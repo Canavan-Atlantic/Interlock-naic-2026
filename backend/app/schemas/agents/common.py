@@ -36,6 +36,17 @@ class EvidenceCreatedBy(StringEnum):
     UNKNOWN = "UNKNOWN"
 
 
+class EvidenceSourceTrust(StringEnum):
+    """Trust boundary for evidence provenance, independent of factual confidence."""
+
+    AUTHORITATIVE_POLICY = "AUTHORITATIVE_POLICY"
+    DETERMINISTIC_SOURCE = "DETERMINISTIC_SOURCE"
+    UNVERIFIED_DEVELOPER_INPUT = "UNVERIFIED_DEVELOPER_INPUT"
+    UNTRUSTED_PROJECT_DOCUMENT = "UNTRUSTED_PROJECT_DOCUMENT"
+    SUPPORTING_SOURCE = "SUPPORTING_SOURCE"
+    UNKNOWN = "UNKNOWN"
+
+
 class DependencyStatus(StringEnum):
     CONFIRMED = "CONFIRMED"
     POTENTIAL = "POTENTIAL"

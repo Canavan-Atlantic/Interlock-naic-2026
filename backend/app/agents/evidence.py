@@ -23,6 +23,7 @@ from ..schemas.agents import (
     DependencyRecord,
     EvidenceBundle,
     EvidenceCreatedBy,
+    EvidenceSourceTrust,
     EvidenceRecord,
     HumanReviewRequest,
     HumanReviewRole,
@@ -41,6 +42,7 @@ from ..schemas.evidence import (
 from ..schemas.project import ProjectInput
 from ..schemas.site_evidence import SiteEvidenceResponse
 from ..services.evidence import project_input_to_evidence_ledger
+from ..services.project_evidence import ProjectEvidenceChunk, ProjectEvidenceFact, ProjectEvidenceRetriever
 from ..services.rag.models import (
     CitationReference,
     DocumentStatus,
@@ -56,6 +58,18 @@ from ..services.site_evidence import evaluate_site
 
 class EvidenceAgentError(RuntimeError):
     """Controlled error for invalid Evidence Agent configuration or input."""
+
+
+@dataclass(frozen=True)
+class EvidenceAgentOptions:
+    """Explicit switches for optional project-document evidence."""
+
+    include_project_documents: bool = True
+    include_benchmark_documents: bool = False
+    project_evidence_root: Path | None = None
+    project_document_query: str = (
+        "project description planning engineering power energy grid water utility connection feasibility"
+    )
 
 
 @dataclass(frozen=True)
@@ -225,6 +239,24 @@ def _created_by_for_source(source_type: Any) -> tuple[EvidenceCreatedBy, bool]:
     return EvidenceCreatedBy.UNKNOWN, False
 
 
+def _source_trust_for_record(
+    created_by: EvidenceCreatedBy,
+    *,
+    source_class: SourceClass | None = None,
+) -> EvidenceSourceTrust:
+    if created_by == EvidenceCreatedBy.RAG_RETRIEVAL:
+        if source_class in {SourceClass.PRIMARY, SourceClass.CURATED}:
+            return EvidenceSourceTrust.AUTHORITATIVE_POLICY
+        return EvidenceSourceTrust.SUPPORTING_SOURCE
+    if created_by == EvidenceCreatedBy.DETERMINISTIC_GIS:
+        return EvidenceSourceTrust.DETERMINISTIC_SOURCE
+    if created_by == EvidenceCreatedBy.DEVELOPER_INPUT:
+        return EvidenceSourceTrust.UNVERIFIED_DEVELOPER_INPUT
+    if created_by == EvidenceCreatedBy.PROJECT_DOCUMENT:
+        return EvidenceSourceTrust.UNTRUSTED_PROJECT_DOCUMENT
+    return EvidenceSourceTrust.UNKNOWN
+
+
 def _confidence(value: Any) -> EvidenceConfidence:
     raw = _enum_value(value) or EvidenceConfidence.UNKNOWN.value
     try:
@@ -291,6 +323,7 @@ def _convert_ledger_entry(
         checked_at=entry.checked_at,
         created_by=selected_created_by,
         deterministic=selected_deterministic,
+        source_trust=_source_trust_for_record(selected_created_by, source_class=source_class),
     )
 
 
@@ -360,6 +393,7 @@ def _structured_project_records(
                 human_review_role=HumanReviewRole(item.get("human_review_role", HumanReviewRole.UNKNOWN.value)),
                 created_by=created_by,
                 deterministic=bool(item.get("deterministic", False)),
+                source_trust=EvidenceSourceTrust(item.get("source_trust", EvidenceSourceTrust.UNKNOWN.value)),
             )
             records.append(record)
         except (KeyError, TypeError, ValueError, ValidationError) as exc:
@@ -529,6 +563,122 @@ def _policy_record(
         human_review_role=_role_for_domain(domain),
         created_by=EvidenceCreatedBy.RAG_RETRIEVAL,
         deterministic=False,
+        source_trust=_source_trust_for_record(EvidenceCreatedBy.RAG_RETRIEVAL, source_class=source_class),
+    )
+
+
+def _project_record_base(
+    *,
+    evidence_id: str,
+    context: ProjectContext,
+    domain: Domain,
+    field_name: str,
+    fact: str,
+    value: Any,
+    source_document_id: str,
+    source_reference: str,
+    source_name: str,
+    source_url: str,
+    citation: CitationReference,
+    evidence_state: AgentEvidenceState,
+    checked_at: datetime,
+) -> EvidenceRecord:
+    return EvidenceRecord(
+        evidence_id=evidence_id,
+        project_id=context.project_id,
+        domain=domain,
+        category=_category_for_domain(domain),
+        field_name=field_name,
+        fact=fact,
+        finding=fact,
+        value=value,
+        source="PROJECT DOCUMENT",
+        source_type=EvidenceSourceType.CUSTOMER_DOCUMENT,
+        source_name=source_name,
+        source_reference=f"{_safe_text(source_url)}::{source_reference}",
+        source_document_id=source_document_id,
+        citation=citation,
+        source_class=SourceClass.UNKNOWN,
+        authority_class=SourceClass.UNKNOWN,
+        document_status=DocumentStatus.SUPPORTING,
+        jurisdiction=Jurisdiction.UNKNOWN,
+        evidence_state=evidence_state,
+        confidence=EvidenceConfidence.UNKNOWN,
+        verification_status="UNVERIFIED_PROJECT_DOCUMENT",
+        limitation="Untrusted project-document evidence; not authoritative policy. Human verification required.",
+        review_status=EvidenceReviewStatus.UNREVIEWED,
+        checked_at=checked_at,
+        human_review_required=True,
+        human_review_role=_role_for_domain(domain),
+        created_by=EvidenceCreatedBy.PROJECT_DOCUMENT,
+        deterministic=False,
+        source_trust=EvidenceSourceTrust.UNTRUSTED_PROJECT_DOCUMENT,
+    )
+
+
+def _project_fact_record(
+    fact: ProjectEvidenceFact,
+    context: ProjectContext,
+    checked_at: datetime,
+) -> EvidenceRecord:
+    value = {
+        "value": fact.value,
+        "status": _enum_value(fact.status),
+        "benchmark_only": fact.benchmark_only,
+    }
+    fact_text = f"{fact.field_name}: {json.dumps(value, sort_keys=True, default=str)}"
+    fact_domain = Domain.GENERAL
+    lower_field = fact.field_name.casefold()
+    if "grid" in lower_field:
+        fact_domain = Domain.GRID
+    elif "renewable" in lower_field or "power" in lower_field or "mic" in lower_field:
+        fact_domain = Domain.ENERGY
+    elif "water" in lower_field or "utility" in lower_field or "feasibility" in lower_field:
+        fact_domain = Domain.WATER
+    elif "area" in lower_field:
+        fact_domain = Domain.PLANNING
+    return _project_record_base(
+        evidence_id=f"project-fact-{fact.fact_id}",
+        context=context,
+        domain=fact_domain,
+        field_name=f"project.{fact.field_name}",
+        fact=fact_text,
+        value=value,
+        source_document_id=fact.project_document_id,
+        source_reference=fact.citation.locator,
+        source_name=f"PROJECT DOCUMENT — {fact.project_document_id}",
+        source_url=fact.source_url,
+        citation=fact.citation,
+        evidence_state=AgentEvidenceState.PROVIDED if fact.value is not None else AgentEvidenceState.UNKNOWN,
+        checked_at=checked_at,
+    )
+
+
+def _project_chunk_record(
+    chunk: ProjectEvidenceChunk,
+    context: ProjectContext,
+    checked_at: datetime,
+) -> EvidenceRecord:
+    value = {
+        "text": chunk.text,
+        "benchmark_only": chunk.benchmark_only,
+        "document_type": chunk.document_type,
+    }
+    chunk_domain = Domain(_enum_value(chunk.domain) or Domain.UNKNOWN.value)
+    return _project_record_base(
+        evidence_id=f"project-chunk-{chunk.chunk_id}",
+        context=context,
+        domain=chunk_domain,
+        field_name=f"project_document.{chunk_domain.value.casefold()}",
+        fact=chunk.text,
+        value=value,
+        source_document_id=chunk.project_document_id,
+        source_reference=chunk.citation.locator,
+        source_name=f"PROJECT DOCUMENT — {chunk.project_document_id}",
+        source_url=chunk.source_url,
+        citation=chunk.citation,
+        evidence_state=AgentEvidenceState.PROVIDED,
+        checked_at=checked_at,
     )
 
 
@@ -871,19 +1021,66 @@ class DeterministicEvidenceAgent:
                         warnings.append(f"Policy evidence record for {_enum_value(domain)} was ignored: invalid provenance")
         return records, warnings, gaps
 
-    def run(self, project_context: ProjectContext) -> EvidenceBundle:
+    def _project_document_records(
+        self,
+        context: ProjectContext,
+        checked_at: datetime,
+        options: EvidenceAgentOptions,
+    ) -> tuple[list[EvidenceRecord], list[str], list[str]]:
+        """Load only project-scoped evidence; never route it through policy RAG."""
+
+        if not options.include_project_documents:
+            return [], [], []
+        retriever = ProjectEvidenceRetriever(options.project_evidence_root or self.project_root)
+        try:
+            facts = retriever.facts(
+                context.project_id,
+                include_benchmark=options.include_benchmark_documents,
+            )
+            chunks = retriever.search(
+                context.project_id,
+                options.project_document_query,
+                include_benchmark=options.include_benchmark_documents,
+                top_k=24,
+            )
+        except (FileNotFoundError, ValueError) as exc:
+            return [], [f"Project-document evidence unavailable: {type(exc).__name__}"], [
+                "No processed project-document evidence is available for this project"
+            ]
+
+        records: list[EvidenceRecord] = []
+        for fact in facts:
+            records.append(_project_fact_record(fact, context, checked_at))
+        for chunk in chunks:
+            records.append(_project_chunk_record(chunk, context, checked_at))
+        if not records:
+            return [], [], ["No project-document evidence matched the requested project scope"]
+        return records, [], []
+
+    def run(
+        self,
+        project_context: ProjectContext,
+        options: EvidenceAgentOptions | None = None,
+    ) -> EvidenceBundle:
         """Gather evidence into one shared bundle without assessing viability."""
 
         started = perf_counter()
         checked_at = _utc_now()
+        options = options or EvidenceAgentOptions()
         project_input = _project_input_from_context(project_context)
         developer_records, warnings = self._developer_records(project_context, project_input, checked_at)
         gis_records, gis_warnings, gis_missing = self._gis_records(project_context, project_input)
         policy_records, policy_warnings, retrieval_gaps = self._policy_records(project_context, checked_at)
+        project_document_records, project_document_warnings, project_document_gaps = self._project_document_records(
+            project_context,
+            checked_at,
+            options,
+        )
         warnings.extend(_safe_text(item) for item in gis_warnings)
         warnings.extend(_safe_text(item) for item in policy_warnings)
+        warnings.extend(_safe_text(item) for item in project_document_warnings)
 
-        records = [*developer_records, *gis_records, *policy_records]
+        records = [*developer_records, *gis_records, *policy_records, *project_document_records]
         missing: list[str] = []
         for record in records:
             if (item := _missing_item_for_record(record)) is not None:
@@ -891,6 +1088,7 @@ class DeterministicEvidenceAgent:
         missing.extend(gis_missing)
         missing.extend(_structured_missing_items(records))
         missing.extend(retrieval_gaps)
+        missing.extend(project_document_gaps)
         missing = list(dict.fromkeys(missing))
 
         contradictions = _build_contradictions(records, project_context.project_id)
@@ -919,6 +1117,14 @@ class DeterministicEvidenceAgent:
         provenance_summary = {
             "developer_records": sum(record.created_by == EvidenceCreatedBy.DEVELOPER_INPUT for record in records),
             "structured_project_records": sum(record.created_by == EvidenceCreatedBy.PROJECT_DOCUMENT for record in records),
+            "project_document_records": len(project_document_records),
+            "project_document_facts": sum(record.field_name.startswith("project.") for record in project_document_records),
+            "benchmark_project_document_records": sum(
+                record.created_by == EvidenceCreatedBy.PROJECT_DOCUMENT
+                and isinstance(record.value, dict)
+                and bool(record.value.get("benchmark_only"))
+                for record in project_document_records
+            ),
             "gis_records": sum(record.created_by == EvidenceCreatedBy.DETERMINISTIC_GIS for record in records),
             "policy_records": sum(record.created_by == EvidenceCreatedBy.RAG_RETRIEVAL for record in records),
             "unknown_or_missing_count": len(missing),
@@ -942,6 +1148,7 @@ class DeterministicEvidenceAgent:
 __all__ = [
     "DEFAULT_RETRIEVAL_QUERY_TEMPLATES",
     "DeterministicEvidenceAgent",
+    "EvidenceAgentOptions",
     "EvidenceAgentError",
     "RetrievalQueryTemplate",
     "build_retrieval_requests",

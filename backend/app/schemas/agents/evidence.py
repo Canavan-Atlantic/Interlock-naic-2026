@@ -25,6 +25,7 @@ from .common import (
     ContractModel,
     DependencyRecord,
     EvidenceCreatedBy,
+    EvidenceSourceTrust,
     HumanReviewRequest,
     HumanReviewRole,
     PotentialContradiction,
@@ -65,6 +66,7 @@ class EvidenceRecord(Module3EvidenceRecord):
     human_review_role: HumanReviewRole = HumanReviewRole.UNKNOWN
     created_by: EvidenceCreatedBy = EvidenceCreatedBy.UNKNOWN
     deterministic: bool = False
+    source_trust: EvidenceSourceTrust = EvidenceSourceTrust.UNKNOWN
     verification_status: str = "UNVERIFIED"
     evidence_state: AgentEvidenceState
 
@@ -101,4 +103,5 @@ __all__ = [
     "EvidenceConfidence",
     "EvidenceReviewStatus",
     "EvidenceSourceType",
+    "EvidenceSourceTrust",
 ]
