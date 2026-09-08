@@ -52,7 +52,13 @@ from ..services.rag.models import (
     SourceClass,
     Workflow,
 )
-from ..services.rag.retrieval import IndexNotBuiltError, StaleIndexError, search_index
+from ..services.rag.retrieval import (
+    IndexNotBuiltError,
+    LoadedRetrievalIndex,
+    StaleIndexError,
+    load_retrieval_index,
+    search_index,
+)
 from ..services.site_evidence import evaluate_site
 
 
@@ -482,6 +488,26 @@ def _policy_hit_allowed(hit: dict[str, Any], context: ProjectContext) -> bool:
     return True
 
 
+_LOCAL_AUTHORITY_GAP_DOMAINS = frozenset({Domain.PLANNING, Domain.WATER})
+
+
+def _policy_gap_allowed(gap: Any, domain: Domain, context: ProjectContext) -> bool:
+    """Keep only local-scope gaps that are material to the requested domain.
+
+    Module 5B still applies its unchanged jurisdiction filters.  This guard
+    prevents its generic local-authority diagnostic from becoming a false
+    gap for domains normally satisfied by national/EU or NPWS evidence.
+    """
+
+    if not isinstance(gap, dict):
+        return True
+    if gap.get("type") != "NO_AUTHORITATIVE_LOCAL_SOURCE":
+        return True
+    if not context.location.local_authority:
+        return False
+    return domain in _LOCAL_AUTHORITY_GAP_DOMAINS
+
+
 def _role_for_domain(domain: Domain) -> HumanReviewRole:
     if domain == Domain.PLANNING:
         return HumanReviewRole.PLANNING_CONSULTANT
@@ -824,25 +850,29 @@ def _build_review_requests(
     project_id: str,
 ) -> list[HumanReviewRequest]:
     requests: list[HumanReviewRequest] = []
-    seen: set[tuple[str, str]] = set()
+    seen: dict[tuple[str, str], HumanReviewRequest] = {}
 
     def add(domain: Domain, reason: str, evidence_ids: list[str], severity: HumanReviewSeverity) -> None:
-        key = (_enum_value(domain) or Domain.UNKNOWN.value, reason)
-        if key in seen:
+        normalised_reason = " ".join(str(reason).split()).casefold()
+        key = (_enum_value(domain) or Domain.UNKNOWN.value, normalised_reason)
+        existing = seen.get(key)
+        if existing is not None:
+            existing.evidence_ids = list(dict.fromkeys([*existing.evidence_ids, *evidence_ids]))
+            if severity == HumanReviewSeverity.HIGH_CONSEQUENCE:
+                existing.severity = HumanReviewSeverity.HIGH_CONSEQUENCE
             return
-        seen.add(key)
-        requests.append(
-            HumanReviewRequest(
-                review_id=f"review-{(_enum_value(domain) or Domain.UNKNOWN.value).casefold()}-{len(requests) + 1}",
-                project_id=project_id,
-                domain=domain,
-                reason=reason,
-                severity=severity,
-                recommended_role=_role_for_domain(domain),
-                evidence_ids=list(dict.fromkeys(evidence_ids)),
-                status="REQUIRED",
-            )
+        review = HumanReviewRequest(
+            review_id=f"review-{(_enum_value(domain) or Domain.UNKNOWN.value).casefold()}-{len(requests) + 1}",
+            project_id=project_id,
+            domain=domain,
+            reason=reason,
+            severity=severity,
+            recommended_role=_role_for_domain(domain),
+            evidence_ids=list(dict.fromkeys(evidence_ids)),
+            status="REQUIRED",
         )
+        seen[key] = review
+        requests.append(review)
 
     for contradiction in contradictions:
         add(
@@ -992,15 +1022,30 @@ class DeterministicEvidenceAgent:
         warnings: list[str] = []
         gaps: list[str] = []
         seen: set[tuple[Any, ...]] = set()
+        loaded_index: LoadedRetrievalIndex | None = None
+        load_error: Exception | None = None
+        if self.retrieval_runner is search_index:
+            try:
+                loaded_index = load_retrieval_index(self.project_root)
+            except (IndexNotBuiltError, StaleIndexError, FileNotFoundError, ValueError) as exc:
+                load_error = exc
         for request in build_retrieval_requests(context, self.retrieval_templates):
             domain = Domain(_enum_value(request.domains[0]) or Domain.UNKNOWN.value)
             try:
-                response = self.retrieval_runner(self.project_root, request)
+                if load_error is not None:
+                    raise load_error
+                response = (
+                    loaded_index.search(request)
+                    if loaded_index is not None
+                    else self.retrieval_runner(self.project_root, request)
+                )
             except (IndexNotBuiltError, StaleIndexError, FileNotFoundError, ValueError) as exc:
                 warnings.append(f"Policy retrieval for {_enum_value(domain)} unavailable: {type(exc).__name__}")
                 gaps.append(f"No current policy retrieval available for {_enum_value(domain)}")
                 continue
             for gap in response.get("gaps", []):
+                if not _policy_gap_allowed(gap, domain, context):
+                    continue
                 if isinstance(gap, dict):
                     message = str(gap.get("message") or gap.get("type") or "Policy retrieval gap")
                     gaps.append(message)

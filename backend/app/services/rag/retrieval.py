@@ -856,6 +856,36 @@ def _load_index(project_root: Path) -> tuple[dict[str, Any], list[dict[str, Any]
     return manifest, records, lexical, vectors
 
 
+class LoadedRetrievalIndex:
+    """Validated Module 5B artifacts reused for one deterministic run."""
+
+    def __init__(
+        self,
+        project_root: Path,
+        manifest: dict[str, Any],
+        records: list[dict[str, Any]],
+        lexical_index: dict[str, Any],
+        vectors: np.ndarray | None,
+    ) -> None:
+        self.project_root = project_root
+        self.manifest = manifest
+        self.records = records
+        self.lexical_index = lexical_index
+        self.vectors = vectors
+        self._embedding_provider: EmbeddingProvider | None = None
+        self._embedding_provider_loaded = False
+
+    def search(self, request: RetrievalRequest | dict[str, Any]) -> dict[str, Any]:
+        return _search_loaded_index(self, request)
+
+
+def load_retrieval_index(project_root: Path) -> LoadedRetrievalIndex:
+    """Load and validate Module 5B artifacts once for a caller's run."""
+
+    root = Path(project_root).resolve()
+    return LoadedRetrievalIndex(root, *_load_index(root))
+
+
 def _infer_local_authority(query: str, request: RetrievalRequest) -> str | None:
     if request.local_authority or request.jurisdiction_detail:
         return request.local_authority or request.jurisdiction_detail
@@ -984,12 +1014,16 @@ def _semantic_scores(
     vectors: np.ndarray | None,
     query: str,
     manifest: dict[str, Any],
+    embedding_provider: EmbeddingProvider | None = None,
+    provider_loaded: bool = False,
 ) -> tuple[dict[str, float], str | None]:
     if vectors is None or not manifest.get("semantic_available"):
         return {}, "Semantic retrieval unavailable; lexical retrieval was used."
     provider_name = manifest.get("embedding_provider")
     try:
-        provider = make_embedding_provider(provider_name)
+        if provider_loaded and embedding_provider is None:
+            return {}, "Semantic retrieval unavailable; lexical retrieval was used."
+        provider = embedding_provider or make_embedding_provider(provider_name)
         query_vector = provider.embed_query(query)
     except SemanticUnavailableError as exc:
         return {}, str(exc)
@@ -1139,20 +1173,40 @@ def _gaps(
     return gaps
 
 
-def search_index(project_root: Path, request: RetrievalRequest | dict[str, Any]) -> dict[str, Any]:
-    """Search the local index using deterministic lexical/semantic fusion."""
+def _search_loaded_index(
+    loaded_index: LoadedRetrievalIndex,
+    request: RetrievalRequest | dict[str, Any],
+) -> dict[str, Any]:
+    """Search already-validated artifacts without changing retrieval rules."""
 
     retrieval_request = request if isinstance(request, RetrievalRequest) else RetrievalRequest.model_validate(request)
     if not retrieval_request.query.strip():
         raise ValueError("query must contain non-whitespace text")
-    manifest, records, lexical_index, vectors = _load_index(project_root)
+    manifest = loaded_index.manifest
+    records = loaded_index.records
+    lexical_index = loaded_index.lexical_index
+    vectors = loaded_index.vectors
     filters = _resolved_filters(retrieval_request)
     allowed_records = [record for record in records if _record_allowed(record, retrieval_request, filters)]
     allowed_ids = {record["record_id"] for record in allowed_records}
     lexical_scores = _bm25_scores(records, lexical_index, retrieval_request.query)
     candidate_count = max(retrieval_request.top_k * CANDIDATE_MULTIPLIER, 50)
     lexical_ranked = _ranked(lexical_scores, allowed_ids)[:candidate_count]
-    semantic_scores, semantic_warning = _semantic_scores(records, allowed_ids, vectors, retrieval_request.query, manifest)
+    if vectors is not None and manifest.get("semantic_available") and not loaded_index._embedding_provider_loaded:
+        try:
+            loaded_index._embedding_provider = make_embedding_provider(manifest.get("embedding_provider"))
+        except SemanticUnavailableError:
+            loaded_index._embedding_provider = None
+        loaded_index._embedding_provider_loaded = True
+    semantic_scores, semantic_warning = _semantic_scores(
+        records,
+        allowed_ids,
+        vectors,
+        retrieval_request.query,
+        manifest,
+        loaded_index._embedding_provider,
+        loaded_index._embedding_provider_loaded,
+    )
     semantic_ranked = _ranked(semantic_scores, allowed_ids)[:candidate_count]
     fused = _fuse(lexical_ranked, semantic_ranked)
     by_id = {record["record_id"]: record for record in allowed_records}
@@ -1225,6 +1279,12 @@ def search_index(project_root: Path, request: RetrievalRequest | dict[str, Any])
         },
     }
     return result
+
+
+def search_index(project_root: Path, request: RetrievalRequest | dict[str, Any]) -> dict[str, Any]:
+    """Search the local index using deterministic lexical/semantic fusion."""
+
+    return load_retrieval_index(project_root).search(request)
 
 
 def _evaluation_filter(case: dict[str, Any]) -> dict[str, Any]:
@@ -1358,10 +1418,12 @@ __all__ = [
     "EmbeddingProvider",
     "DeterministicMockEmbeddingProvider",
     "OpenAIEmbeddingProvider",
+    "LoadedRetrievalIndex",
     "IndexNotBuiltError",
     "StaleIndexError",
     "build_index",
     "evaluate_index",
     "main",
+    "load_retrieval_index",
     "search_index",
 ]
