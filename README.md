@@ -2,7 +2,7 @@
 
 INTERLOCK is an early-stage decision-support platform for data-centre development. Its long-term purpose is to help a developer understand whether a development proposition is credible enough to progress, what could stop or delay it, what remains unknown, and what needs to happen next.
 
-## Current scope: Modules 1–5B
+## Current scope: Modules 1–6.0
 
 Module 1 proves that a Streamlit frontend can communicate with a FastAPI backend and that both services can run with Docker Compose. Module 2 adds the structured developer project-input workflow. Module 3 converts that input into an in-memory evidence ledger. Module 4A adds deterministic raw-data inventory, validation, cleaning, provenance, and spatial standardisation. Module 4B adds deterministic site-level evidence queries over those processed outputs while retaining the Module 3 ledger and explicit limitations. Module 5A creates a deterministic, provenance-aware policy knowledge-base foundation. Module 5B adds authority-aware hybrid retrieval over that processed corpus without answer generation or project decisions.
 
@@ -25,6 +25,13 @@ It includes:
 - a Module 5A document registry, authority/status metadata model, page-aware extraction, curated-record preservation, and deterministic provenance-aware chunks;
 - a Module 5B local BM25/optional-embedding retrieval index with authority/status filtering, exact citations, stale-index detection, and a read-only search endpoint;
 - automated health, project-input, evidence-ledger, registry, and processing tests.
+
+Module 6.0 adds a separate deterministic project-evidence pipeline and Evidence
+Agent integration. The Herbata benchmark uses a finite official-document
+allow-list, keeps source PDFs local, writes project-scoped page/chunk/fact
+artifacts outside the policy RAG directories, and marks all project-document
+evidence as untrusted and human-review-required. It does not add scoring,
+recommendations, answer generation, or Module 11 validation.
 
 Raw source files under `data/raw/` are immutable. Generated manifests and processed outputs are written under `data/processed/`. Modules 4A and 4B do not call external services, make site decisions, score sites, or persist data in a database.
 
@@ -85,6 +92,28 @@ Build, search, and evaluate the index from the project root:
 ```
 
 The read-only API endpoint is `POST /rag/search`. It accepts the canonical query, workflow, domains, jurisdiction/local-authority scope, historical/supporting switches, and result limits. It returns separate `authoritative_results`, `curated_results`, `supporting_results`, and `historical_results`, together with citation/provenance metadata, retrieval ranks, comparison candidates, warnings, and evidence gaps. The Streamlit developer section exposes the same retrieval controls without adding answer generation.
+
+## Module 6.0 — Isolated project evidence
+
+Herbata project documents are deliberately separate from Module 5 policy evidence:
+
+- source PDFs: `data/project_evidence/benchmarks/herbata/source_documents/` (local and git-ignored);
+- processed registry/pages/chunks/facts/reports: `data/project_evidence_processed/herbata/`;
+- optional project index metadata: `data/project_evidence_index/herbata/`;
+- authoritative policy artifacts remain under `data/rag_processed/` and `data/rag_index/`.
+
+Run the finite download and deterministic extraction from the project root:
+
+```powershell
+& '.\.venv\Scripts\python.exe' scripts/project_evidence/download_herbata.py --project-root .
+& '.\.venv\Scripts\python.exe' scripts/project_evidence/build_herbata.py --project-root .
+```
+
+The Evidence Agent endpoint accepts `include_project_documents=true` and
+`include_benchmark_documents=false` (the early-evidence default). The Streamlit
+Evidence Agent panel exposes Normal project, Herbata Early Evidence, and Herbata
+Validation modes. Project-document records retain source URLs/page citations and
+cannot masquerade as authoritative policy.
 
 ## Prerequisites
 

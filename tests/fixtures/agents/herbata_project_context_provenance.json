@@ -1,0 +1,76 @@
+{
+  "project_id": {
+    "value": "benchmark-herbata-naas",
+    "provenance": "Existing Herbata benchmark metadata and project-evidence manifest."
+  },
+  "project_name": {
+    "value": "Herbata Data Centre Campus",
+    "document_id": "project-herbata-grid-substation",
+    "page": 3,
+    "provenance": "110kV Grid Substation and Transmission Line Report title block."
+  },
+  "project_type": {
+    "value": "Data Centre",
+    "document_id": "project-herbata-appropriate-assessment",
+    "page": 6,
+    "provenance": "Appropriate Assessment Screening Report describes a data centre development."
+  },
+  "location.address": {
+    "value": "Naas, County Kildare",
+    "document_id": "project-herbata-grid-substation",
+    "page": 3,
+    "provenance": "Grid Substation report identifies the Herbata Data Centre Campus location."
+  },
+  "location.local_authority": {
+    "value": "Kildare County Council",
+    "document_id": "project-herbata-grid-substation",
+    "page": 9,
+    "provenance": "Report states that parts of the substation development are subject to a separate planning application to Kildare County Council."
+  },
+  "location.country": {
+    "value": "Ireland",
+    "document_id": "project-herbata-grid-substation",
+    "page": 23,
+    "provenance": "Official Ordnance Survey Ireland source and Ireland address text in the site-location drawing."
+  },
+  "location.jurisdiction": {
+    "value": "IRELAND",
+    "provenance": "Deterministic jurisdiction classification from the explicitly Irish site/document location; not a legal conclusion."
+  },
+  "location.latitude": {
+    "value": 53.21888588126229,
+    "document_id": "project-herbata-grid-substation",
+    "page": 23,
+    "source_coordinates": {
+      "x": 686184.27765,
+      "y": 719497.0173,
+      "crs": "EPSG:2157"
+    },
+    "provenance": "Deterministic EPSG:2157-to-EPSG:4326 transformation of the document's labelled Centre Point Coordinates; no geocoding or guessing."
+  },
+  "location.longitude": {
+    "value": -6.709498983154712,
+    "document_id": "project-herbata-grid-substation",
+    "page": 23,
+    "source_coordinates": {
+      "x": 686184.27765,
+      "y": 719497.0173,
+      "crs": "EPSG:2157"
+    },
+    "provenance": "Deterministic EPSG:2157-to-EPSG:4326 transformation of the document's labelled Centre Point Coordinates; no geocoding or guessing."
+  },
+  "assessment_workflow": {
+    "value": "SITE_FEASIBILITY",
+    "provenance": "Explicit demo-run configuration, not a project-document fact."
+  },
+  "unknown_fields": [
+    "project_lifecycle_status",
+    "site_boundary",
+    "planned_power_mw",
+    "requested_mic_mva",
+    "power_strategy",
+    "energy_strategy",
+    "phasing",
+    "project_stage"
+  ]
+}

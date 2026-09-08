@@ -43,3 +43,9 @@ data/demo/*
 !data/demo/.gitkeep
 
 # data/rag_processed/ and data/rag_index/ are intentionally included.
+
+# Project-evidence source PDFs and generated indexes stay local; manifests,
+# metadata, code, and tests remain commit-able.
+data/project_evidence/benchmarks/herbata/source_documents/
+data/project_evidence_processed/
+data/project_evidence_index/

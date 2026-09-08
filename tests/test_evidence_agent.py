@@ -8,8 +8,14 @@ from typing import Any
 
 from fastapi.testclient import TestClient
 
-from backend.app.agents.evidence import DeterministicEvidenceAgent, build_retrieval_requests
-from backend.app.schemas.agents import AgentEvidenceState, EvidenceBundle, ProjectContext
+import backend.app.agents.evidence as evidence_module
+from backend.app.agents.evidence import (
+    DeterministicEvidenceAgent,
+    EvidenceAgentOptions,
+    _build_review_requests,
+    build_retrieval_requests,
+)
+from backend.app.schemas.agents import AgentEvidenceState, EvidenceBundle, EvidenceRecord as AgentEvidenceRecord, ProjectContext
 from backend.app.schemas.evidence import (
     EvidenceCategory,
     EvidenceConfidence,
@@ -288,6 +294,77 @@ def test_fingal_local_policy_does_not_leak_into_wicklow_project() -> None:
     bundle = DeterministicEvidenceAgent(project_root=ROOT, retrieval_runner=retrieve).run(context)
     assert not any(item.source_document_id == "doc-policy-001" for item in bundle.records)
     assert any("Wicklow" in item for item in bundle.retrieval_gaps)
+
+
+def test_generic_local_authority_gaps_are_only_kept_for_planning_and_water() -> None:
+    def retrieve(_root: Path, request: Any) -> dict[str, Any]:
+        domain = getattr(request.domains[0], "value", request.domains[0])
+        return {
+            "authoritative_results": [],
+            "curated_results": [],
+            "supporting_results": [],
+            "historical_results": [],
+            "gaps": [{
+                "type": "NO_AUTHORITATIVE_LOCAL_SOURCE",
+                "domain": domain,
+                "message": f"No active local-authority {domain} source for Kildare County Council is present.",
+            }],
+            "warnings": [],
+        }
+
+    context = _context(
+        location={
+            "address": "Synthetic site, Naas",
+            "country": "Ireland",
+            "jurisdiction": "IRELAND",
+            "local_authority": "Kildare County Council",
+        }
+    )
+    bundle = DeterministicEvidenceAgent(
+        project_root=ROOT,
+        retrieval_runner=retrieve,
+    ).run(context, EvidenceAgentOptions(include_project_documents=False))
+
+    assert len(bundle.retrieval_gaps) == 2
+    assert all(domain in bundle.retrieval_gaps[index] for index, domain in enumerate(("PLANNING", "WATER")))
+    assert not any(domain in " ".join(bundle.retrieval_gaps) for domain in ("GRID", "ENERGY", "BIODIVERSITY", "ENVIRONMENT", "DATA_CENTRE_POLICY"))
+
+
+def test_duplicate_review_reasons_are_collapsed_case_and_whitespace_insensitively() -> None:
+    record = AgentEvidenceRecord.model_validate({
+        **_entry("review-001", "site.field", None, state=EvidenceState.UNKNOWN).model_dump(),
+        "project_id": "agent-test-project",
+        "domain": Domain.PLANNING,
+        "evidence_state": AgentEvidenceState.UNKNOWN,
+        "human_review_required": True,
+    })
+    duplicate = record.model_copy(update={"evidence_id": "review-002", "limitation": "  SYNTHETIC   TEST LIMITATION "})
+    reviews = _build_review_requests([record, duplicate], [], [], [], "agent-test-project")
+
+    assert len(reviews) == 1
+    assert reviews[0].evidence_ids == ["review-001", "review-002"]
+
+
+def test_one_evidence_run_loads_and_reuses_one_policy_index(monkeypatch: Any) -> None:
+    calls = {"loads": 0, "searches": 0}
+
+    class FakeLoadedIndex:
+        def search(self, _request: Any) -> dict[str, Any]:
+            calls["searches"] += 1
+            return _empty_retrieval(Path("."), _request)
+
+    def load(_root: Path) -> FakeLoadedIndex:
+        calls["loads"] += 1
+        return FakeLoadedIndex()
+
+    monkeypatch.setattr(evidence_module, "load_retrieval_index", load)
+    agent = DeterministicEvidenceAgent(
+        project_root=ROOT,
+        retrieval_runner=evidence_module.search_index,
+    )
+    agent.run(_context(), EvidenceAgentOptions(include_project_documents=False))
+
+    assert calls == {"loads": 1, "searches": len(build_retrieval_requests(_context()))}
 
 
 def test_duplicate_retrieved_chunks_are_deduplicated() -> None:

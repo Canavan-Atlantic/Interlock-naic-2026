@@ -1,0 +1,27 @@
+{
+  "project_id": "benchmark-herbata-naas",
+  "project_name": "Herbata Data Centre Campus",
+  "project_type": "Data Centre",
+  "assessment_workflow": "SITE_FEASIBILITY",
+  "project_lifecycle_status": "UNKNOWN",
+  "location": {
+    "address": "Naas, County Kildare",
+    "latitude": 53.21888588126229,
+    "longitude": -6.709498983154712,
+    "local_authority": "Kildare County Council",
+    "country": "Ireland",
+    "jurisdiction": "IRELAND"
+  },
+  "site_boundary": null,
+  "planned_power_mw": null,
+  "requested_mic_mva": null,
+  "power_strategy": null,
+  "energy_strategy": null,
+  "phasing": null,
+  "project_stage": null,
+  "developer_inputs": {
+    "fixture": "official-herbata-document-derived-demo-context"
+  },
+  "uploaded_document_refs": [],
+  "source_project_input": null
+}

@@ -63,15 +63,20 @@ def display_evidence_value(value: object) -> str:
     return str(value)
 
 
-def build_evidence_agent_context(project: dict[str, object]) -> dict[str, object]:
+def build_evidence_agent_context(
+    project: dict[str, object],
+    *,
+    project_evidence_mode: str = "Normal project",
+) -> dict[str, object]:
     """Build the shared ProjectContext from the already validated form values."""
 
     stable_payload = json.dumps(project, sort_keys=True, default=str).encode("utf-8")
     project_id = "streamlit-" + hashlib.sha256(stable_payload).hexdigest()[:12]
     has_coordinates = project.get("latitude") is not None and project.get("longitude") is not None
+    herbata_mode = project_evidence_mode.startswith("Herbata")
     return {
-        "project_id": project_id,
-        "project_name": project.get("project_name"),
+        "project_id": "benchmark-herbata-naas" if herbata_mode else project_id,
+        "project_name": "Herbata Data Centre benchmark" if herbata_mode else project.get("project_name"),
         "project_type": project.get("development_type"),
         "assessment_workflow": "SITE_FEASIBILITY" if has_coordinates else "SITE_DISCOVERY",
         "project_lifecycle_status": "UNKNOWN",
@@ -80,8 +85,8 @@ def build_evidence_agent_context(project: dict[str, object]) -> dict[str, object
             "latitude": project.get("latitude"),
             "longitude": project.get("longitude"),
             "local_authority": None,
-            "country": None,
-            "jurisdiction": "UNKNOWN",
+            "country": "Ireland" if herbata_mode else None,
+            "jurisdiction": "IRELAND" if herbata_mode else "UNKNOWN",
         },
         "site_boundary": (
             {"area_hectares": project.get("site_area_hectares")}
@@ -94,7 +99,10 @@ def build_evidence_agent_context(project: dict[str, object]) -> dict[str, object
         "energy_strategy": project.get("energy_strategy"),
         "phasing": project.get("project_phasing_notes"),
         "project_stage": project.get("project_stage"),
-        "developer_inputs": {"source": "validated_streamlit_project_input"},
+        "developer_inputs": {
+            "source": "validated_streamlit_project_input",
+            "project_evidence_mode": project_evidence_mode,
+        },
         "uploaded_document_refs": [],
         "source_project_input": project,
     }
@@ -222,7 +230,8 @@ def render_evidence_agent(payload: dict[str, object]) -> None:
     if not isinstance(records, list):
         records = []
     sections = (
-        ("Project evidence", {"DEVELOPER_INPUT", "PROJECT_DOCUMENT"}),
+        ("Developer input", {"DEVELOPER_INPUT"}),
+        ("Project documents (untrusted evidence)", {"PROJECT_DOCUMENT"}),
         ("Public/GIS evidence", {"DETERMINISTIC_GIS"}),
         ("Policy/regulatory evidence", {"RAG_RETRIEVAL"}),
     )
@@ -238,6 +247,7 @@ def render_evidence_agent(payload: dict[str, object]) -> None:
                 "State": item.get("evidence_state"),
                 "Finding": item.get("finding") or item.get("fact"),
                 "Source": item.get("source_name"),
+                "Trust boundary": item.get("source_trust"),
                 "Verification": item.get("verification_status"),
             }
             for item in selected
@@ -525,6 +535,15 @@ if validation_payload:
                 st.error("The backend returned an invalid site-evidence response.")
 
     project_for_evidence = validation_payload["project"]
+    project_evidence_mode = st.selectbox(
+        "Project evidence mode",
+        options=[
+            "Normal project",
+            "Herbata benchmark — Early Evidence",
+            "Herbata benchmark — Validation",
+        ],
+        help="Project documents remain separate from authoritative Module 5 policy evidence. Validation explicitly includes benchmark-only documents.",
+    )
     if st.button(
         "Run Evidence Agent",
         key="run_evidence_agent",
@@ -537,7 +556,14 @@ if validation_payload:
             try:
                 agent_response = requests.post(
                     f"{api_base_url.rstrip('/')}/agents/evidence",
-                    json=build_evidence_agent_context(project_for_evidence),
+                    params={
+                        "include_project_documents": "true",
+                        "include_benchmark_documents": str(project_evidence_mode.endswith("Validation")).lower(),
+                    },
+                    json=build_evidence_agent_context(
+                        project_for_evidence,
+                        project_evidence_mode=project_evidence_mode,
+                    ),
                     timeout=240,
                 )
                 agent_response.raise_for_status()
