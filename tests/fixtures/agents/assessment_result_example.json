@@ -1,0 +1,51 @@
+{
+  "project_context": {
+    "project_id": "synthetic-blanchardstown-001",
+    "project_name": "Synthetic Blanchardstown Data Centre",
+    "project_type": "Data Centre",
+    "assessment_workflow": "SITE_FEASIBILITY",
+    "project_lifecycle_status": "PRE_PLANNING",
+    "location": {"address": "Synthetic site", "jurisdiction": "IRELAND"},
+    "site_boundary": null,
+    "planned_power_mw": null,
+    "requested_mic_mva": null,
+    "power_strategy": "Unknown",
+    "energy_strategy": null,
+    "phasing": null,
+    "project_stage": "Unknown",
+    "developer_inputs": {},
+    "uploaded_document_refs": [],
+    "source_project_input": null
+  },
+  "findings": [
+    {
+      "finding_id": "finding-synthetic-001",
+      "domain": "GRID",
+      "status": "UNKNOWN",
+      "constraint": null,
+      "dependency_ids": [],
+      "evidence_ids": [],
+      "material_unknowns": ["connection information not supplied"],
+      "decision_impact": "Further evidence is needed before a planning assessment.",
+      "evidence_required_next": ["developer or grid evidence"],
+      "human_review_required": true
+    }
+  ],
+  "constraints": [],
+  "dependencies": [],
+  "material_unknowns": ["connection information not supplied"],
+  "human_reviews": [
+    {
+      "review_id": "review-synthetic-001",
+      "project_id": "synthetic-blanchardstown-001",
+      "domain": "GRID",
+      "reason": "Confirm the source and status of connection information.",
+      "severity": "MATERIAL",
+      "recommended_role": "GRID_ENGINEER",
+      "evidence_ids": [],
+      "status": "REQUIRED",
+      "requested_at": null
+    }
+  ],
+  "warnings": ["Synthetic assessment finding only; no final decision is represented."]
+}
