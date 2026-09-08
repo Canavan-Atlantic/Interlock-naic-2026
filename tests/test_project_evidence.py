@@ -183,6 +183,37 @@ def test_downloader_is_idempotent_and_refuses_a_different_existing_hash(tmp_path
         downloader.download_allowlist(tmp_path, session=Session(), sleep_seconds=0)
 
 
+def test_failed_required_download_is_recorded_explicitly(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import requests
+    import scripts.project_evidence.download_herbata as downloader
+    from backend.app.services.project_evidence.catalog import HerbataDocumentSpec
+
+    spec = HerbataDocumentSpec(
+        "failed",
+        "Failed document",
+        "https://herbatagdc.ie/listing",
+        ProjectDocumentClassification.PROJECT_INPUT_BENCHMARK,
+        "PROJECT_DESCRIPTION",
+        Domain.GENERAL,
+        False,
+        "https://herbatagdc.ie/documents/2/file",
+    )
+
+    class Session:
+        headers: dict[str, str] = {}
+
+        def get(self, url: str, timeout: int):
+            raise requests.ConnectionError("synthetic connection failure")
+
+    monkeypatch.setattr(downloader, "HERBATA_DOCUMENT_ALLOWLIST", (spec,))
+    with pytest.raises(RuntimeError, match="required-document failure"):
+        downloader.download_allowlist(tmp_path, session=Session(), sleep_seconds=0, retries=0)
+    manifest = json.loads(
+        (tmp_path / "data" / "project_evidence" / "benchmarks" / "herbata" / "metadata" / "download_manifest.json").read_text(encoding="utf-8")
+    )
+    assert manifest["failures"][0]["key"] == "failed"
+
+
 def test_project_document_never_claims_policy_authority() -> None:
     document = _document()
     assert document.source_type == "PROJECT_DOCUMENT"
