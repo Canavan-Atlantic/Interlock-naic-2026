@@ -1,4 +1,4 @@
-# INTERLOCK — Canavan Atlantic / NAIC 2026
+# INTERLOCK - Canavan Atlantic / NAIC 2026
 
 INTERLOCK is an early-stage decision-support platform for data-centre development. Its long-term purpose is to help a developer understand whether a development proposition is credible enough to progress, what could stop or delay it, what remains unknown, and what needs to happen next.
 
