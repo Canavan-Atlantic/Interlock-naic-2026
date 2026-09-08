@@ -1,0 +1,35 @@
+{
+  "project_id": "synthetic-blanchardstown-001",
+  "project_name": "Synthetic Blanchardstown Data Centre",
+  "project_type": "Data Centre",
+  "assessment_workflow": "SITE_FEASIBILITY",
+  "project_lifecycle_status": "PRE_PLANNING",
+  "location": {
+    "address": "Synthetic site, Blanchardstown area",
+    "latitude": 53.386,
+    "longitude": -6.377,
+    "local_authority": "Synthetic Local Authority",
+    "country": "Ireland",
+    "jurisdiction": "IRELAND"
+  },
+  "site_boundary": {
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [[[ -6.380, 53.384 ], [ -6.374, 53.384 ], [ -6.374, 53.388 ], [ -6.380, 53.388 ], [ -6.380, 53.384 ]]]
+    },
+    "area_hectares": 12.5,
+    "source_reference": "synthetic-boundary-input"
+  },
+  "planned_power_mw": 48.0,
+  "requested_mic_mva": null,
+  "power_strategy": "Unknown",
+  "energy_strategy": null,
+  "phasing": "Synthetic two-phase concept; phasing confirmation is outstanding.",
+  "project_stage": "Early Feasibility",
+  "developer_inputs": {
+    "source": "synthetic_fixture",
+    "power_value_status": "developer_supplied"
+  },
+  "uploaded_document_refs": ["synthetic-project-brief-v1"],
+  "source_project_input": null
+}

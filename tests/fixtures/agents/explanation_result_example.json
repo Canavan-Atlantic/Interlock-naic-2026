@@ -1,0 +1,12 @@
+{
+  "executive_summary": "Synthetic evidence remains incomplete and requires human follow-up.",
+  "why_it_matters": ["Unknown connection information affects the next feasibility step."],
+  "known_facts": ["The project context identifies a synthetic site."],
+  "material_unknowns": ["Connection information is not supplied."],
+  "constraints": [],
+  "dependencies": ["grid connection evidence"],
+  "next_actions": ["Collect the missing source evidence."],
+  "human_handoffs": ["GRID_ENGINEER"],
+  "source_citations": [],
+  "warnings": ["Synthetic fixture; not advice or a recommendation."]
+}
