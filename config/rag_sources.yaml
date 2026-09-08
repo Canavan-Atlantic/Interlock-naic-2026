@@ -1,0 +1,164 @@
+version: 1
+
+roots:
+  - path: data/rag
+    allowed_extensions: [.pdf, .docx, .jsonl, .json, .zip]
+  - path: data/raw/grid
+    allowed_extensions: [.pdf]
+  - path: data/raw/water
+    allowed_extensions: [.pdf]
+
+path_rules:
+  - prefix: data/rag/archive
+    source_class: ARCHIVE
+    document_status: UNKNOWN
+    retrieval_eligible: false
+    jurisdiction: UNKNOWN
+    applicable_workflows: []
+    applicable_domains: [UNKNOWN]
+  - prefix: data/rag/restricted
+    source_class: RESTRICTED
+    document_status: UNKNOWN
+    retrieval_eligible: false
+    jurisdiction: UNKNOWN
+    applicable_workflows: []
+    applicable_domains: [UNKNOWN]
+    restricted: true
+    confidential: true
+  - prefix: data/rag/governance
+    source_class: GOVERNANCE
+    document_status: SUPPORTING
+    retrieval_eligible: false
+    jurisdiction: UNKNOWN
+    applicable_workflows: [POLICY_REGULATORY_INTELLIGENCE]
+    applicable_domains: [RESPONSIBLE_AI]
+  - prefix: data/rag/primary
+    source_class: PRIMARY
+    document_status: CURRENT
+    retrieval_eligible: true
+    jurisdiction: UNKNOWN
+    applicable_workflows: [SITE_DISCOVERY, SITE_FEASIBILITY, POLICY_REGULATORY_INTELLIGENCE]
+  - prefix: data/rag/curated
+    source_class: CURATED
+    document_status: SUPPORTING
+    retrieval_eligible: true
+    jurisdiction: IRELAND
+    applicable_workflows: [SITE_DISCOVERY, SITE_FEASIBILITY, POLICY_REGULATORY_INTELLIGENCE]
+    applicable_domains: [DATA_CENTRE_POLICY, GENERAL]
+  - prefix: data/rag/supporting/public_bodies
+    source_class: SUPPORTING_PUBLIC_BODY
+    document_status: SUPPORTING
+    retrieval_eligible: true
+    jurisdiction: UNKNOWN
+    applicable_workflows: [SITE_FEASIBILITY, POLICY_REGULATORY_INTELLIGENCE]
+  - prefix: data/rag/supporting/industry
+    source_class: SUPPORTING_INDUSTRY
+    document_status: SUPPORTING
+    retrieval_eligible: true
+    jurisdiction: IRELAND
+    applicable_workflows: [SITE_FEASIBILITY, POLICY_REGULATORY_INTELLIGENCE]
+  - prefix: data/rag/supporting/research
+    source_class: SUPPORTING_RESEARCH
+    document_status: SUPPORTING
+    retrieval_eligible: true
+    jurisdiction: UNKNOWN
+    applicable_workflows: [SITE_DISCOVERY, SITE_FEASIBILITY, POLICY_REGULATORY_INTELLIGENCE]
+  - prefix: data/raw/grid
+    source_class: PRIMARY
+    document_status: CURRENT
+    retrieval_eligible: true
+    jurisdiction: IRELAND
+    jurisdiction_detail: Ireland
+    issuer: EirGrid
+    document_type: SYSTEM_OPERATOR_POLICY_OR_TECHNICAL
+    applicable_workflows: [SITE_DISCOVERY, SITE_FEASIBILITY, POLICY_REGULATORY_INTELLIGENCE]
+    applicable_domains: [GRID, ENERGY]
+  - prefix: data/raw/water
+    source_class: PRIMARY
+    document_status: CURRENT
+    retrieval_eligible: true
+    jurisdiction: IRELAND
+    jurisdiction_detail: Ireland
+    issuer: Uisce Éireann
+    document_type: CAPACITY_REGISTER
+    applicable_workflows: [SITE_DISCOVERY, SITE_FEASIBILITY, POLICY_REGULATORY_INTELLIGENCE]
+    applicable_domains: [WATER, INFRASTRUCTURE]
+
+domain_path_map:
+  cru: [GRID, ENERGY, DATA_CENTRE_POLICY]
+  grid: [GRID, ENERGY]
+  energy: [ENERGY]
+  planning: [PLANNING, INFRASTRUCTURE]
+  biodiversity: [BIODIVERSITY]
+  environment: [ENVIRONMENT, BIODIVERSITY]
+  water: [WATER, INFRASTRUCTURE]
+  infrastructure_policy: [INFRASTRUCTURE]
+  responsible_ai: [RESPONSIBLE_AI]
+  screening: [DATA_CENTRE_POLICY, GENERAL]
+
+workflow_domain_map:
+  GRID: [SITE_DISCOVERY, SITE_FEASIBILITY, POLICY_REGULATORY_INTELLIGENCE]
+  ENERGY: [SITE_DISCOVERY, SITE_FEASIBILITY, POLICY_REGULATORY_INTELLIGENCE]
+  PLANNING: [SITE_DISCOVERY, SITE_FEASIBILITY, POLICY_REGULATORY_INTELLIGENCE]
+  BIODIVERSITY: [SITE_DISCOVERY, SITE_FEASIBILITY, POLICY_REGULATORY_INTELLIGENCE]
+  ENVIRONMENT: [SITE_DISCOVERY, SITE_FEASIBILITY, POLICY_REGULATORY_INTELLIGENCE]
+  WATER: [SITE_DISCOVERY, SITE_FEASIBILITY, POLICY_REGULATORY_INTELLIGENCE]
+  INFRASTRUCTURE: [SITE_DISCOVERY, SITE_FEASIBILITY, POLICY_REGULATORY_INTELLIGENCE]
+  DATA_CENTRE_POLICY: [SITE_FEASIBILITY, POLICY_REGULATORY_INTELLIGENCE]
+  GENERAL: [POLICY_REGULATORY_INTELLIGENCE]
+  RESPONSIBLE_AI: [POLICY_REGULATORY_INTELLIGENCE]
+
+no_text_page_overrides:
+  data/rag/primary/ireland/government/leap-large-energy-user-action-plan.pdf:
+    '1':
+      classification: COVER_TITLE
+      manual_review_required: false
+      basis: Cover page contains image/design elements and is followed by the contents page.
+    '32':
+      classification: MAP_FIGURE
+      manual_review_required: true
+      basis: Final LEAP graphic page; surrounding text identifies an illustrative green-energy-park graphic.
+  data/rag/primary/ireland/planning/local_authority/fingal/fingal-development-plan-2023-2029-appendices-consolidated-1.pdf:
+    '145':
+      classification: MAP_FIGURE
+      manual_review_required: true
+      basis: Image-only Architectural Conservation Area map/figure between labelled ACA pages.
+    '147':
+      classification: MAP_FIGURE
+      manual_review_required: true
+      basis: Image-only Architectural Conservation Area map/figure between labelled ACA pages.
+    '155':
+      classification: MAP_FIGURE
+      manual_review_required: true
+      basis: Image-only Architectural Conservation Area map/figure between labelled ACA pages.
+    '168':
+      classification: MAP_FIGURE
+      manual_review_required: true
+      basis: Image-only Architectural Conservation Area map/figure between labelled ACA pages.
+    '290':
+      classification: MAP_FIGURE
+      manual_review_required: true
+      basis: Visual open-space provision diagram/legend page between appendix text pages.
+  data/rag/primary/ireland/planning/local_authority/fingal/sheet12-blanchardstown-north-2023-2029_varied.pdf:
+    '1':
+      classification: MAP_FIGURE
+      manual_review_required: true
+      basis: Large-format map sheet with image objects and no extractable text.
+  data/rag/primary/ireland/planning/local_authority/fingal/sheet13-blanchardstown-south-2023-2029_varied.pdf:
+    '1':
+      classification: MAP_FIGURE
+      manual_review_required: true
+      basis: Large-format map sheet with image objects and no extractable text.
+  data/rag/supporting/public_bodies/infrastructure_policy/Accelerating_Infrastructure_Report_and_Action_Plan.pdf:
+    '2':
+      classification: COVER_TITLE
+      manual_review_required: false
+      basis: Decorative title/cover design page; adjacent page contains the table of contents.
+    '139':
+      classification: INTENTIONALLY_BLANK
+      manual_review_required: false
+      basis: Decorative end-matter page with no text; surrounding page is the acronym list and the next page is a back-cover design.
+    '140':
+      classification: COVER_TITLE
+      manual_review_required: false
+      basis: Decorative back-cover/logo page with no policy prose.

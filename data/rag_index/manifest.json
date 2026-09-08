@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "index_created_at": "2026-09-08T02:23:55.446226+00:00",
+  "corpus_hash": "d5492c43bae44bb6bcdeac9c5c72ac5035f8efa9bd367056a3e66491dfa0a6e7",
+  "source_hashes": {
+    "chunks.jsonl": "8343bfc9b8901adb35b85f50bf2f9085ac405399894285ea50ec9a593ef45032",
+    "curated_records.jsonl": "f25be89420feaa9333ae87bac78ae18ea05acb0dcefa16ee2ac8cacb273c6ab2",
+    "document_registry.json": "cdb5917d2ef6a5c4f1d72cc2ad11a6b19dfa3dfd05ac22e9addb74bb4e976d6f",
+    "build_report.json": "bf4d7c249ab270d1385204f486ec6ba4cd117aefe6e917513fa245197ea70ea0"
+  },
+  "indexed_chunks": 2360,
+  "indexed_curated_records": 11,
+  "indexed_records": 2371,
+  "embedding_provider_requested": "openai",
+  "embedding_provider": "openai",
+  "embedding_model": "text-embedding-3-small",
+  "dimension": 1536,
+  "semantic_available": true,
+  "semantic_unavailable_reason": null,
+  "lexical_index": {
+    "method": "BM25",
+    "k1": 1.2,
+    "b": 0.75,
+    "rrf_k": 60,
+    "candidate_multiplier": 5
+  }
+}

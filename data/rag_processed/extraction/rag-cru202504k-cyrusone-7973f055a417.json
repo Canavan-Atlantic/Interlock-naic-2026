@@ -1,0 +1,29 @@
+{
+  "document_id": "rag-cru202504k-cyrusone-7973f055a417",
+  "source_path": "data/rag/supporting/industry/cru_consultation/CRU202504k - CyrusOne.pdf",
+  "page_count": 2,
+  "no_text_pages": [],
+  "pages": [
+    {
+      "page": 1,
+      "text": "  \n  \n  \n  \n  \nCyrusOne Irish Datacentre Holdings Ltd | Suite 3, One Earlsfort Centre | Lower Hatch Street | Dublin 2, Ireland  \nCompany number: 605064 \nCyrusone.com  \n  \n  \n  \nCommission for the Regulation of Utilities  \nThe Exchange  \nBelgard Square North \nTallaght \nDublin 24  \nelectricityconnectionpolicy@cru.ie  \n19 March 2024  \n \nCyrusOne Response to CRU2024001: Review of LEU Connection Policy  \n \nDear Sirs,  \nThank you for the opportunity to provide our input to this consultation.  We have contributed \nto the collective comments submitted by Digital Infrastructure Ireland (DII) and fully support \nthe DII consultation response which reflects our position.  However, there are several points \npertinent to our individual circumstances that we would like to bring to your attention and \nseveral more generic observations that we would like to make. These are iterated below. \n• \nRecognition of sunk costs: The arbitrary nature of the current moratorium imposes \ndifferent impacts on operators depending on the maturity of their in-country projects and \nthe degree of investment already made. CyrusOne has committed €200M to this project \nsince its inception in 2018 including over €25M to fund the development of HV substation \ninfrastructure to ensure adequate power to the site. Currently we are left with sunk costs \nand a stranded asset.  We would be grateful for acknowledgement by CRU that projects \nat risk are at different stages of development and investment. \n   \n• \nRecognition of existing consents and connections: For sites that are consented and \nhave connection agreements in place, we hope that a pragmatic interim solution can be \nfound, in particular for those projects where the power demand is relatively modest and \nwhich therefore would not impose an unmanageable burden on supply. \n• \nConsistency: The understanding of what is meant by a flex power connection has \nchanged during the last three years. Essentially it has migrated from a temporary measure \nwith short term effects linked to seasonal demand peaks to a full outage for up to 20 days. \nWe would be grateful for a clear and consistent definition.   \n• \nOperational constraints: Colocation providers like CyrusOne are building digital \ninfrastructure for large cloud providers to whom we provide guarantees of continuous \npower.  Continuity of supply is the core business requirement.  While we can engineer \n",
+      "has_text": true,
+      "images": 0,
+      "drawings": 19,
+      "links": 0,
+      "width": 612.0,
+      "height": 792.0
+    },
+    {
+      "page": 2,
+      "text": "  \n  \n  \n  \n  \nCyrusOne Irish Datacentre Holdings Ltd | Suite 3, One Earlsfort Centre | Lower Hatch Street | Dublin 2, Ireland  \nCompany number: 605064 \nCyrusone.com  \n  \n  \n  \nsolutions to accommodate short term outages through embedded generation and storage, \nwe cannot provision for protracted outages.  We cannot run our generators for long periods \nof time because we would breach environmental permitting regulations and battery \nstorage must be replenished. A third potential option, a gas connection for the purpose of \nstandby power, has been ruled out following a Ministerial instruction to this effect. \n• \nApproach to flex: The adoption of flex power solutions will be important not just to \novercome the current supply constraints but also to enable Ireland to accommodate an \nincreasing proportion of intermittent renewables.  We therefore feel that the regulatory \npriority should be to support the development of an effective market for a variety of flex \nenergy products, with appropriate incentives, rather than targeting regulatory effort at \ncustomers. This encourages those consumers with activities that can accommodate flex \npower to adopt it, irrespective of industry sector.  Data centre operators like ourselves can \nmake \na \nsignificant \ncontribution \nto \nsupporting \nIreland’s \nenergy \ntransition \nby \naccommodating certain flex products, but not all.  \n• \nPolicy alignment: It is important that the CRU, when addressing this issue, has the \nfullest possible regard to Government Policy as a whole, including enterprise and industrial \npolicy, in terms of potential impacts on business, employment, investment and the \nreputation of Ireland as a location for Foreign Direct Investment. It is also important that \nregulatory structures recognise transitional arrangements regarding previously committed \nand consented investments. \nAbout CyrusOne \nCyrusOne is a leading global data centre developer and operator, headquartered in the USA, \nspecialising in delivering state-of-the art digital infrastructure solutions across the globe. With \nmore than 55 high-performance mission-critical facilities worldwide, the Company ensures \nthe continued operation of digital infrastructure for nearly 1,000 customers, including \napproximately 200 Fortune 1000 companies. In short, we develop data centres and then lease \nthem to large technology companies with large data requirements.  \nCyrusOne has had a presence in Ireland since 2018 with our first data centre going live in \n2021, developed for a large global tech company that is a major employer in Ireland. Our \noperational data centre is located at Conchobar Murray Avenue, Grange Castle Business Park \nSouth, Co. Dublin, Republic of Ireland.   \nRegards,  \n  \nEric Hoegger  \nSr. Director, Global Power and Energy  \n",
+      "has_text": true,
+      "images": 1,
+      "drawings": 18,
+      "links": 0,
+      "width": 612.0,
+      "height": 792.0
+    }
+  ],
+  "ocr_used": false
+}

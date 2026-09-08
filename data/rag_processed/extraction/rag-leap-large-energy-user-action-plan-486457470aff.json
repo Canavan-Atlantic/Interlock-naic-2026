@@ -1,0 +1,332 @@
+{
+  "document_id": "rag-leap-large-energy-user-action-plan-486457470aff",
+  "source_path": "data/rag/primary/ireland/government/leap-large-energy-user-action-plan.pdf",
+  "page_count": 32,
+  "no_text_pages": [
+    1,
+    32
+  ],
+  "pages": [
+    {
+      "page": 1,
+      "text": "",
+      "has_text": false,
+      "images": 1,
+      "drawings": 1,
+      "links": 0,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 2,
+      "text": "Contents\nMinisterial Foreword\n1\nExecutive Summary\n2\nPlanning for energy intensive sectors of the future\n5 \nLEAP Strategy\n7\nActions\n8\n\t\nEnergy Infrastructure Delivery\n8\n\t\nProviding Regulatory Certainty\n11\n\t\nEnhanced Planning Coordination\n13\n\t\nNew Routes to Co-Location\n15\n\t\nPreparing for Strategic Opportunities\n18\nImplementation\n21\nTimeline\n21\nUnlocking Additional Renewable Energy Opportunities\n24\nData Centre Policy\n26\nWhat are the opportunities of a plan-led approach?\n28\n",
+      "has_text": true,
+      "images": 0,
+      "drawings": 32,
+      "links": 0,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 3,
+      "text": "Foreword by the Minister for Enterprise, \nTourism and Employment, Peter Burke TD, \nand the Minister for Climate, Energy and the \nEnvironment, Darragh O’Brien TD. \nAs Minister for Enterprise, Tourism and \nEmployment, and Minister for Climate, Energy \nand the Environment, we are cognisant and \nhighly alert to the increasingly critical and \nstrategic interdependence between our \nindustrial sectors and our energy system. More \nthan ever, energy system transformation and \nfuture industrial investment opportunities are \ninterwoven. We see this as a huge opportunity \nfor Ireland. \nWe are well underway in the transition to an \nenergy system where renewable energy and \nindigenous natural resources will provide the \nmajority of our energy needs. At the same \ntime, energy-intensive industries – such as \nsemiconductor manufacturers, data centres  \nand life sciences – require more strategic \nforward-planning to identify the right \nlocations for a new type and scale of industrial \ninvestment, with an emphasis on digitalisation, \nAI, energy security and decarbonisation. \nIreland is extraordinarily well-placed to capture \nthese opportunities, and to deliver prosperity, \nsustainable employment and high-value \neconomic activities across our regions for \ndecades to come. \nThe actions and approach set out in this \nLarge Energy User Action Plan (LEAP) provide \na clear set of policy steps to unlock those \nopportunities. In particular, this will allow \nfor greater co-location of energy-intensive \nsectors with the supply of renewable energy \ngeneration within green energy parks. LEAP \nsets out clearly that greater coordination on \nthe delivery of energy infrastructure and \nenergy-intensive industry can deliver significant \nbenefits for energy utilities, industry and all \nenergy customers, including through enabling a \nfaster green transition. Implementation of the \nactions in this document will position industry \nand our infrastructure providers for success, \nthrough structured ongoing coordination, the \ncreation of a shared spatial plan and a strategic \nindustrial policy approach.\nOn behalf of both of our Departments, we \nwant to thank our industry and energy sector \nstakeholders for their collaboration, innovation \nand willingness to work together on the \nopportunities before us.\nThe approach outlined in this document will \nunderscore and enhance Ireland’s proposition \nas a world‑class place to do business, where \na secure, sustainable energy system supports \ninnovation, investment and long‑term industrial \ngrowth.\nGo raibh maith agaibh. \nPeter Burke T.D.\nMinister for Enterprise, \nTourism & \nEmployment\t\nDarragh O’Brien T.D.\nMinister for Climate, \nEnergy and the \nEnvironment\nLEAP \n1\n",
+      "has_text": true,
+      "images": 2,
+      "drawings": 13,
+      "links": 0,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 4,
+      "text": "Executive Summary\nThis Large Energy-User Action Plan (LEAP) sets out the Government’s \napproach to planning for sustainable new energy intensive industrial \ndevelopments. It prepares for a plan-led approach to the location of \nvery large energy user (LEU) sectors, especially in the period beyond \n2030, including through identifying green energy park locations. \nThis will facilitate co-locating the most energy intensive industrial \ndevelopments with indigenous renewable energy supply.\nLEAP will:\n•\t\nEnable Ireland to attract the next generation \nof investment in energy intensive sectors, \nsuch as life sciences, semiconductors, \nArtificial Intelligence (AI) and data centres. \nThis will drive economic opportunities, \ninnovation, and digitalisation across our \neconomy over the coming decades. \n•\t\nProvide further national planning policy, to \nbuild on the policy direction of the National \nPlanning Framework, in relation to green \nenergy parks and sustainable energy-\nintensive industrial developments.\n•\t\nEnsure cross-Government collaboration to \ninform and implement a plan-led approach.\n•\t\nAlign future LEU development with \nIreland’s renewable energy resources, \nbolster our green energy transition and \nenergy security, and unlock regional \neconomic opportunities.\n•\t\nFacilitate opportunities for developer-\nled LEU investments in green energy \npark settings that complement and are \nsupported by existing infrastructure.\n•\t\nPromote regional data centre projects \nwhich are consistent with the Government \nStatement on Data Centres and the \nCommission for Regulation of Utilities’ \n(CRU) connection policy.\n•\t\nInitiate enhanced collaboration between \nGovernment, energy System Operators, \nand industry, exploring the potential for \nlimited development opportunities within \nthe greater Dublin area. It is acknowledged \nthat these opportunities will be limited in \nthe short-term.\nLEAP sets out 17 enabling actions to deliver \nthis – key measures include:\n•\t\nPreparation of a National Planning \nStatement for Green Energy Parks.\n•\t\nPro-active consultation by Government and \nenergy System Operators on opportunities \nfor sustainable Green Energy Parks, \nincluding with LEU developers.  \n•\t\nPromoting greater demand side flexibility \nby LEUs, through innovative grid \nconnection contracts, to unlock sustainable \nLEU and green energy park developments.\n•\t\nModelling LEU development scenarios to \ninform a plan-led approach to co-locating \nindustry and energy opportunities.\n•\t\nDevelopment of IDA ‘Next Generation \nSites’.\nLEAP \n2\n",
+      "has_text": true,
+      "images": 0,
+      "drawings": 2,
+      "links": 0,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 5,
+      "text": "This strategic approach will maximise the \neconomic opportunities associated with the \nsustainable future growth of LEUs, including \ndata centres, while ensuring alignment with the \ngreen transition. It will support robust energy \nsecurity, cost competitiveness and affordability \nfor all energy customers.\nPro-active planning to co-locate very energy-\nintensive industrial sites with renewable energy \ngeneration and other energy infrastructure will \nsubstantially improve coordination of private \nand public investment decisions. It will provide \npredictability and transparency in the planning \nprocess, and enable accelerated delivery of \nkey infrastructure, including electricity and gas \nnetworks, water, renewable energy, storage \nand dispatchable electricity generation. The \napproach will be consistent with the objectives \nof the National Planning Framework (NPF), \nincluding economic and regional employment \ndevelopment, and aligned with the delivery \nof housing and transport infrastructure. \nLikewise, this approach will be aligned with the \nobjectives of the Accelerating Infrastructure \nAction Plan, which sets out an ambitious vision \nfor transformative reform of the delivery of \ncritical infrastructure in Ireland, including \nelectricity networks.\nThis approach to strategic green energy \nparks will focus on the most energy intensive \nindustrial sectors in the period after 2030, \nincluding data centres, semiconductors, \nlife sciences and chemicals, with plan-led \nsites likely to be of the scale of hundreds \nof megawatts capacity. LEAP will prioritise \nlocating LEUs where they support investment \nin renewables, effective grid utilisation and \neconomic development, and are consistent \nwith Ireland’s legally binding climate \nobjectives. Strategic Green Energy Parks, \nwhich may comprise individual landbanks or \nwider geographical areas, may be privately \ndeveloped, or comprise industrial investments \ncoordinated by a State body, consistent with \nthe approach set out in a National Planning \nStatement. \nLEAP does not preclude LEU developments \noutside of strategic plan-led locations. \nDevelopments which are consistent with the \nNPF and Government policy, across all regions, \nwill remain possible and desirable in the period \nbefore and beyond 2030. However, LEAP \nanticipates that a number of very large energy \nintensive projects will be best facilitated \nthrough these strategically prepared, nationally \nplanned locations. \nData centre developments will continue \nto adhere to the principles of the 2022 \nGovernment Statement on the Role of Data \nCentres in Ireland’s Enterprise Strategy, \nwhich prioritises co-location with renewables. \nThe revised LEU Connection Policy decision \npublished by the CRU in December 2025 sets \nout criteria for the connection of proposed \nnew data centres to our electricity network. \nThis Connection Policy requires provision of \nadditional dispatchable generation, and aligned \nwith the principles of the National Biomethane \nStrategy, there is an opportunity that some \nof this could be provided utilising indigenous \nbiogas. The Government Statement on Data \nCentres will also remain applicable in respect \nof ‘islanded’ data centres, which are not in line \nwith national policy objectives; Ireland intends \nto facilitate data centre operations that play \na pro-active and positive role in our energy \nsystem, its long-term security, and its transition \nto renewable electricity. \nLEAP \n3\n",
+      "has_text": true,
+      "images": 0,
+      "drawings": 3,
+      "links": 2,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 6,
+      "text": "There will be opportunities for LEU \ndevelopments in the coming years where \nthere is existing or planned energy network \ncapacity, though these will be limited by \navailable grid infrastructure, pending delivery \nof grid investment. Opportunities for new LEU \nlocations nonetheless may include instances \nsuch as where existing grid infrastructure \nis underutilised, a connection agreement is \ntransferred, or where new capacity becomes \navailable through infrastructure development \nor other non-wires alternatives. As part of \nLEAP, Government and the electricity System \nOperators will engage with industry to \nexplore opportunities for developer-led LEU \ninvestment pre-2030, primarily in green energy \nparks, where this aligns with national planning, \nenergy, climate and enterprise policy.  \nAs set out in the Programme for Government \nand the Action Plan on Competitiveness \nand Productivity, LEAP represents a key \nstrategic industrial policy in support of \nthe Government’s objective to accelerate \nrenewable energy deployment, expedite grid \ninvestment and streamline planning for the \nnext wave of industrial development. LEAP \nwill provide certainty for industries making \nenergy intensive investments in alignment with \nour decarbonisation objectives, and growing \nIreland’s high-tech economy.\nLEAP \n4\n",
+      "has_text": true,
+      "images": 0,
+      "drawings": 3,
+      "links": 0,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 7,
+      "text": "Planning for energy intensive\nsectors of the future  \nIreland has a proven record in attracting and developing high-value, \ncutting edge industry to locate and invest across our regions, including \nwithin energy intensive sectors such as data centres, manufacturing, \nlife sciences and semiconductors. These create sustainable regional \nemployment, drive innovation, attract FDI at scale, and contribute to \nour national prosperity.\nGlobal demand for energy intensive \ndigitalisation and associated LEU \ndevelopments, including for data centres, \nAI, and semiconductors, is rising sharply. At \nthe same time, the energy and infrastructure \nrequirements of these energy intensive \nindustries have made them increasingly \ncomplex to plan and deliver. \nA report published by the International Energy \nAgency (IEA) in April 2025 notes that global \ninvestment in data centres has nearly doubled \nsince 2022 and amounted to half a trillion \ndollars in 2024. According to the IEA, data \ncentres accounted for around 1.5% of the \nworld’s electricity consumption in 2024, or \n415 terawatt-hours (TWh), and is forecast to \nmore than double by the end of this decade. \nIn Ireland, data centres accounted for 22% of \nmetered electricity consumption in 2024.\nAt EU level, the response to these economic \nopportunities has included the European Chips \nAct 2023, which aims to double the region’s \nsemiconductor chips market share by 2030. \nIreland has subsequently published its own \nSemiconductor Strategy in 2025 – “Silicon \nIsland” - setting out significant ambition for \nthis sector. The EU Clean Industrial Deal \npublished in February 2025 is designed to \nalign environmental, climate, and industrial \npolicies, to expand investment in clean energy \ninfrastructure, digitalisation, and to scale-up \nlow-carbon industries. \nThe 2024 National Competitiveness and \nProductivity Council (NCPC) report outlined \nenergy-related challenges to Ireland’s \ncompetitiveness and productivity over the \nmedium term, including infrastructure delivery, \nenergy price inflation and security of supply \nconcerns. As noted by the NCPC, these \nchallenges, if unaddressed, could undermine \nthe attractiveness of Ireland as a home to these \nsectors and a destination for FDI. \nLEAP \n5\n",
+      "has_text": true,
+      "images": 0,
+      "drawings": 3,
+      "links": 0,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 8,
+      "text": "Reflecting the increased scale of recent \nand projected LEU development in key \nsectors, in both investment value and energy \ndemand terms, LEAP sets out a process \nthat will prepare for these developments in \nIreland, in order to capture future decades \nof industrial opportunity. Through LEAP and \nother Government initiatives, Ireland will \ncontinue to attract investment in high-quality, \nstrategic and sustainable sectors. LEAP will \nensure that associated energy needs are met \nthrough indigenous renewable energy to the \ngreatest extent possible and allow for planned \nalignment of LEUs with our infrastructure, \nstrategically positioning Ireland’s industry for a \nnet zero carbon future.\nLEAP\n6\n",
+      "has_text": true,
+      "images": 1,
+      "drawings": 4,
+      "links": 0,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 9,
+      "text": "LEAP Strategy\nTo support opportunities for developer-led green energy parks and \nfacilitate plan-led energy intensive LEU developments beyond 2030, \nLEAP includes a suite of enabling actions, to be delivered on a cross-\nGovernment basis.\nThese actions are categorised across five \nthemes. The foundational layers, such as \ndelivering infrastructure investment, efficient \nregulation and a predictable planning regime, \nwill be pre-requisites to achieving the more \nstrategic objectives. \nLEAP therefore initiates a transformative \nstrategy, co-locating energy intensive \ndevelopments with renewable energy supply, \nunlocking opportunities for LEU sectors of \nthe future. The pyramid below gives a broad \noverview of the approach. The five themes will \nbe progressed concurrently and a timeline for \nimplementation is set out.\nDelivery of LEAP also requires ongoing \nimplementation of relevant Government \npolicies, plans and strategies, including Climate \nAction, Energy Security in Ireland to 2030, \nRoadmap for Decarbonisation of Industrial \nHeat, Powering Prosperity – Ireland’s Offshore \nWind Industrial Strategy, the revised National \nPlanning Framework and policy actions to \nexpedite infrastructure delivery. For clarity on \nthe additional interventions proposed in LEAP, \nthese are not repeated below.\nLEAP Delivery Model\nLEAP \n7\n",
+      "has_text": true,
+      "images": 2,
+      "drawings": 4,
+      "links": 0,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 10,
+      "text": "Actions\nEnergy Infrastructure Delivery \nObjective\nTimeframe\nLead\nAction\n1.\nDeliver \nelectricity grid \ninvestment\nFrom 2026 \nEirGrid, ESB \nNetworks, \nDCEE, CRU \nProgress multi-annual \ninvestment in electricity \ninfrastructure\n•\t\nThe electricity System Operators will invest at unprecedented levels in grid \ninfrastructure in the Price Review 6 (PR6) period up to 2030. This investment is in \nline with Shaping our Electricity Future, Ireland’s 80% renewable energy target and \ndelivery of key priorities including housing, decarbonisation and economic growth \n– it does not provide for additional infrastructure to facilitate data centre demand-\nloads beyond those already with connection contracts.\n•\t\nThe Accelerating Renewable Electricity Taskforce will receive quarterly updates on \nthe key PR6 strategic energy infrastructure projects as they progress from design \nto planning to delivery, with co-dependencies, delivery risks and timeframes.\n•\t\nIn the medium-term, beyond PR6, Action 7 (below) will inform an assessment of the \ncosts and opportunities of pre-emptive, anticipatory investments in infrastructure, \nfor example to facilitate green energy parks in specific locations. The need for \ngreater adoption of anticipatory grid investments is a recommendation of the IEA’s \nenergy security report, 2025.\n•\t\nPlan-led investments may also require Government to consider new infrastructure \nfunding models to ensure Ireland is an attractive investment location for industry, \nwhile providing fairness for all energy customers, and economic return for the \nState. This would require the approval by Government.\nLEAP \n8\n",
+      "has_text": true,
+      "images": 0,
+      "drawings": 37,
+      "links": 0,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 11,
+      "text": "Objective\nTimeframe\nLead\nAction\n2.\nEnergy system \nplanning\n2027\nDCEE and \nSystem \nOperators\nCreate an energy system \nplan with centralised \nspatial demand and \ngeneration projections, \nincluding new LEUs, across \nelectricity and gas System \nOperators.\n•\t\nDCEE will ensure that electricity and gas System Operators develop, plan \nand operate, on the basis of an agreed and shared set of objectives, including \nforecast supply and demand drivers, and a common approach to national spatial \nplanning. This process should be informed by the IEA Energy Security Review, and \nindependent of any single System Operator.\n•\t\nThe Minister with responsibility for Energy will have opportunity to convey the \nGovernment’s central policy objectives to this planning process and to interrogate \nthe trade-offs inherent in the shared assumptions and objectives determined; for \nexample demand forecasts by sector (including industry), spatial development \nassumptions, generation mix requirements and consistency of gas and electricity \ninfrastructure objectives, subject to independent regulatory processes.\n•\t\nAs part of this process, Government policy will outline national ambition for green \nenergy parks, which will feed into wider energy network development and system \nplanning.\n•\t\nThis integrated process will further meet the requirements for joint scenario \ndevelopment across electricity, gas, renewable gas, hydrogen and district heating as \nset out in the revised EU Gas Package measures; and for joint systems assessments \nunder Action 22 in the Energy Security Package of November 2023.\n•\t\nThis new process does not replace or replicate the existing planning functions and \nresponsibilities of the SOs, and will build on the processes that exist, such as the \nAll-Island Resource Adequacy Assessment, the Network Development Plan, EirGrid’s \nTomorrow’s Energy Scenarios processes and Flexibility Needs Assessment.\nLEAP \n9\n",
+      "has_text": true,
+      "images": 0,
+      "drawings": 38,
+      "links": 2,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 12,
+      "text": "Objective\nTimeframe\nLead\nAction\n3.\nDemand \nflexibility \n2027\nCRU,  EirGrid, \nESB Networks\nDesign flexible or ‘non-\nfirm’ contracts and hybrid \nconnections for LEUs \nthat maximise utilisation \nof available grid and \nrenewable electricity use.\n•\t\nExisting and new infrastructure will be more efficient, cheaper for customers \nand have lower carbon intensity if LEUs, including data centres, can use grid \npower when renewables are plentiful, and reduce grid demand when they are \nnot and/or the grid is constrained (i.e. operate flexibly). The design of contractual \narrangements for this behaviour will facilitate efficient, low-carbon growth.\n•\t\nThe CRU also consider and implement, as appropriate, measures that incentivise \nSOs to deliver flexible demand connections for LEUs, to the benefit of all grid \nusers.\n•\t\nThis should include consideration of opportunities for cost effective flexible \nLEU demand connections, and/or hybrid connections, in respect of existing grid \ninfrastructure and new infrastructure to be delivered under Price Reviews or \npossible alternative grid development frameworks.\n•\t\nThe need to optimise use of grid infrastructure through operational and \ncontractual arrangements, such as flexible grid connections, is a recommendation \nof the IEA’s Energy Security Report 2025. \n•\t\nThe development of a framework for System Operators to offer the possibility of \nestablishing flexible connection agreements in areas where there is limited or no \nnetwork capacity availability for new connections is a requirement of EU Directive \n2024/1711.\nLEAP \n10\n",
+      "has_text": true,
+      "images": 0,
+      "drawings": 36,
+      "links": 0,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 13,
+      "text": "Objective\nTimeframe\nLead\nAction\nProviding Regulatory Certainty  \nObjective\nTimeframe\nLead\nAction\n4.\nMarkets and \nTariffs that \nunlock demand \nflexibility\nAs per a revised \nand expedited \nNational \nEnergy \nDemand \nStrategy \n(publication \n2026)\nCRU\nEnergy Network Tariffs, \nmarket operation and grid \ncode redesign to deliver \nLEU demand flexibility\n•\t\nDue to the intermittency of renewables, and network constraints, electricity \nmarket design and tariff structures which incentivise demand flexibility by LEUs \nis essential. This will provide for greater consumption of electricity at times when \nthere is an abundance of renewable energy available and reduced consumption \nduring peak demand periods. In addition to bolstering energy security, this \nenhanced flexibility has the effect of reducing carbon emissions, lowering the \ncost of energy, and making efficient use of the grid. Demand flexibility can further \nimprove the investment case for renewables and reduces peak demand when \nelectricity may be more expensive and have higher associated emissions.\n•\t\nThe NEDS sets out a series of actions to be implemented by the Regulator, and \nelectricity and gas SOs in order to unlock this opportunity. Within the forthcoming \nrevised NEDS due in 2026, Government and the CRU will accelerate and build on \nthese actions.\n•\t\nThe NEDS will assess reforms to network tariffs, day-ahead and inter-day \nwholesale market trading, grid code, storage and flexibility procurement (plus \ncapacity markets if required), and set out a pathway to future implementation.\n•\t\nThe need to unlock greater LEU demand side flexibility through “connection \nrequirements and market mechanisms such as incentives for workload shifting, \nonsite storage and operational optimisation” is a recommendation of the Draft IEA \nEnergy Security Report, 2025.\nLEAP \n11\n",
+      "has_text": true,
+      "images": 0,
+      "drawings": 60,
+      "links": 4,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 14,
+      "text": "Objective\nTimeframe\nLead\nAction\n5.\nSystem \nOperators \nempowered to \nfacilitate plan-\nled approach\n2027 – position \npaper, followed \nby new \nlegislation if \nrequired\nDCEE, CRU, \nEirGrid, ESB \nNetworks, GNI\nAssess powers of System \nOperators and the CRU to \nfacilitate plan-led demand \nlocations, and associated \nenhanced anticipatory \ninfrastructure investments \nand/or prioritised \nconnection types\n•\t\nIn order to provide for a strategic plan-led approach to energy intensive LEUs \nand establishment of green energy parks, an assessment of the legal powers and \nresponsibilities of the System Operators and their regulators is required.\n•\t\nA strategic approach to facilitate co-location of demand load, generation and/or \nstorage, would be a change from the current ‘developer led’ system of grid planning \nand connections policy.\n•\t\nConsideration will be given to the appropriate funding mechanisms to enable \ninfrastructure investment for plan led approach. \n6.\nLegislate \nGovernment \nPrivate Wires \nPolicy\n2026\nDCEE\nLegislate for Ireland’s new \nPrivate Wire Policy\n•\t\nAllowing private actors to install private electricity infrastructure to a standard \nconsistent with national infrastructure will enable expedited infrastructure delivery, \ndeployment of ‘proximate’ renewables and storage, and allow for innovative energy \npark systems to emerge in certain locations.\n•\t\nA new Private Wires policy was approved by Government in July 2025, which will \nbe legislated for during 2026. While emphasising the primacy of the national grid \nfor delivering secure, decarbonised energy to all customers, the policy highlights a \nnumber of scenarios where development of Private Wires will be permitted.\nLEAP \n12\n",
+      "has_text": true,
+      "images": 0,
+      "drawings": 54,
+      "links": 0,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 15,
+      "text": "Objective\nTimeframe\nLead\nAction\nEnhanced Planning Coordination   \nObjective\nTimeframe\nLead\nAction\n7.\nModel LEU \ndemand \nscenarios\nQ2 2026\nDCEE, Eirgrid, \nESB Networks, \nGNI, DETE\nModel a range of plan-led \nLEU development scenarios \nand locations to inform \npolicy choices\n•\t\nAs part of ongoing grid planning exercises, such as EirGrid’s Tomorrow’s Energy \nScenarios (TES), the Long-Term Generation and Network Adequacy Study and GNI \nNetwork Development Plan a set of scenarios relating to LEU development will be \nmodelled and considered.\n•\t\nThis exercise will provide an initial opportunity to consider plan-led industrial \ndevelopment opportunities and interdependencies within TSO and DSO grid \nplanning.\n•\t\nThis exercise should ultimately inform a more integrated approach to a plan-led \nenergy system agreed across SOs, the regulator and Government, as described in \nAction 2.\n•\t\nEnergy System Planning will include assessment of the required level of gas \ngeneration and the adequacy of the Irish gas and electricity network to support \npeak electricity demand under a range of economic and sectoral growth scenarios.\nLEAP \n13\n",
+      "has_text": true,
+      "images": 0,
+      "drawings": 55,
+      "links": 0,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 16,
+      "text": "Objective\nTimeframe\nLead\nAction\n8.\nEmbed LEAP \nstrategy in \nnational spatial \nplanning policy\n2026\nDHLGH, DETE, \nDCEE\nPrepare a National \nPlanning Statement \non Green Energy Park \ndevelopment\n•\t\nPreparation of a National Planning Statement for Green Energy Parks will allow \nconsideration of the co-location of LEUs and generation; this may include both \ndeveloper-led and plan-led strategic green energy park developments, consistent \nwith the objectives of the revised National Planning Framework.\n•\t\nThe National Planning Statement will provide more clarity on large energy intensive \nsectors in green energy park developments and will not be sector prescriptive. \nNonetheless, where it relates to data centre developments it will further give effect \nto the Government Statement on the Role of Data Centres in Enterprise Strategy \n(2022), or equivalent updated policy.\n•\t\nIn cooperation with DHLGH, DETE will establish a technical working group to \nprogress analysis and drafting of a National Planning Statement.\n9.\nEstablish Data \nCentre Sector \nRoundtable\n2026 & \nonwards \nD/Taoiseach \nDCEE, DETE, \nIDA, EirGrid, \nESB Networks, \nGNI, CRU\nConvene Annual Data \nCentre Sector Roundtable \nfor greater sectoral and \ngovernment engagement\n•\t\nGovernment Departments and energy System Operators will engage annually \nwith representatives of the data centre sector to update on the implementation of \nLEAP, provide policy updates, receive sector feedback and escalate challenges. \nLEAP \n14\n",
+      "has_text": true,
+      "images": 0,
+      "drawings": 54,
+      "links": 0,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 17,
+      "text": "Objective\nTimeframe\nLead\nAction\nNew Routes to Co-Location\nObjective\nTimeframe\nLead\nAction\n10.\n ‘Single point \nof contact’ for \nGreen Energy \nParks\n2027\nDETE\nConsider development of \na ‘Single Point of Contact’ \nmechanism for plan-\nled Green Energy Park \ndevelopments \n•\t\nDesign of a ‘single point of contact’ approach for potential developer-led and plan-\nled green energy park development to coordinate permit granting procedures will \nbe considered.\n•\t\nA Single Point of Contact, such as envisaged under the Renewable Energy \nDirective III and the Net Zero Industry Act, and other provisions of EU Clean \nIndustrial Deal, may also facilitate consolidation or prioritisation of development \nwithin a green energy park to support development opportunities that would \nmaximise the economic and environmental benefits for the State.\n11.\nConnect \nOffshore \nWind to Green \nEnergy Parks\n2027\nDCEE, CRU, \nEirGrid\nSupport the further \ndevelopment of a CPPA \n‘Route to Market’ for \noffshore wind to supply \nGreen Energy Parks\n•\t\nA plan-led approach to LEU development should ensure that new developments \nare powered primarily from renewable energy, and therefore in some locations it \nwill be necessary for industrial developers to contract with ‘merchant’ offshore \nwind developments through corporate power purchase agreements (CPPAs).\n•\t\nThere may also be opportunities for private procurement of renewable energy \nthrough CPPAs alongside the generation supported by the Offshore Renewable \nElectricity Support Scheme (ORESS) or its equivalent successor scheme, exploiting \neconomies of scale to secure cheaper energy for all electricity customers.\n•\t\nThis action will be progressed as part of DCEE’s ongoing review of CPPA policy and \nthrough the ongoing review of the RESS.\nLEAP \n15\n",
+      "has_text": true,
+      "images": 0,
+      "drawings": 74,
+      "links": 0,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 18,
+      "text": "Objective\nTimeframe\nLead\nAction\n12.\nLEU Efficiency \nand Emissions \nReporting \n2026\nDCEE, DETE, \nSEAI\nEstablish and mandate \nLEU efficiency reporting \naligned with EU legislation, \nand review opportunity \nfor real-time emissions \nreporting framework\n•\t\nTo ensure ongoing decarbonisation of the electricity system, and of LEU demand \nloads in particular, a near ‘real-time’ emissions measurement is required. \n•\t\nAdvance and support measures in-line with existing and emerging EU legislation \nto drive energy efficiency improvements, demand-side flexibility and emissions \nreporting, including: \n\tૡ\nArticle 12 of the Energy Efficiency Directive (EED) to increase transparency and \ndrive energy efficiency improvements in the data centre industry. \n\tૡ\nEED Article 26 to promote the utilisation of waste heat from data centres in \nnearby facilities and heat networks.\n\tૡ\nThe EU Commission rating scheme and minimum performance standards.\n\tૡ\nEncourage adoption of new designs and energy efficiency developments in \nboth new and existing facilities, with refence to the most recent version of the \nEuropean code of conduct on data center energy efficiency. \n•\t\nThe emissions associated with electricity use is determined by the mix of \ngeneration technologies, including storage and renewables, including renewable \ngases, at the time of consumption and location of their energy use compared to the \ntime and availability of renewable energy generation and storage. \n•\t\nConsider opportunity for real-time emissions reporting data infrastructure, to \nenable accurate emissions data, aggregation and reporting, and obligating its use \nby LEUs.\nLEAP \n16\n",
+      "has_text": true,
+      "images": 0,
+      "drawings": 36,
+      "links": 0,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 19,
+      "text": "Objective\nTimeframe\nLead\nAction\n13.\nMarket design \nto support co-\nlocation\n2028 and \nongoing \nCRU, DCEE, \nEirGrid,  ESB \nNetworks\nElectricity tariff and \nsystem services markets \nthat enable co-location \nand incentivise demand-\nflexibility \n•\t\nImplementation of the revised NEDS will consider new tariff and market \nstructures that are required to unlock demand flexibility and efficient use \nof grid infrastructure, enhancing economic incentives for green energy park \ndevelopments.\n•\t\nProspective green energy park developments should have access to a package of \n‘stackable’ revenue-making opportunities and grid connections that appropriately \nreflect their efficient use of grid infrastructure and provision of additional services \nthat benefit national energy system operation, including storage and provision of \ndemand flexibility.\n•\t\nThis will clarify economic opportunities for green energy park developments, while \nalso providing for more efficient energy system management, including through \nbenefits associated with co-location, efficient use of grid infrastructure, and \nreduced renewable energy curtailment.\nLEAP \n17\n",
+      "has_text": true,
+      "images": 0,
+      "drawings": 36,
+      "links": 0,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 20,
+      "text": "Objective\nTimeframe\nLead\nAction\nPreparing for Strategic Opportunities \nObjective\nTimeframe\nLead\nAction\n14.\nSupport \nopportunities \naligned with \nnational policy\n2026 & \nonwards\nDCEE, DETE, \nEirGrid, ESB \nNetworks, GNI\nFacilitate Direct \nEngagement with Regional \n“Green Energy Park” \nProposers\n•\t\nTo inform implementation steps within LEAP, Government Departments and \nenergy System Operators will engage directly with proposers of developer-led \ngreen energy park projects.\n15.\nDevelop IDA \nStrategic site \nproposals\nProposals \n2025;  \nInvestments \nfrom 2030\nDETE, IDA\nProgress IDA Ireland ‘Next \nGeneration Sites’ \n•\t\nIDA will progress and assess how proposed development of Next Generation \nSites can complement, while utilising the plan-led approach to green energy park \nconcepts described in this strategy. \n•\t\nIDA’s Regional Property Programme seeks to provide land and advanced building \nand infrastructure solutions to both IDA and EI clients companies. These agencies \ncould play a pre-investment, convening or coordinating role in energy park \ninstigation – subject to an appropriate business case and, where appropriate, \nGovernment approval.\nLEAP \n18\n",
+      "has_text": true,
+      "images": 0,
+      "drawings": 74,
+      "links": 0,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 21,
+      "text": "Objective\nTimeframe\nLead\nAction\n16.\nEnterprise \nsupport for \ninnovation \nin energy \nmanagement \n2025 \nWorkplan;  \n2026 \nimplementation\nEI, IDA\nSupport innovation \nin the areas of energy \nmanagement and storage \nfor LEUs, and consider use \nof regulatory sandbox\n•\t\nDETE will engage EI and IDA on approaches to support the expert suppliers and \nservice providers to LEU sectors, and determine how the agencies can best assist \ninnovation particularly in the areas of energy management, efficiency, renewables \nintegration and energy storage in these specialist Irish suppliers.\n•\t\nConsider the use of regulatory sandboxes to facilitate innovation in energy \nmanagement.\nLEAP \n19\n",
+      "has_text": true,
+      "images": 0,
+      "drawings": 36,
+      "links": 0,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 22,
+      "text": "Objective\nTimeframe\nLead\nAction\n17.\nEstablish \n‘Sectors of \nthe Future’   \nCouncil\n2026\nDETE, DHLGH\nEstablish an LEU ‘Sectors \nof the Future’ expert \nCouncil to inform industrial \npolicy approach to energy \nparks\n•\t\nA plan-led approach to LEU development will allow for policy considerations as to \nwhat types of LEU would provide most advantageous broad economic and social \nreturn for Ireland. \n•\t\nDETE and its agencies will progress analysis on economy-wide return on \ninfrastructure investment across multiple potential decarbonised LEU sectors. This \nwill include establishment of an expert advisory panel. \n•\t\nThis work will inform any business case to support targeting of particular sectors, \nwith consideration given to their likely impacts on employment, domestic value-\nadded, skills spillovers, ‘stickiness’, environmental and economic sustainability. \n•\t\nDETE will assess whether EU or international regional designations such as \n‘hydrogen valleys’ / ‘innovation valleys’ or similar concepts offer opportunities to \nenhance green energy parks. In particular, this will include assessment of whether \nit would facilitate access to EU funding initiatives such as the Innovation Fund, \nCompetitiveness Fund, Hydrogen bank, IPCEIs or other EU/global research and/or \ninnovation opportunities.\nLEAP \n20\n",
+      "has_text": true,
+      "images": 0,
+      "drawings": 37,
+      "links": 0,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 23,
+      "text": "Implementation\nLEAP will be progressed on a cross-Government basis, with regular \nupdates on implementation provided to a Senior Officials Group and \nthe Cabinet Committee on Economy, Trade and Competitiveness. \nImplementation oversight will include:\n•\t\nRevised National Energy Demand Strategy implementation group (Action 4)\n•\t\nTechnical Working Group to support the preparation of a National Planning Statement, setting \nour clear policy and guidance relation to Green Energy Parks to extensively support the planning \nsystem in identifying such sites, including necessary infrastructure required (Action 8)\n•\t\nAnnual Data Centre sector Roundtable (Action 9)\n•\t\nEngagement with Developer-led green energy park proposals by Departments, State Agencies \nand System Operators (Action 14) \n•\t\n‘Sectors of the Future’ Council (Action 17)\nTimeline \nThe actions described will be progressed concurrently, under three areas of activity.\n1:\t Expediting delivery of infrastructure and unlocking innovation.\n2:\t Informing a Plan-Led Approach\n3:\t Embedding a Plan-led Approach \nSome Actions are already underway, while others can start immediately. Collectively, they \nensure delivery against existing infrastructure needs and committed regulation, and provide \nfor a new national approach to energy and industrial planning for LEU sectors. The actions will \nallow Government to consider a robust evidence-base, and cost-benefit analysis, for plan-led \nopportunities for LEU development, for example, assessing pre-emptive energy infrastructure \ncosts for planned green energy park developments. Ultimately the actions should further allow \nthat Government, through the appropriate Minister, may choose to propose or support specific \nspatial plans that deliver on the objectives set out.\nLEAP \n21\n",
+      "has_text": true,
+      "images": 0,
+      "drawings": 2,
+      "links": 0,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 24,
+      "text": "Timelines for Large Energy User Action Plan\nLEAP \nLEAP \n22\n23\n",
+      "has_text": true,
+      "images": 1,
+      "drawings": 3,
+      "links": 0,
+      "width": 1190.550048828125,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 25,
+      "text": "Unlocking Additional \nRenewable Energy Opportunities\nThe Government has ambitious targets for the deployment of \noffshore renewable energy (ORE), in addition to further expansion \nof onshore wind and solar PV generation capacity, biomethane and \ngreen hydrogen. This will support low or zero emissions economic \ndevelopment. The scale of this opportunity requires enhanced \nenergy system planning and careful consideration of the allocation of \ninfrastructure costs, not least to ensure future energy affordability for \nIrish households and businesses.\nIn recent years, growth in energy demand and \ndevelopment of renewables has outstripped \nour ability to deliver the complex electricity \ngrid infrastructure required to underpin a \nsecure and increasingly low-carbon electricity \nsystem. LEAP creates a process to align the \nlocation of new LEU energy demand with both \ngrid infrastructure and renewable generation, \nand this is critical to unlocking efficiencies and \nopportunities. The energy system will also \nneed more dispatchable generation and storage \ncapacity to underpin Ireland’s rising proportion \nof intermittent renewables, consistent with \nIreland’s pathway to a net zero economy and \nrobust energy security.\nIn March 2024, the Government published \nPowering Prosperity – Ireland’s Offshore \nWind Industrial Strategy, to ensure that \nIreland develops the supply chain to deliver an \noffshore wind sector of scale and maximises \nthe associated economic benefits. Amongst the \ncore pillars of this strategy is a focus on future \ndemand and opportunities in aligning growing \nenterprise activity with the development of \nrenewable energy supply. The strategy set out \na vision for industrial parks primarily powered \nby green energy from offshore wind, and \nan expert report informing this approach is \npublished alongside LEAP.\nIreland has an abundant renewable energy \npotential that can be deployed to support \nfuture economic and industrial development. \nMany renewable energy projects are supported \nthrough the PSO Levy, which is included on \nhousehold and business electricity customer \nbills.  There is also significant renewable \ngeneration now operating outside PSO Levy \nsupport schemes with a marked expansion \nin projects supported through CPPAs with \nindustry, and data centres in particular. Future \nLEU investment can further support renewable \nenergy targets such as the Government’s \ntarget of 5.7 TWh of biomethane, and green \nhydrogen, through Corporate Gas Purchase \nAgreements, while simultaneously enhancing \nIreland’s energy security. LEAP’s plan-led \napproach to energy intensive industrial \ndevelopments can ensure that these \ndevelopments drive new investment in, and are \npowered primarily by, renewable energy.\nLEAP \n24\n",
+      "has_text": true,
+      "images": 0,
+      "drawings": 4,
+      "links": 2,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 26,
+      "text": "This strategy sets out a process to ensure \nthat LEUs unlock additional renewable energy \nopportunities and contribute to grid flexibility \nby providing or supporting energy storage, \npeak demand management and renewables \nintegration. Investment by LEUs in sustainable \nenergy solutions will be vital to the continued \nalignment of economic growth and climate \naction objectives. Further, demand flexibility \nwill be a critical enabler of low carbon future \nLEU growth. \nThis ensures renewable energy use is \nmaximised during periods of abundant supply \nand reduces our peak demand when the energy \nsystem is constrained, it also improves the \ninvestment case for renewables. The National \nEnergy Demand Strategy (NEDS) sets out \na series of actions to unlock this ‘demand-\nflexibility’ opportunity, and the actions \ndescribed above build on these. \nLEAP\n25\n",
+      "has_text": true,
+      "images": 1,
+      "drawings": 4,
+      "links": 0,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 27,
+      "text": "Data Centre Policy \nIreland’s data centre policy is set out succinctly in the Government \nStatement on the Role of Data Centres in Ireland’s Enterprise Strategy \n(2022). Data centres provide important digital infrastructure for \nIreland’s modern economy and strengthen its position as a strategic \nknowledge intensive, export location for the ICT sector. \nData centres underpin the provision of often \nmission-critical software and digital services, \nfrom enterprise resource planning applications \nwhich help the world’s largest companies \nto manage global supply chains, to online \nbanking and shopping, accessing health and \nfrom accessing public services online, to \nstreaming movies. They enable the digital \ntransformation of global enterprise and the \ncontinued strong position of Ireland as one \nof the world’s leading export locations for \nsoftware and digital services. Data centres also \nenable remote working, facilitate improved \nwork life balance for employees, and could help \nto balance regional development. Ireland has \nsupported the evolution of a globally significant \ndata centre sector, which contributes to our \nprosperity and employment. Data centres \nare now rapidly evolving to support the \ndeployment of AI across industry and society \nmore broadly.\nCritically, data centres anchor other valuable \nactivities in the Irish economy, including in \ntechnology, finance, security, entertainment, \nhealth and manufacturing sectors. Ireland’s \ntechnology sector, underpinned by digital \ninfrastructure in data centres, accounted for \napproximately €95 billion or 20% of gross value \nadded in 2023, and employing 182,900 people \nin Q4 2024, equivalent to 7% of Ireland’s \ntotal workforce. According to IDA, companies \nthat operate data centres, whether as part \nof their own infrastructure requirements or \nas a provider of services to other users - in \nIreland account for approximately 21,000 \ndirect employees. The expertise that has been \ndeveloped by indigenous enterprise around \ndata centres has given an Irish data centre \nconstruction, engineering, design and electrical \nspecialist subsectors a significant global \nadvantage, supporting indigenous employment \nand exports.\nElectricity demand from data centres, which \naccounted for 22% of metered national \nelectricity consumption in 2024, has \ngrown faster than the delivery of new grid \ninfrastructure, and connection of renewable \nand dispatchable generation. Ireland is also \nset to rapidly electrify its transport and heat \n(both residential and commercial) sectors. \nSignificant additional electricity grid capacity \nand an accelerated connection of renewables \nwill be therefore required if further growth \nin LEUs is to be sustainable, and available \ngrid capacity will act as a constraint on data \ncentre growth in the short and medium term. \nThere have been further technical challenges \nin Ireland and other jurisdictions associated \nwith data centre integration, including the fault \nride through issue, which must be resolved \nthrough innovation and engagement between \nSystem Operators and industry. LEAP sets \nout a process to develop a plan-led approach \nto maximising opportunities within these \nconstraints.\nLEAP \n26\n",
+      "has_text": true,
+      "images": 0,
+      "drawings": 2,
+      "links": 0,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 28,
+      "text": "The 2022 Government Data Centre Statement \nadopted a series of principles to inform \ndecisions on future development in Ireland. \nThese signal that Government has a preference \nfor data centre developments associated with: \n•\t\nStrong economic activity and employment; \n•\t\nEfficient use of renewable energy \nresources; \n•\t\nEfficient use of electricity grid \ninfrastructure, using available grid capacity \nand alleviating constraints; \n•\t\nPotential to co-locate a renewable \ngeneration facility or advanced storage \nwith the data centre, supported by a CPPA, \nprivate wire or other arrangements.\nLEAP, through the actions set out above, \nadvances and complements the 2022 \nGovernment Statement; adopting a plan-\nled approach to facilitating co-location \nopportunities and planning for green energy \nparks in regional locations. This will include the \npreparation of a National Planning Statement, \nestablishing clear national policies on planning \nmatters relating to sustainable energy parks \nand key enabling infrastructure. \nCertain types of data centre activities – such as \nretail, or ‘co-location’ development – require to \nbe in close proximity to their customers. These \ndevelopments have been concentrated in \nDublin, which is at present a highly constrained \narea of our electricity grid. The electricity \nSystem Operators are currently delivering a \nsignificant investment programme in Dublin’s \nelectricity infrastructure, which is necessary to \ndeliver housing, transport and public services \nand industrial development. LEAP will initiate \nenhanced collaboration between Government, \nSystem Operators and industry to explore \nlimited opportunities within the greater Dublin \narea and opportunities to unlock grid capacity \nthrough demand side flexibility. However, it is \nimportant to highlight that these opportunities \nare likely to be extremely limited owing to \nexisting capacity constraint.  \nThe Department of Enterprise, Tourism and \nEmployment is currently progressing an \nanalysis to set out the economic impacts of \ndata centres in Ireland, and the scenarios for \ndeveloping the data centre landscape beyond \n2030, with a view to optimising future benefits \nto Ireland. This analysis will inform LEAP’s plan-\nled approach to LEU development regionally \nand also inform considerations as to the scale \nof additional Dublin energy infrastructure that \nmight be warranted, so as to facilitate some \nvolume of data centres that require proximity \nto that city.\nThe revised LEU Connection Policy decision \nby the Commission for Regulation of Utilities \n(CRU) has now amended the required criteria \nfor connection of proposed new data centres \nto our electricity grid. As outlined in the \nGovernment Statement, ‘islanded’ data centres, \nthat run primarily on fossil fuels, are not in line \nwith national policy objectives. Ireland intends \nto facilitate data centre operations that play \na pro-active and positive role in our energy \nsystem, its long-term security, and its transition \nto renewable electricity. This sets a high but \nnecessary requirement for sustainability \nand reliability in this sector, reflecting the \nneed to maintain our robust energy security \nand continue to reduce our energy sector \nemissions.\nLEAP \n27\n",
+      "has_text": true,
+      "images": 0,
+      "drawings": 1,
+      "links": 0,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 29,
+      "text": "What are the opportunities \nof a plan-led approach? \nGreen energy parks, that co-locate LEUs, dispatchable generation, \nstorage and renewable generation, are optimal to efficiently use our \nenergy infrastructure and natural resources. \nA strategic, plan-led approach to LEU \ndevelopment can align our planning system, \ninfrastructure delivery, and support Ireland’s \ncapacity to attract and retain the next wave \nof industrial investment. It will ensure that \nindustrial development in energy intensive \nsectors aligns with Government enterprise and \nenergy policy over the coming decades, as well \nas our national objectives for decarbonisation, \ndigitalisation and competitiveness. A plan-\nled approach will complement Government \ninvestment priorities in housing, transport, \nwater and other public services.\nLEAP establishes a framework for identifying \nappropriate locations, scale and composition of \nLEU development and enabling infrastructure, \nand thus de-risking project delivery. In order \nto ensure that a plan-led approach interacts \nseamlessly with spatial planning, additional \npolicies and objectives will need to be \nembedded in regional and local planning, \nconsistent with the revised NPF, and a future \nNational Planning Statement. \nPlan-led industrial development can provide \nfor evidence-based assessment of the costs \nassociated with new energy infrastructure, \nincluding dispatchable generation, renewables, \nelectricity and our gas networks. This \nassessment may allow for innovative or \nappropriate allocation of these costs to \ndifferent energy users. In some locations, \nthere may be a diminishing rationale for all \nelectricity customers to support development \nof renewable assets beyond those necessary \nto decarbonise Ireland’s domestic energy \ndemands. This process can bolster Ireland’s \nstatus as an attractive location for investing in \nrenewables powered industry, while ensuring \nthat the taxpayer and energy customers, are \nnot exposed to unwarranted risks or cost.\nEnergy infrastructure planning and \ndevelopment by our energy System Operators \n(EirGrid, ESB Networks, GNI) typically occurs \nover a cycle of between 5 to 10 years, and \nsometimes longer. The capital programmes \nof our energy System Operators are defined \nout to 2030 and beyond. To unlock the \nopportunities of green energy parks and \nstrategic LEU development early in the next \ndecade, LEAP sets out a programme of actions \nand preparation that will begin immediately. \nA planned approach to infrastructure delivery, \nincluding consideration of pre-investments \nin specified locations to facilitate targeted \nindustrial developments, would be a change \nfrom the exclusively ‘developer-led’ system \nin place. To ensure fair and cost-effective \ninfrastructure delivery, and competitive energy \nmarkets, further evaluation will be needed on \nhow a plan-led approach to LEU development \naligns with the regulated process for energy \ninfrastructure development. LEAP therefore \ninitiates assessment by relevant state agencies \non available future options for the delivery of \nenergy infrastructure within a coordinated, \nplanned approach to future LEU development.\nLEAP \n28\n",
+      "has_text": true,
+      "images": 0,
+      "drawings": 2,
+      "links": 0,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 30,
+      "text": "Green energy park concepts often develop \nsynergies between industries in the geography, \nincluding energy storage, RD&I facilities \nand the development of other industrial \ninnovations, biodiversity programmes, \nenvironmental sustainability initiatives and \nenergy transition technologies. A planned \napproach may also provide opportunities for \nstreamlined consenting processes, including \nthrough adopting provisions within existing \nand future EU legislative frameworks, such as a \n‘single point of contact’ mechanism – as set out \nin Action 10. \nA plan-led approach to green energy parks \nwill allow for enterprise policy considerations \nas to what sectors or activities would provide \nthe most advantageous broad economic and \nsocial return for Ireland. The Government and \nIreland’s enterprise development agencies, with \nthe support of the newly proposed ‘Sectors \nof the Future Council’, will progress analysis \nto inform any business case to facilitate plan-\nled energy parks, with consideration of their \nlikely impacts on employment, domestic \nvalue-added, skills spillovers, and long-term \nenvironmental and economic sustainability.\nGreen energy park development will also \nrequire and inspire significant innovation \nin energy management, energy services, \nand smart energy systems across complex \ninfrastructure, generation and demand loads. \nIreland’s enterprise and innovation policy can \nensure that this world-leading innovation is \nfacilitated, and that Irish expertise and supply \nchains are preparing for this opportunity \nglobally.\nLEAP \n29\n",
+      "has_text": true,
+      "images": 1,
+      "drawings": 3,
+      "links": 0,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 31,
+      "text": "This is a concept drawing of a green energy park, \nincluding an indicative mix of the elements that may \nfeature in future LEU opportunities, alongside other \ninstallations including power generation plants, \npotentially to include Carbon Capture technologies \nand renewable generation. \nA green energy park would not necessarily require \nall the elements included here, and this graphic is for \nillustrative purposes only.\n30\n31\nLEAP \nLEAP\n",
+      "has_text": true,
+      "images": 0,
+      "drawings": 7850,
+      "links": 0,
+      "width": 1190.550048828125,
+      "height": 841.8900146484375
+    },
+    {
+      "page": 32,
+      "text": "",
+      "has_text": false,
+      "images": 0,
+      "drawings": 44,
+      "links": 0,
+      "width": 595.2760009765625,
+      "height": 841.8900146484375
+    }
+  ],
+  "ocr_used": false
+}

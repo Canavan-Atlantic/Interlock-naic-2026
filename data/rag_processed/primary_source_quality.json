@@ -1,0 +1,516 @@
+{
+  "generated_at": "2026-09-08T00:28:40.611476+00:00",
+  "documents": [
+    {
+      "document_id": "rag-birds-directive-environment-european-commission-b7c112a578c0",
+      "title": "Birds Directive",
+      "issuer": "European Commission",
+      "jurisdiction": "EU",
+      "publication_date": null,
+      "effective_date": null,
+      "version": null,
+      "document_status": "CURRENT",
+      "pages": 14,
+      "chunks": 14,
+      "missing_metadata": [
+        "publication_date",
+        "effective_date",
+        "version"
+      ],
+      "pages_without_text": [],
+      "duplicate_of": null,
+      "supersedes": null,
+      "superseded_by": null,
+      "retrieval_eligible": true
+    },
+    {
+      "document_id": "rag-celex-01992l0043-20250714-en-txt-4848770734fa",
+      "title": "Council Directive 92/43/EEC on the conservation of natural habitats and of wild fauna and flora",
+      "issuer": "Council of the European Communities",
+      "jurisdiction": "EU",
+      "publication_date": "1992-05-21",
+      "effective_date": null,
+      "version": "Consolidated text 2025-07-14",
+      "document_status": "CURRENT",
+      "pages": 56,
+      "chunks": 56,
+      "missing_metadata": [
+        "effective_date"
+      ],
+      "pages_without_text": [],
+      "duplicate_of": null,
+      "supersedes": null,
+      "superseded_by": null,
+      "retrieval_eligible": true
+    },
+    {
+      "document_id": "rag-celex-32009l0147-en-txt-baaaa61f78b8",
+      "title": "Directive 2009/147/EC on the conservation of wild birds",
+      "issuer": "European Parliament and Council of the European Union",
+      "jurisdiction": "EU",
+      "publication_date": "2009-11-30",
+      "effective_date": null,
+      "version": "Directive 2009/147/EC codified version",
+      "document_status": "CURRENT",
+      "pages": 19,
+      "chunks": 23,
+      "missing_metadata": [
+        "effective_date"
+      ],
+      "pages_without_text": [],
+      "duplicate_of": null,
+      "supersedes": null,
+      "superseded_by": null,
+      "retrieval_eligible": true
+    },
+    {
+      "document_id": "rag-celex-32023l1791-en-txt-2a296ac087ae",
+      "title": "Directive (EU) 2023/1791 on energy efficiency",
+      "issuer": "European Parliament and Council of the European Union",
+      "jurisdiction": "EU",
+      "publication_date": "2023-09-13",
+      "effective_date": null,
+      "version": "Directive (EU) 2023/1791 recast",
+      "document_status": "CURRENT",
+      "pages": 111,
+      "chunks": 171,
+      "missing_metadata": [
+        "effective_date"
+      ],
+      "pages_without_text": [],
+      "duplicate_of": null,
+      "supersedes": null,
+      "superseded_by": null,
+      "retrieval_eligible": true
+    },
+    {
+      "document_id": "rag-renewable-energy-directive-02109a8d540b",
+      "title": "Renewable Energy Directive",
+      "issuer": "European Commission",
+      "jurisdiction": "EU",
+      "publication_date": null,
+      "effective_date": null,
+      "version": null,
+      "document_status": "CURRENT",
+      "pages": 7,
+      "chunks": 7,
+      "missing_metadata": [
+        "publication_date",
+        "effective_date",
+        "version"
+      ],
+      "pages_without_text": [],
+      "duplicate_of": null,
+      "supersedes": null,
+      "superseded_by": null,
+      "retrieval_eligible": true
+    },
+    {
+      "document_id": "rag-celex-02011l0092-20140515-en-txt-b8b89d388164",
+      "title": "Directive 2011/92/EU on the assessment of the effects of certain public and private projects on the environment",
+      "issuer": "European Parliament and Council of the European Union",
+      "jurisdiction": "EU",
+      "publication_date": "2011-12-13",
+      "effective_date": null,
+      "version": "Directive 2011/92/EU codification; consolidated text 2014-05-15",
+      "document_status": "CURRENT",
+      "pages": 35,
+      "chunks": 35,
+      "missing_metadata": [
+        "effective_date"
+      ],
+      "pages_without_text": [],
+      "duplicate_of": null,
+      "supersedes": null,
+      "superseded_by": null,
+      "retrieval_eligible": true
+    },
+    {
+      "document_id": "rag-cru202504-leu-connection-policy-proposed-decision-e2985e0a4ad5",
+      "title": "Large Energy User Connection Policy — Proposed Decision CRU/202504",
+      "issuer": "Commission for Regulation of Utilities (CRU)",
+      "jurisdiction": "IRELAND",
+      "publication_date": "2025-02-18",
+      "effective_date": null,
+      "version": "CRU/202504",
+      "document_status": "PROPOSED",
+      "pages": null,
+      "chunks": 0,
+      "missing_metadata": [
+        "effective_date"
+      ],
+      "pages_without_text": [],
+      "duplicate_of": "rag-cru202504-leu-connection-policy-proposed-decision-0-1d3af8ccb901",
+      "supersedes": null,
+      "superseded_by": null,
+      "retrieval_eligible": true
+    },
+    {
+      "document_id": "rag-cru2025236-large-energy-user-connection-policy-decision-paper-0264a1b80bdc",
+      "title": "Large Energy User Connection Policy — Decision Paper CRU/2025236",
+      "issuer": "Commission for Regulation of Utilities (CRU)",
+      "jurisdiction": "IRELAND",
+      "publication_date": "2025-12-12",
+      "effective_date": "2025-12-12",
+      "version": "CRU/2025236",
+      "document_status": "CURRENT",
+      "pages": 134,
+      "chunks": 137,
+      "missing_metadata": [],
+      "pages_without_text": [],
+      "duplicate_of": null,
+      "supersedes": "rag-cru202504-leu-connection-policy-proposed-decision-0-1d3af8ccb901",
+      "superseded_by": null,
+      "retrieval_eligible": true
+    },
+    {
+      "document_id": "rag-cru202504-leu-connection-policy-proposed-decision-0-1d3af8ccb901",
+      "title": "Large Energy User Connection Policy — Proposed Decision CRU/202504",
+      "issuer": "Commission for Regulation of Utilities (CRU)",
+      "jurisdiction": "IRELAND",
+      "publication_date": "2025-02-18",
+      "effective_date": null,
+      "version": "CRU/202504",
+      "document_status": "PROPOSED",
+      "pages": 107,
+      "chunks": 108,
+      "missing_metadata": [
+        "effective_date"
+      ],
+      "pages_without_text": [],
+      "duplicate_of": null,
+      "supersedes": null,
+      "superseded_by": "rag-cru2025236-large-energy-user-connection-policy-decision-paper-0264a1b80bdc",
+      "retrieval_eligible": true
+    },
+    {
+      "document_id": "rag-private-wires-policy-statement-7312270a332d",
+      "title": "Private Wires Policy Statement",
+      "issuer": "Department of Climate, Energy and the Environment",
+      "jurisdiction": "IRELAND",
+      "publication_date": "2025-07",
+      "effective_date": null,
+      "version": null,
+      "document_status": "CURRENT",
+      "pages": 13,
+      "chunks": 13,
+      "missing_metadata": [
+        "effective_date",
+        "version"
+      ],
+      "pages_without_text": [],
+      "duplicate_of": null,
+      "supersedes": null,
+      "superseded_by": null,
+      "retrieval_eligible": true
+    },
+    {
+      "document_id": "rag-annex-i-general-scheme-private-wires-bill-2025-amendments-to-electrici-fa78d5538bd4",
+      "title": "General Scheme — Private Wires Bill 2025 Amendments to Electricity Regulation Act 1999",
+      "issuer": "Department of Climate, Energy and the Environment",
+      "jurisdiction": "IRELAND",
+      "publication_date": "2025",
+      "effective_date": null,
+      "version": "General Scheme 2025",
+      "document_status": "PROPOSED",
+      "pages": 14,
+      "chunks": 14,
+      "missing_metadata": [
+        "effective_date"
+      ],
+      "pages_without_text": [],
+      "duplicate_of": null,
+      "supersedes": null,
+      "superseded_by": null,
+      "retrieval_eligible": true
+    },
+    {
+      "document_id": "rag-government-statement-on-the-role-of-data-centres-in-irelands-enterpris-834449439a83",
+      "title": "Government Statement on the Role of Data Centres in Ireland's Enterprise Strategy",
+      "issuer": "Government of Ireland",
+      "jurisdiction": "IRELAND",
+      "publication_date": "2022-07",
+      "effective_date": null,
+      "version": null,
+      "document_status": "CURRENT",
+      "pages": 22,
+      "chunks": 23,
+      "missing_metadata": [
+        "effective_date",
+        "version"
+      ],
+      "pages_without_text": [],
+      "duplicate_of": null,
+      "supersedes": null,
+      "superseded_by": null,
+      "retrieval_eligible": true
+    },
+    {
+      "document_id": "rag-leap-large-energy-user-action-plan-486457470aff",
+      "title": "Government Large Energy User Action Plan (LEAP)",
+      "issuer": "Department of Enterprise, Tourism and Employment (DETE)",
+      "jurisdiction": "IRELAND",
+      "publication_date": "2026-01-13",
+      "effective_date": null,
+      "version": null,
+      "document_status": "CURRENT",
+      "pages": 32,
+      "chunks": 30,
+      "missing_metadata": [
+        "effective_date",
+        "version"
+      ],
+      "pages_without_text": [
+        1,
+        32
+      ],
+      "duplicate_of": null,
+      "supersedes": null,
+      "superseded_by": null,
+      "retrieval_eligible": true
+    },
+    {
+      "document_id": "rag-fingal-development-plan-2023-2029-appendices-consolidated-1-f1b259f0e43a",
+      "title": "Fingal Development Plan 2023–2029 — Appendices Consolidated",
+      "issuer": "Fingal County Council",
+      "jurisdiction": "LOCAL_AUTHORITY",
+      "publication_date": "2026-03",
+      "effective_date": null,
+      "version": "2023-2029 consolidated",
+      "document_status": "CURRENT",
+      "pages": 296,
+      "chunks": 293,
+      "missing_metadata": [
+        "effective_date"
+      ],
+      "pages_without_text": [
+        145,
+        147,
+        155,
+        168,
+        290
+      ],
+      "duplicate_of": null,
+      "supersedes": null,
+      "superseded_by": null,
+      "retrieval_eligible": true
+    },
+    {
+      "document_id": "rag-fingal-development-plan-2023-2029-written-statement-consolidated-1-cd005ed6b19c",
+      "title": "Fingal Development Plan 2023–2029 — Written Statement Consolidated",
+      "issuer": "Fingal County Council",
+      "jurisdiction": "LOCAL_AUTHORITY",
+      "publication_date": "2026-03",
+      "effective_date": null,
+      "version": "2023-2029 consolidated",
+      "document_status": "CURRENT",
+      "pages": 662,
+      "chunks": 703,
+      "missing_metadata": [
+        "effective_date"
+      ],
+      "pages_without_text": [],
+      "duplicate_of": null,
+      "supersedes": null,
+      "superseded_by": null,
+      "retrieval_eligible": true
+    },
+    {
+      "document_id": "rag-sheet12-blanchardstown-north-2023-2029-varied-dbb3f0888cc4",
+      "title": "sheet12-blanchardstown-north-2023-2029 varied",
+      "issuer": null,
+      "jurisdiction": "LOCAL_AUTHORITY",
+      "publication_date": null,
+      "effective_date": null,
+      "version": null,
+      "document_status": "CURRENT",
+      "pages": 1,
+      "chunks": 0,
+      "missing_metadata": [
+        "issuer",
+        "publication_date",
+        "effective_date",
+        "version"
+      ],
+      "pages_without_text": [
+        1
+      ],
+      "duplicate_of": null,
+      "supersedes": null,
+      "superseded_by": null,
+      "retrieval_eligible": true
+    },
+    {
+      "document_id": "rag-sheet13-blanchardstown-south-2023-2029-varied-fce1e1b6406f",
+      "title": "sheet13-blanchardstown-south-2023-2029 varied",
+      "issuer": null,
+      "jurisdiction": "LOCAL_AUTHORITY",
+      "publication_date": null,
+      "effective_date": null,
+      "version": null,
+      "document_status": "CURRENT",
+      "pages": 1,
+      "chunks": 0,
+      "missing_metadata": [
+        "issuer",
+        "publication_date",
+        "effective_date",
+        "version"
+      ],
+      "pages_without_text": [
+        1
+      ],
+      "duplicate_of": null,
+      "supersedes": null,
+      "superseded_by": null,
+      "retrieval_eligible": true
+    },
+    {
+      "document_id": "rag-1-national-planning-framework-first-revision-april-2025-8b730545298e",
+      "title": "National Planning Framework — First Revision",
+      "issuer": "Government of Ireland",
+      "jurisdiction": "IRELAND",
+      "publication_date": "2025-04",
+      "effective_date": null,
+      "version": "First Revision",
+      "document_status": "CURRENT",
+      "pages": 195,
+      "chunks": 264,
+      "missing_metadata": [
+        "effective_date"
+      ],
+      "pages_without_text": [],
+      "duplicate_of": null,
+      "supersedes": null,
+      "superseded_by": null,
+      "retrieval_eligible": true
+    },
+    {
+      "document_id": "rag-data-centre-connection-offer-process-and-policy-v3-may-2026-1c4c9974760e",
+      "title": "Demand Connections — Data Centre Connection Offer Process and Policy Version 3",
+      "issuer": "EirGrid",
+      "jurisdiction": "IRELAND",
+      "publication_date": "2026-05-20",
+      "effective_date": null,
+      "version": "Version 3",
+      "document_status": "CURRENT",
+      "pages": 31,
+      "chunks": 39,
+      "missing_metadata": [
+        "effective_date"
+      ],
+      "pages_without_text": [],
+      "duplicate_of": null,
+      "supersedes": null,
+      "superseded_by": null,
+      "retrieval_eligible": true
+    },
+    {
+      "document_id": "rag-data-centre-constrained-area-overview-may-2026-0cba04b02c3e",
+      "title": "Data Centre Constrained Area Overview",
+      "issuer": "EirGrid",
+      "jurisdiction": "IRELAND",
+      "publication_date": "2026-05",
+      "effective_date": null,
+      "version": null,
+      "document_status": "CURRENT",
+      "pages": 12,
+      "chunks": 16,
+      "missing_metadata": [
+        "effective_date",
+        "version"
+      ],
+      "pages_without_text": [],
+      "duplicate_of": null,
+      "supersedes": null,
+      "superseded_by": null,
+      "retrieval_eligible": true
+    },
+    {
+      "document_id": "rag-data-centre-technical-assessment-may-2026-14c632c74fd3",
+      "title": "Data Centre Technical Assessment",
+      "issuer": "EirGrid",
+      "jurisdiction": "IRELAND",
+      "publication_date": "2026-05",
+      "effective_date": null,
+      "version": null,
+      "document_status": "CURRENT",
+      "pages": 16,
+      "chunks": 20,
+      "missing_metadata": [
+        "effective_date",
+        "version"
+      ],
+      "pages_without_text": [],
+      "duplicate_of": null,
+      "supersedes": null,
+      "superseded_by": null,
+      "retrieval_eligible": true
+    },
+    {
+      "document_id": "rag-eirgrid-transmission-system-map-february-2025-727ec635d16c",
+      "title": "EirGrid Transmission System Map",
+      "issuer": "EirGrid",
+      "jurisdiction": "IRELAND",
+      "publication_date": "2025-02",
+      "effective_date": null,
+      "version": null,
+      "document_status": "CURRENT",
+      "pages": 1,
+      "chunks": 2,
+      "missing_metadata": [
+        "effective_date",
+        "version"
+      ],
+      "pages_without_text": [],
+      "duplicate_of": null,
+      "supersedes": null,
+      "superseded_by": null,
+      "retrieval_eligible": true
+    },
+    {
+      "document_id": "rag-dublin-wastewater-treatment-capacity-register-uisce-ireann-formerly-ir-d2a7ed4caa5d",
+      "title": "Dublin Wastewater Treatment Capacity Register",
+      "issuer": "Uisce Éireann",
+      "jurisdiction": "IRELAND",
+      "publication_date": null,
+      "effective_date": null,
+      "version": null,
+      "document_status": "CURRENT",
+      "pages": 4,
+      "chunks": 4,
+      "missing_metadata": [
+        "publication_date",
+        "effective_date",
+        "version"
+      ],
+      "pages_without_text": [],
+      "duplicate_of": null,
+      "supersedes": null,
+      "superseded_by": null,
+      "retrieval_eligible": true
+    },
+    {
+      "document_id": "rag-dublin-water-supply-capacity-register-uisce-ireann-formerly-irish-wate-c6f8f0e390a2",
+      "title": "Dublin Water Supply Capacity Register",
+      "issuer": "Uisce Éireann",
+      "jurisdiction": "IRELAND",
+      "publication_date": null,
+      "effective_date": null,
+      "version": null,
+      "document_status": "CURRENT",
+      "pages": 6,
+      "chunks": 6,
+      "missing_metadata": [
+        "publication_date",
+        "effective_date",
+        "version"
+      ],
+      "pages_without_text": [],
+      "duplicate_of": null,
+      "supersedes": null,
+      "superseded_by": null,
+      "retrieval_eligible": true
+    }
+  ]
+}

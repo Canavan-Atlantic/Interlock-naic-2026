@@ -1,0 +1,1095 @@
+[
+  {
+    "dataset_id": "biodiversity-special-area-of-conservation-sac-itm-2026-01-744f84c8f69a",
+    "domain": "biodiversity",
+    "source_name": "NPWS SAC and SPA spatial data",
+    "processing_mode": "spatial_zip",
+    "raw_relative_path": "data/raw/biodiversity/Special Area of Conservation (SAC)_ITM_2026_01.zip",
+    "file_type": "zip",
+    "file_size": 35464704,
+    "sha256": "ba815109510ac682b410fea30b3377941ef795d04999230b7d3f5740acef40f1",
+    "discovered_at": "2026-09-07T01:03:22.640710Z",
+    "processed_at": "2026-09-07T01:03:26.477313Z",
+    "source_crs": "EPSG:2157, EPSG:4326",
+    "output_crs": "EPSG:2157",
+    "row_count": 441,
+    "feature_count": 441,
+    "geometry_type": "MultiPolygon, Polygon",
+    "processed_output_path": "data/processed/biodiversity-special-area-of-conservation-sac-itm-2026-01-744f84c8f69a/SAC_ITM_2026_01.parquet",
+    "processed_output_paths": [
+      "data/processed/biodiversity-special-area-of-conservation-sac-itm-2026-01-744f84c8f69a/SAC_ITM_2026_01.parquet",
+      "data/processed/biodiversity-special-area-of-conservation-sac-itm-2026-01-744f84c8f69a/SAC_Offshore_WGS84_2022_11.parquet"
+    ],
+    "status": "PROCESSED",
+    "limitations": [
+      "Source layers are standardised to EPSG:2157 while original CRS is recorded."
+    ],
+    "validation_errors": [],
+    "processing_errors": [],
+    "quality": {
+      "raw_file_exists": true,
+      "raw_file_immutable": true,
+      "zip_member_count": 17,
+      "shapefile_layer_count": 2,
+      "shapefile_layers": [
+        "sac_itm_2026_01",
+        "sac_offshore_wgs84_2022_11"
+      ],
+      "missing_shapefile_companions": [],
+      "layers": [
+        {
+          "layer": "SAC_ITM_2026_01",
+          "status": "processed",
+          "feature_count": 433,
+          "empty_geometry_count_before": 0,
+          "invalid_geometry_count_before": 0,
+          "repair_attempted": false,
+          "repaired_geometry_count": 0,
+          "unusable_after_repair_count": 0,
+          "invalid_geometry_count_after_repair": 0,
+          "empty_geometry_count_after_repair": 0,
+          "geometry_collection_repair_count": 0,
+          "buffer_zero_fallback_count": 0,
+          "output_geometry_type_after_repair": "MultiPolygon, Polygon",
+          "output_feature_count_after_repair": 433,
+          "dropped_unusable_feature_count": 0,
+          "output_feature_count": 433,
+          "invalid_geometry_count_after_transform": 0,
+          "empty_geometry_count_after_transform": 0,
+          "output_geometry_type": "MultiPolygon, Polygon",
+          "post_transform_repair_attempted": false,
+          "repaired_geometry_count_after_transform": 0,
+          "missing_optional_columns": [],
+          "valid_spatial_bounds": [
+            415280.63829999976,
+            518561.90190000087,
+            760468.7466000002,
+            969804.8142000008
+          ]
+        },
+        {
+          "layer": "SAC_Offshore_WGS84_2022_11",
+          "status": "processed",
+          "feature_count": 8,
+          "empty_geometry_count_before": 0,
+          "invalid_geometry_count_before": 0,
+          "repair_attempted": false,
+          "repaired_geometry_count": 0,
+          "unusable_after_repair_count": 0,
+          "invalid_geometry_count_after_repair": 0,
+          "empty_geometry_count_after_repair": 0,
+          "geometry_collection_repair_count": 0,
+          "buffer_zero_fallback_count": 0,
+          "output_geometry_type_after_repair": "Polygon",
+          "output_feature_count_after_repair": 8,
+          "dropped_unusable_feature_count": 0,
+          "output_feature_count": 8,
+          "invalid_geometry_count_after_transform": 0,
+          "empty_geometry_count_after_transform": 0,
+          "output_geometry_type": "Polygon",
+          "post_transform_repair_attempted": false,
+          "repaired_geometry_count_after_transform": 0,
+          "missing_optional_columns": [
+            "COUNTY",
+            "HA"
+          ],
+          "valid_spatial_bounds": [
+            94419.24006321252,
+            160080.44021018175,
+            496170.12844786013,
+            1087338.366741963
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "dataset_id": "biodiversity-special-protection-area-spa-itm-2026-02-f54a4a75e7fd",
+    "domain": "biodiversity",
+    "source_name": "NPWS SAC and SPA spatial data",
+    "processing_mode": "spatial_zip",
+    "raw_relative_path": "data/raw/biodiversity/Special Protection Area (SPA)_ITM_2026_02.zip",
+    "file_type": "zip",
+    "file_size": 11248439,
+    "sha256": "74653356f2ab30f3bb00f2342e19a79d7209c93691c75da5bc5678b848c30d48",
+    "discovered_at": "2026-09-07T01:03:22.640710Z",
+    "processed_at": "2026-09-07T01:03:42.332067Z",
+    "source_crs": "EPSG:2157",
+    "output_crs": "EPSG:2157",
+    "row_count": 202,
+    "feature_count": 202,
+    "geometry_type": "MultiPolygon, Polygon",
+    "processed_output_path": "data/processed/biodiversity-special-protection-area-spa-itm-2026-02-f54a4a75e7fd/SPA_ITM_2026_02.parquet",
+    "processed_output_paths": [
+      "data/processed/biodiversity-special-protection-area-spa-itm-2026-02-f54a4a75e7fd/SPA_ITM_2026_02.parquet",
+      "data/processed/biodiversity-special-protection-area-spa-itm-2026-02-f54a4a75e7fd/SPA_ITM_2026_02_Marine.parquet"
+    ],
+    "status": "PROCESSED",
+    "limitations": [
+      "Source layers are standardised to EPSG:2157 while original CRS is recorded."
+    ],
+    "validation_errors": [],
+    "processing_errors": [],
+    "quality": {
+      "raw_file_exists": true,
+      "raw_file_immutable": true,
+      "zip_member_count": 17,
+      "shapefile_layer_count": 2,
+      "shapefile_layers": [
+        "spa_itm_2026_02",
+        "spa_itm_2026_02_marine"
+      ],
+      "missing_shapefile_companions": [],
+      "layers": [
+        {
+          "layer": "SPA_ITM_2026_02",
+          "status": "processed",
+          "feature_count": 199,
+          "empty_geometry_count_before": 0,
+          "invalid_geometry_count_before": 0,
+          "repair_attempted": false,
+          "repaired_geometry_count": 0,
+          "unusable_after_repair_count": 0,
+          "invalid_geometry_count_after_repair": 0,
+          "empty_geometry_count_after_repair": 0,
+          "geometry_collection_repair_count": 0,
+          "buffer_zero_fallback_count": 0,
+          "output_geometry_type_after_repair": "MultiPolygon, Polygon",
+          "output_feature_count_after_repair": 199,
+          "dropped_unusable_feature_count": 0,
+          "output_feature_count": 199,
+          "invalid_geometry_count_after_transform": 0,
+          "empty_geometry_count_after_transform": 0,
+          "output_geometry_type": "MultiPolygon, Polygon",
+          "post_transform_repair_attempted": false,
+          "repaired_geometry_count_after_transform": 0,
+          "missing_optional_columns": [],
+          "valid_spatial_bounds": [
+            415752.2452999996,
+            523134.86140000075,
+            736803.2489999998,
+            967277.9488999993
+          ]
+        },
+        {
+          "layer": "SPA_ITM_2026_02_Marine",
+          "status": "processed",
+          "feature_count": 3,
+          "empty_geometry_count_before": 0,
+          "invalid_geometry_count_before": 0,
+          "repair_attempted": false,
+          "repaired_geometry_count": 0,
+          "unusable_after_repair_count": 0,
+          "invalid_geometry_count_after_repair": 0,
+          "empty_geometry_count_after_repair": 0,
+          "geometry_collection_repair_count": 0,
+          "buffer_zero_fallback_count": 0,
+          "output_geometry_type_after_repair": "Polygon",
+          "output_feature_count_after_repair": 3,
+          "dropped_unusable_feature_count": 0,
+          "output_feature_count": 3,
+          "invalid_geometry_count_after_transform": 0,
+          "empty_geometry_count_after_transform": 0,
+          "output_geometry_type": "Polygon",
+          "post_transform_repair_attempted": false,
+          "repaired_geometry_count_after_transform": 0,
+          "missing_optional_columns": [],
+          "valid_spatial_bounds": [
+            445884.7287999997,
+            575150.2101000007,
+            764191.3835000005,
+            791611.0488000009
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "dataset_id": "flood-esds-floodmap-ext-c-c-b65cd5adfada",
+    "domain": "flood",
+    "source_name": "OPW coastal and fluvial flood extents",
+    "processing_mode": "spatial_zip",
+    "raw_relative_path": "data/raw/flood/esds_floodmap_ext_c_c.zip",
+    "file_type": "zip",
+    "file_size": 35452160,
+    "sha256": "551cd501c185cd53af62c312f37361712300e5deabd6e1c44c994e640743b50c",
+    "discovered_at": "2026-09-07T01:03:22.640710Z",
+    "processed_at": "2026-09-07T01:03:46.794500Z",
+    "source_crs": "EPSG:29903",
+    "output_crs": "EPSG:2157",
+    "row_count": 63712,
+    "feature_count": 63712,
+    "geometry_type": "MultiPolygon, Polygon",
+    "processed_output_path": "data/processed/flood-esds-floodmap-ext-c-c-b65cd5adfada/esds_floodmap_ext_c_c_0010.parquet",
+    "processed_output_paths": [
+      "data/processed/flood-esds-floodmap-ext-c-c-b65cd5adfada/esds_floodmap_ext_c_c_0010.parquet",
+      "data/processed/flood-esds-floodmap-ext-c-c-b65cd5adfada/esds_floodmap_ext_c_c_0200.parquet",
+      "data/processed/flood-esds-floodmap-ext-c-c-b65cd5adfada/esds_floodmap_ext_c_c_1000.parquet"
+    ],
+    "status": "PROCESSED",
+    "limitations": [
+      "Coastal/fluvial and return-period identity is retained as processed metadata.",
+      "Flood extents are source evidence, not a project suitability decision.",
+      "The source contained invalid polygon geometry; the generated copy uses deterministic make_valid repair and must not be treated as originally clean."
+    ],
+    "validation_errors": [],
+    "processing_errors": [],
+    "quality": {
+      "raw_file_exists": true,
+      "raw_file_immutable": true,
+      "zip_member_count": 15,
+      "shapefile_layer_count": 3,
+      "shapefile_layers": [
+        "esds_floodmap_ext_c_c_0010",
+        "esds_floodmap_ext_c_c_0200",
+        "esds_floodmap_ext_c_c_1000"
+      ],
+      "missing_shapefile_companions": [],
+      "layers": [
+        {
+          "layer": "esds_floodmap_ext_c_c_0010",
+          "status": "processed",
+          "feature_count": 21919,
+          "empty_geometry_count_before": 0,
+          "invalid_geometry_count_before": 427,
+          "repair_attempted": true,
+          "repaired_geometry_count": 427,
+          "unusable_after_repair_count": 0,
+          "invalid_geometry_count_after_repair": 0,
+          "empty_geometry_count_after_repair": 0,
+          "geometry_collection_repair_count": 0,
+          "buffer_zero_fallback_count": 0,
+          "output_geometry_type_after_repair": "MultiPolygon, Polygon",
+          "output_feature_count_after_repair": 21919,
+          "dropped_unusable_feature_count": 0,
+          "output_feature_count": 21919,
+          "invalid_geometry_count_after_transform": 0,
+          "empty_geometry_count_after_transform": 0,
+          "output_geometry_type": "MultiPolygon, Polygon",
+          "post_transform_repair_attempted": false,
+          "repaired_geometry_count_after_transform": 0,
+          "missing_optional_columns": [],
+          "valid_spatial_bounds": [
+            436389.6860646277,
+            539032.868989638,
+            733368.0944680879,
+            954043.5305234455
+          ]
+        },
+        {
+          "layer": "esds_floodmap_ext_c_c_0200",
+          "status": "processed",
+          "feature_count": 21156,
+          "empty_geometry_count_before": 0,
+          "invalid_geometry_count_before": 448,
+          "repair_attempted": true,
+          "repaired_geometry_count": 448,
+          "unusable_after_repair_count": 0,
+          "invalid_geometry_count_after_repair": 0,
+          "empty_geometry_count_after_repair": 0,
+          "geometry_collection_repair_count": 0,
+          "buffer_zero_fallback_count": 0,
+          "output_geometry_type_after_repair": "MultiPolygon, Polygon",
+          "output_feature_count_after_repair": 21156,
+          "dropped_unusable_feature_count": 0,
+          "output_feature_count": 21156,
+          "invalid_geometry_count_after_transform": 0,
+          "empty_geometry_count_after_transform": 0,
+          "output_geometry_type": "MultiPolygon, Polygon",
+          "post_transform_repair_attempted": false,
+          "repaired_geometry_count_after_transform": 0,
+          "missing_optional_columns": [],
+          "valid_spatial_bounds": [
+            436389.6860646277,
+            539031.7853782139,
+            733368.0944680879,
+            954043.5305234455
+          ]
+        },
+        {
+          "layer": "esds_floodmap_ext_c_c_1000",
+          "status": "processed",
+          "feature_count": 20637,
+          "empty_geometry_count_before": 0,
+          "invalid_geometry_count_before": 402,
+          "repair_attempted": true,
+          "repaired_geometry_count": 402,
+          "unusable_after_repair_count": 0,
+          "invalid_geometry_count_after_repair": 0,
+          "empty_geometry_count_after_repair": 0,
+          "geometry_collection_repair_count": 0,
+          "buffer_zero_fallback_count": 0,
+          "output_geometry_type_after_repair": "MultiPolygon, Polygon",
+          "output_feature_count_after_repair": 20637,
+          "dropped_unusable_feature_count": 0,
+          "output_feature_count": 20637,
+          "invalid_geometry_count_after_transform": 0,
+          "empty_geometry_count_after_transform": 0,
+          "output_geometry_type": "MultiPolygon, Polygon",
+          "post_transform_repair_attempted": false,
+          "repaired_geometry_count_after_transform": 0,
+          "missing_optional_columns": [],
+          "valid_spatial_bounds": [
+            436389.6860646277,
+            539031.7853782139,
+            733368.0944680879,
+            954043.5305234455
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "dataset_id": "flood-esds-floodmap-ext-f-c-867e0faca644",
+    "domain": "flood",
+    "source_name": "OPW coastal and fluvial flood extents",
+    "processing_mode": "spatial_zip",
+    "raw_relative_path": "data/raw/flood/esds_floodmap_ext_f_c.zip",
+    "file_type": "zip",
+    "file_size": 101096903,
+    "sha256": "91206395fe95e302d48498f99eadb6e738f0d0073c27264e7eb71bb5227acdb3",
+    "discovered_at": "2026-09-07T01:52:15.135483Z",
+    "processed_at": "2026-09-07T01:52:18.552227Z",
+    "source_crs": "EPSG:29903",
+    "output_crs": "EPSG:2157",
+    "row_count": 170625,
+    "feature_count": 170625,
+    "geometry_type": "MultiPolygon, Polygon",
+    "processed_output_path": "data/processed/flood-esds-floodmap-ext-f-c-867e0faca644/esds_floodmap_ext_f_c_0010.parquet",
+    "processed_output_paths": [
+      "data/processed/flood-esds-floodmap-ext-f-c-867e0faca644/esds_floodmap_ext_f_c_0010.parquet",
+      "data/processed/flood-esds-floodmap-ext-f-c-867e0faca644/esds_floodmap_ext_f_c_0100.parquet",
+      "data/processed/flood-esds-floodmap-ext-f-c-867e0faca644/esds_floodmap_ext_f_c_1000.parquet"
+    ],
+    "status": "PROCESSED",
+    "limitations": [
+      "Coastal/fluvial and return-period identity is retained as processed metadata.",
+      "Flood extents are source evidence, not a project suitability decision.",
+      "The source contained invalid polygon geometry; the generated copy uses deterministic make_valid repair and must not be treated as originally clean.",
+      "2 feature(s) were omitted because no usable polygon remained after deterministic repair and reprojection.",
+      "5 feature(s) were omitted because no usable polygon remained after deterministic repair and reprojection."
+    ],
+    "validation_errors": [],
+    "processing_errors": [],
+    "quality": {
+      "raw_file_exists": true,
+      "raw_file_immutable": true,
+      "zip_member_count": 15,
+      "shapefile_layer_count": 3,
+      "shapefile_layers": [
+        "esds_floodmap_ext_f_c_0010",
+        "esds_floodmap_ext_f_c_0100",
+        "esds_floodmap_ext_f_c_1000"
+      ],
+      "missing_shapefile_companions": [],
+      "layers": [
+        {
+          "layer": "esds_floodmap_ext_f_c_0010",
+          "status": "processed",
+          "feature_count": 66348,
+          "empty_geometry_count_before": 0,
+          "invalid_geometry_count_before": 1703,
+          "repair_attempted": true,
+          "repaired_geometry_count": 1703,
+          "unusable_after_repair_count": 0,
+          "invalid_geometry_count_after_repair": 0,
+          "empty_geometry_count_after_repair": 0,
+          "geometry_collection_repair_count": 0,
+          "buffer_zero_fallback_count": 0,
+          "output_geometry_type_after_repair": "MultiPolygon, Polygon",
+          "output_feature_count_after_repair": 66348,
+          "dropped_unusable_feature_count": 0,
+          "output_feature_count": 66348,
+          "invalid_geometry_count_after_transform": 1,
+          "empty_geometry_count_after_transform": 0,
+          "output_geometry_type": "MultiPolygon, Polygon",
+          "post_transform_repair_attempted": true,
+          "repaired_geometry_count_after_transform": 1,
+          "unusable_after_post_transform_repair_count": 0,
+          "dropped_unusable_feature_count_after_transform": 0,
+          "invalid_geometry_count_after_post_transform_repair": 0,
+          "empty_geometry_count_after_post_transform_repair": 0,
+          "missing_optional_columns": [],
+          "valid_spatial_bounds": [
+            442761.63176429016,
+            531370.1448229564,
+            733071.1105440658,
+            950789.1970558913
+          ]
+        },
+        {
+          "layer": "esds_floodmap_ext_f_c_0100",
+          "status": "processed",
+          "feature_count": 58122,
+          "empty_geometry_count_before": 0,
+          "invalid_geometry_count_before": 2041,
+          "repair_attempted": true,
+          "repaired_geometry_count": 2041,
+          "unusable_after_repair_count": 0,
+          "invalid_geometry_count_after_repair": 0,
+          "empty_geometry_count_after_repair": 0,
+          "geometry_collection_repair_count": 0,
+          "buffer_zero_fallback_count": 0,
+          "output_geometry_type_after_repair": "MultiPolygon, Polygon",
+          "output_feature_count_after_repair": 58122,
+          "dropped_unusable_feature_count": 0,
+          "output_feature_count": 58120,
+          "invalid_geometry_count_after_transform": 2,
+          "empty_geometry_count_after_transform": 0,
+          "output_geometry_type": "MultiPolygon, Polygon",
+          "post_transform_repair_attempted": true,
+          "repaired_geometry_count_after_transform": 0,
+          "unusable_after_post_transform_repair_count": 2,
+          "dropped_unusable_feature_count_after_transform": 2,
+          "invalid_geometry_count_after_post_transform_repair": 0,
+          "empty_geometry_count_after_post_transform_repair": 0,
+          "missing_optional_columns": [],
+          "valid_spatial_bounds": [
+            442751.6339462794,
+            531370.1448229564,
+            733071.1105440694,
+            950789.1970558913
+          ],
+          "warning": "2 feature(s) were omitted because no usable polygon remained after deterministic repair and reprojection."
+        },
+        {
+          "layer": "esds_floodmap_ext_f_c_1000",
+          "status": "processed",
+          "feature_count": 46162,
+          "empty_geometry_count_before": 0,
+          "invalid_geometry_count_before": 1974,
+          "repair_attempted": true,
+          "repaired_geometry_count": 1974,
+          "unusable_after_repair_count": 0,
+          "invalid_geometry_count_after_repair": 0,
+          "empty_geometry_count_after_repair": 0,
+          "geometry_collection_repair_count": 0,
+          "buffer_zero_fallback_count": 0,
+          "output_geometry_type_after_repair": "MultiPolygon, Polygon",
+          "output_feature_count_after_repair": 46162,
+          "dropped_unusable_feature_count": 0,
+          "output_feature_count": 46157,
+          "invalid_geometry_count_after_transform": 10,
+          "empty_geometry_count_after_transform": 0,
+          "output_geometry_type": "MultiPolygon, Polygon",
+          "post_transform_repair_attempted": true,
+          "repaired_geometry_count_after_transform": 5,
+          "unusable_after_post_transform_repair_count": 5,
+          "dropped_unusable_feature_count_after_transform": 5,
+          "invalid_geometry_count_after_post_transform_repair": 0,
+          "empty_geometry_count_after_post_transform_repair": 0,
+          "missing_optional_columns": [],
+          "valid_spatial_bounds": [
+            442721.64011998137,
+            531370.1448229564,
+            733071.1105440694,
+            950804.1938243132
+          ],
+          "warning": "5 feature(s) were omitted because no usable polygon remained after deterministic repair and reprojection."
+        }
+      ]
+    }
+  },
+  {
+    "dataset_id": "grid-customer-heatmap-download-july-2026-e27048c1f85a",
+    "domain": "grid",
+    "source_name": "ESB Networks capacity heatmap",
+    "processing_mode": "grid_excel",
+    "raw_relative_path": "data/raw/grid/customer-heatmap-download-july-2026.xlsx",
+    "file_type": "xlsx",
+    "file_size": 6929289,
+    "sha256": "5609fc4cd44c655e1d80114056efe637ee0c2d958b0099d4e6c6c4040821c5fa",
+    "discovered_at": "2026-09-07T01:33:18.933933Z",
+    "processed_at": "2026-09-07T01:33:22.156648Z",
+    "source_crs": "EPSG:4326",
+    "output_crs": "EPSG:2157",
+    "row_count": 46525,
+    "feature_count": 46525,
+    "geometry_type": "Point",
+    "processed_output_path": "data/processed/grid-customer-heatmap-download-july-2026-e27048c1f85a/grid.parquet",
+    "processed_output_paths": [
+      "data/processed/grid-customer-heatmap-download-july-2026-e27048c1f85a/grid.parquet"
+    ],
+    "status": "PROCESSED",
+    "limitations": [
+      "Public grid capacity data is indicative only.",
+      "Capacity is not treated as a guaranteed project connection."
+    ],
+    "validation_errors": [],
+    "processing_errors": [],
+    "quality": {
+      "raw_file_exists": true,
+      "raw_file_immutable": true,
+      "validation_deferred_to_processing": true,
+      "empty_geometry_count": 0,
+      "invalid_geometry_count": 0,
+      "feature_count": 46525,
+      "output_feature_count": 46525,
+      "invalid_geometry_count_after_transform": 0,
+      "empty_geometry_count_after_transform": 0,
+      "output_geometry_type": "Point",
+      "post_transform_repair_attempted": false,
+      "repaired_geometry_count_after_transform": 0,
+      "missing_optional_columns": [],
+      "valid_spatial_bounds": [
+        431452.51976656786,
+        521275.3364115631,
+        733482.9134225271,
+        958517.3702128946
+      ],
+      "invalid_coordinate_count": 2
+    }
+  },
+  {
+    "dataset_id": "grid-data-centre-connection-offer-process-and-policy-v3-may-2026-1c4c9974760e",
+    "domain": "grid",
+    "source_name": "EirGrid policy and technical documents",
+    "processing_mode": "register_only",
+    "raw_relative_path": "data/raw/grid/Data-Centre-Connection-Offer-Process-and-Policy-V3-May-2026.pdf",
+    "file_type": "pdf",
+    "file_size": 605820,
+    "sha256": "f2ecfa6fb121e9029ce8cb44a981ed3604b236e521a5b8bb7d987585f7aef5f4",
+    "discovered_at": "2026-09-07T01:03:22.640710Z",
+    "processed_at": "2026-09-07T01:16:57.526084Z",
+    "source_crs": null,
+    "output_crs": null,
+    "row_count": null,
+    "feature_count": null,
+    "geometry_type": null,
+    "processed_output_path": null,
+    "processed_output_paths": [],
+    "status": "REGISTERED_ONLY",
+    "limitations": [
+      "Registered only in Module 4A; parsing, policy rules, and RAG are deferred to Module 5."
+    ],
+    "validation_errors": [],
+    "processing_errors": [],
+    "quality": {
+      "raw_file_exists": true,
+      "raw_file_immutable": true,
+      "validation_deferred_to_processing": false
+    }
+  },
+  {
+    "dataset_id": "grid-data-centre-constrained-area-overview-may-2026-0cba04b02c3e",
+    "domain": "grid",
+    "source_name": "EirGrid policy and technical documents",
+    "processing_mode": "register_only",
+    "raw_relative_path": "data/raw/grid/Data-Centre-Constrained-Area-Overview-May-2026.pdf",
+    "file_type": "pdf",
+    "file_size": 201131,
+    "sha256": "ac86e26a4a6166aa289582e1936151f5ab4f1459ee1d00adb52a633266f7f491",
+    "discovered_at": "2026-09-07T01:03:22.640710Z",
+    "processed_at": "2026-09-07T01:16:57.526274Z",
+    "source_crs": null,
+    "output_crs": null,
+    "row_count": null,
+    "feature_count": null,
+    "geometry_type": null,
+    "processed_output_path": null,
+    "processed_output_paths": [],
+    "status": "REGISTERED_ONLY",
+    "limitations": [
+      "Registered only in Module 4A; parsing, policy rules, and RAG are deferred to Module 5."
+    ],
+    "validation_errors": [],
+    "processing_errors": [],
+    "quality": {
+      "raw_file_exists": true,
+      "raw_file_immutable": true,
+      "validation_deferred_to_processing": false
+    }
+  },
+  {
+    "dataset_id": "grid-data-centre-technical-assessment-may-2026-14c632c74fd3",
+    "domain": "grid",
+    "source_name": "EirGrid policy and technical documents",
+    "processing_mode": "register_only",
+    "raw_relative_path": "data/raw/grid/Data-Centre-Technical-Assessment-May-2026.pdf",
+    "file_type": "pdf",
+    "file_size": 286874,
+    "sha256": "9c75e2eafcd72195da280836961e2467663f5b9f15609d920fea2a206a257ed9",
+    "discovered_at": "2026-09-07T01:03:22.640710Z",
+    "processed_at": "2026-09-07T01:16:57.526416Z",
+    "source_crs": null,
+    "output_crs": null,
+    "row_count": null,
+    "feature_count": null,
+    "geometry_type": null,
+    "processed_output_path": null,
+    "processed_output_paths": [],
+    "status": "REGISTERED_ONLY",
+    "limitations": [
+      "Registered only in Module 4A; parsing, policy rules, and RAG are deferred to Module 5."
+    ],
+    "validation_errors": [],
+    "processing_errors": [],
+    "quality": {
+      "raw_file_exists": true,
+      "raw_file_immutable": true,
+      "validation_deferred_to_processing": false
+    }
+  },
+  {
+    "dataset_id": "grid-eirgrid-transmission-system-map-february-2025-727ec635d16c",
+    "domain": "grid",
+    "source_name": "EirGrid policy and technical documents",
+    "processing_mode": "register_only",
+    "raw_relative_path": "data/raw/grid/EirGrid-Transmission-System-Map-February-2025.pdf",
+    "file_type": "pdf",
+    "file_size": 3461945,
+    "sha256": "c71594299009787d7418d19930e7f279ef87ee35e8192b5f16c546de6bf7cf4d",
+    "discovered_at": "2026-09-07T01:03:22.640710Z",
+    "processed_at": "2026-09-07T01:16:57.526531Z",
+    "source_crs": null,
+    "output_crs": null,
+    "row_count": null,
+    "feature_count": null,
+    "geometry_type": null,
+    "processed_output_path": null,
+    "processed_output_paths": [],
+    "status": "REGISTERED_ONLY",
+    "limitations": [
+      "Registered only in Module 4A; parsing, policy rules, and RAG are deferred to Module 5."
+    ],
+    "validation_errors": [],
+    "processing_errors": [],
+    "quality": {
+      "raw_file_exists": true,
+      "raw_file_immutable": true,
+      "validation_deferred_to_processing": false
+    }
+  },
+  {
+    "dataset_id": "ground-ie-gsi-groundwater-vulnerability-40k-ie26-itm-359eb644df99",
+    "domain": "ground",
+    "source_name": "GSI groundwater vulnerability and karst datasets",
+    "processing_mode": "spatial_zip",
+    "raw_relative_path": "data/raw/ground/IE_GSI_Groundwater_Vulnerability_40K_IE26_ITM.zip",
+    "file_type": "zip",
+    "file_size": 148369972,
+    "sha256": "31c1d85e2045e3b6f36341e22ff5433cf215a8a2be15f482297b9954d0538784",
+    "discovered_at": "2026-09-07T01:03:22.640710Z",
+    "processed_at": "2026-09-07T01:16:57.526645Z",
+    "source_crs": "EPSG:2157",
+    "output_crs": "EPSG:2157",
+    "row_count": 221136,
+    "feature_count": 221136,
+    "geometry_type": "MultiPolygon, Polygon",
+    "processed_output_path": "data/processed/ground-ie-gsi-groundwater-vulnerability-40k-ie26-itm-359eb644df99/IE_GSI_Groundwater_Vulnerability_40K_IE26_ITM.parquet",
+    "processed_output_paths": [
+      "data/processed/ground-ie-gsi-groundwater-vulnerability-40k-ie26-itm-359eb644df99/IE_GSI_Groundwater_Vulnerability_40K_IE26_ITM.parquet"
+    ],
+    "status": "PROCESSED",
+    "limitations": [
+      "Groundwater, karst landform, and traced-connection layers remain separate outputs where source schemas differ."
+    ],
+    "validation_errors": [],
+    "processing_errors": [],
+    "quality": {
+      "raw_file_exists": true,
+      "raw_file_immutable": true,
+      "zip_member_count": 19,
+      "shapefile_layer_count": 1,
+      "shapefile_layers": [
+        "ie_gsi_groundwater_vulnerability_40k_ie26_itm"
+      ],
+      "missing_shapefile_companions": [],
+      "layers": [
+        {
+          "layer": "IE_GSI_Groundwater_Vulnerability_40K_IE26_ITM",
+          "status": "processed",
+          "feature_count": 221136,
+          "empty_geometry_count_before": 0,
+          "invalid_geometry_count_before": 0,
+          "repair_attempted": false,
+          "repaired_geometry_count": 0,
+          "unusable_after_repair_count": 0,
+          "invalid_geometry_count_after_repair": 0,
+          "empty_geometry_count_after_repair": 0,
+          "geometry_collection_repair_count": 0,
+          "buffer_zero_fallback_count": 0,
+          "output_geometry_type_after_repair": "MultiPolygon, Polygon",
+          "output_feature_count_after_repair": 221136,
+          "dropped_unusable_feature_count": 0,
+          "output_feature_count": 221136,
+          "invalid_geometry_count_after_transform": 0,
+          "empty_geometry_count_after_transform": 0,
+          "output_geometry_type": "MultiPolygon, Polygon",
+          "post_transform_repair_attempted": false,
+          "repaired_geometry_count_after_transform": 0,
+          "missing_optional_columns": [],
+          "valid_spatial_bounds": [
+            399986.5604999997,
+            499992.9251000006,
+            744883.5239000004,
+            959857.7866999991
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "dataset_id": "ground-ie-gsi-karst-datasets-40k-ie32-itm-dcd23cd05c6c",
+    "domain": "ground",
+    "source_name": "GSI groundwater vulnerability and karst datasets",
+    "processing_mode": "spatial_zip",
+    "raw_relative_path": "data/raw/ground/IE_GSI_Karst_Datasets_40K_IE32_ITM.zip",
+    "file_type": "zip",
+    "file_size": 3443849,
+    "sha256": "62acc98e3b5d1aa4eaee115d02a8e9e2e1f33e5f74ee3c0643332acd6ffa89cf",
+    "discovered_at": "2026-09-07T01:33:18.933933Z",
+    "processed_at": "2026-09-07T01:33:33.533753Z",
+    "source_crs": "EPSG:2157",
+    "output_crs": "EPSG:2157",
+    "row_count": 17859,
+    "feature_count": 17859,
+    "geometry_type": "LineString, Point",
+    "processed_output_path": "data/processed/ground-ie-gsi-karst-datasets-40k-ie32-itm-dcd23cd05c6c/IE_GSI_Karst_Landforms_40K_IE32_ITM.parquet",
+    "processed_output_paths": [
+      "data/processed/ground-ie-gsi-karst-datasets-40k-ie32-itm-dcd23cd05c6c/IE_GSI_Karst_Landforms_40K_IE32_ITM.parquet",
+      "data/processed/ground-ie-gsi-karst-datasets-40k-ie32-itm-dcd23cd05c6c/IE_GSI_Traced_Underground_Connections_40K_IE32_ITM.parquet"
+    ],
+    "status": "PROCESSED",
+    "limitations": [
+      "Groundwater, karst landform, and traced-connection layers remain separate outputs where source schemas differ."
+    ],
+    "validation_errors": [],
+    "processing_errors": [],
+    "quality": {
+      "raw_file_exists": true,
+      "raw_file_immutable": true,
+      "zip_member_count": 34,
+      "shapefile_layer_count": 2,
+      "shapefile_layers": [
+        "ie_gsi_karst_landforms_40k_ie32_itm",
+        "ie_gsi_traced_underground_connections_40k_ie32_itm"
+      ],
+      "missing_shapefile_companions": [],
+      "layers": [
+        {
+          "layer": "IE_GSI_Karst_Landforms_40K_IE32_ITM",
+          "status": "processed",
+          "empty_geometry_count": 0,
+          "invalid_geometry_count": 0,
+          "feature_count": 17291,
+          "output_feature_count": 17291,
+          "invalid_geometry_count_after_transform": 0,
+          "empty_geometry_count_after_transform": 0,
+          "output_geometry_type": "Point",
+          "post_transform_repair_attempted": false,
+          "repaired_geometry_count_after_transform": 0,
+          "missing_optional_columns": [],
+          "valid_spatial_bounds": [
+            471178.3049999997,
+            563484.0613000002,
+            744853.5241,
+            945027.0032000002
+          ]
+        },
+        {
+          "layer": "IE_GSI_Traced_Underground_Connections_40K_IE32_ITM",
+          "status": "processed",
+          "empty_geometry_count": 0,
+          "invalid_geometry_count": 0,
+          "feature_count": 568,
+          "output_feature_count": 568,
+          "invalid_geometry_count_after_transform": 0,
+          "empty_geometry_count_after_transform": 0,
+          "output_geometry_type": "LineString",
+          "post_transform_repair_attempted": false,
+          "repaired_geometry_count_after_transform": 0,
+          "missing_optional_columns": [],
+          "valid_spatial_bounds": [
+            501301.71050000004,
+            573005.2968000006,
+            743895.7165999999,
+            945027.0032000002
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "dataset_id": "heritage-smrzoneopendata-251201-e3f45c3e514f",
+    "domain": "heritage",
+    "source_name": "National Monuments Service archaeological survey",
+    "processing_mode": "spatial_zip",
+    "raw_relative_path": "data/raw/heritage/SMRZoneOpenData_251201.zip",
+    "file_type": "zip",
+    "file_size": 54662367,
+    "sha256": "0744619410dbee1039568a646f9d65ec6221f4b42623d45eba385f203792bb62",
+    "discovered_at": "2026-09-07T01:23:59.680657Z",
+    "processed_at": "2026-09-07T01:24:02.977151Z",
+    "source_crs": "EPSG:2157",
+    "output_crs": "EPSG:2157",
+    "row_count": 81409,
+    "feature_count": 81409,
+    "geometry_type": "Polygon",
+    "processed_output_path": "data/processed/heritage-smrzoneopendata-251201-e3f45c3e514f/SMRZoneOpenData_251201.parquet",
+    "processed_output_paths": [
+      "data/processed/heritage-smrzoneopendata-251201-e3f45c3e514f/SMRZoneOpenData_251201.parquet"
+    ],
+    "status": "PROCESSED",
+    "limitations": [
+      "Long WEB_NOTES and REFERENCES_ fields are excluded from core processed features.",
+      "This source currently exposes ZONE_ID and geometry rather than the richer archaeological survey fields; missing fields are recorded.",
+      "The source contained invalid polygon geometry; the generated copy uses deterministic make_valid repair and must not be treated as originally clean."
+    ],
+    "validation_errors": [],
+    "processing_errors": [],
+    "quality": {
+      "raw_file_exists": true,
+      "raw_file_immutable": true,
+      "zip_member_count": 8,
+      "shapefile_layer_count": 1,
+      "shapefile_layers": [
+        "smrzoneopendata_251201"
+      ],
+      "missing_shapefile_companions": [],
+      "layers": [
+        {
+          "layer": "SMRZoneOpenData_251201",
+          "status": "processed",
+          "feature_count": 81409,
+          "empty_geometry_count_before": 0,
+          "invalid_geometry_count_before": 458,
+          "repair_attempted": true,
+          "repaired_geometry_count": 458,
+          "unusable_after_repair_count": 0,
+          "invalid_geometry_count_after_repair": 0,
+          "empty_geometry_count_after_repair": 0,
+          "geometry_collection_repair_count": 0,
+          "buffer_zero_fallback_count": 0,
+          "output_geometry_type_after_repair": "Polygon",
+          "output_feature_count_after_repair": 81409,
+          "dropped_unusable_feature_count": 0,
+          "output_feature_count": 81409,
+          "invalid_geometry_count_after_transform": 0,
+          "empty_geometry_count_after_transform": 0,
+          "output_geometry_type": "Polygon",
+          "post_transform_repair_attempted": false,
+          "repaired_geometry_count_after_transform": 0,
+          "missing_optional_columns": [
+            "SMRS",
+            "COUNTY",
+            "TOWNLAND",
+            "MONUMENT_CLASS",
+            "ZONE_ID_1",
+            "ITM_E",
+            "ITM_N",
+            "WEBSITE_LINK",
+            "ENTITY_ID",
+            "CLASS_CODE"
+          ],
+          "valid_spatial_bounds": [
+            420630.0245000003,
+            520158.0974000003,
+            733803.0,
+            7877245.0
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "dataset_id": "planning-irishplanningapplications-7549531114849704649-b6efee79afc3",
+    "domain": "planning",
+    "source_name": "National Irish Planning Applications",
+    "processing_mode": "planning_geojson",
+    "raw_relative_path": "data/raw/planning/IrishPlanningApplications_7549531114849704649.geojson",
+    "file_type": "geojson",
+    "file_size": 714389685,
+    "sha256": "6ce16b7f1fbb7744f35fd774543cbb57dabec5f8caa55d510c90ae4004b75521",
+    "discovered_at": "2026-09-07T01:03:22.640710Z",
+    "processed_at": "2026-09-07T01:20:02.825691Z",
+    "source_crs": "EPSG:3857",
+    "output_crs": "EPSG:2157",
+    "row_count": 504425,
+    "feature_count": 504425,
+    "geometry_type": "Point",
+    "processed_output_path": "data/processed/planning-irishplanningapplications-7549531114849704649-b6efee79afc3.parquet",
+    "processed_output_paths": [
+      "data/processed/planning-irishplanningapplications-7549531114849704649-b6efee79afc3.parquet"
+    ],
+    "status": "PROCESSED",
+    "limitations": [
+      "Applicant personal information is excluded from processed outputs."
+    ],
+    "validation_errors": [],
+    "processing_errors": [],
+    "quality": {
+      "raw_file_exists": true,
+      "raw_file_immutable": true,
+      "validation_deferred_to_processing": true,
+      "source_size_bytes": 714389685,
+      "empty_geometry_count": 0,
+      "invalid_geometry_count": 0,
+      "feature_count": 504425,
+      "output_feature_count": 504425,
+      "invalid_geometry_count_after_transform": 0,
+      "empty_geometry_count_after_transform": 0,
+      "output_geometry_type": "Point",
+      "post_transform_repair_attempted": false,
+      "repaired_geometry_count_after_transform": 0,
+      "missing_optional_columns": [],
+      "valid_spatial_bounds": [
+        431253.21659655124,
+        520900.3385977583,
+        733478.2395027934,
+        959228.4166018819
+      ],
+      "excluded_personal_columns": [
+        "ApplicantForename",
+        "ApplicantSurname",
+        "ApplicantAddress"
+      ]
+    }
+  },
+  {
+    "dataset_id": "water-dublin-wastewater-treatment-capacity-register-uisce-ireann-formerly-irish-water-d2a7ed4caa5d",
+    "domain": "water",
+    "source_name": "Uisce \u00c9ireann capacity-register documents",
+    "processing_mode": "register_only",
+    "raw_relative_path": "data/raw/water/Dublin _ Wastewater Treatment Capacity Register _ Uisce \u00c9ireann (formerly Irish Water).pdf",
+    "file_type": "pdf",
+    "file_size": 1268317,
+    "sha256": "61b6a0bbbdc3378bee5a801427e98ad268a24a2dd3861255798fd05f9ad09a41",
+    "discovered_at": "2026-09-07T01:03:22.640710Z",
+    "processed_at": "2026-09-07T01:20:51.536625Z",
+    "source_crs": null,
+    "output_crs": null,
+    "row_count": null,
+    "feature_count": null,
+    "geometry_type": null,
+    "processed_output_path": null,
+    "processed_output_paths": [],
+    "status": "REGISTERED_ONLY",
+    "limitations": [
+      "Registered only; reliable structured extraction is deferred.",
+      "Capacity indications are not treated as guaranteed connections."
+    ],
+    "validation_errors": [],
+    "processing_errors": [],
+    "quality": {
+      "raw_file_exists": true,
+      "raw_file_immutable": true,
+      "validation_deferred_to_processing": false
+    }
+  },
+  {
+    "dataset_id": "water-dublin-water-supply-capacity-register-uisce-ireann-formerly-irish-water-c6f8f0e390a2",
+    "domain": "water",
+    "source_name": "Uisce \u00c9ireann capacity-register documents",
+    "processing_mode": "register_only",
+    "raw_relative_path": "data/raw/water/Dublin _ Water Supply Capacity Register _ Uisce \u00c9ireann (formerly Irish Water).pdf",
+    "file_type": "pdf",
+    "file_size": 1272724,
+    "sha256": "1b6be89729cbc430ce9e97c5d4cf2512a1860027f7ff3c03877d4161c7a3989a",
+    "discovered_at": "2026-09-07T01:03:22.640710Z",
+    "processed_at": "2026-09-07T01:20:51.536743Z",
+    "source_crs": null,
+    "output_crs": null,
+    "row_count": null,
+    "feature_count": null,
+    "geometry_type": null,
+    "processed_output_path": null,
+    "processed_output_paths": [],
+    "status": "REGISTERED_ONLY",
+    "limitations": [
+      "Registered only; reliable structured extraction is deferred.",
+      "Capacity indications are not treated as guaranteed connections."
+    ],
+    "validation_errors": [],
+    "processing_errors": [],
+    "quality": {
+      "raw_file_exists": true,
+      "raw_file_immutable": true,
+      "validation_deferred_to_processing": false
+    }
+  },
+  {
+    "dataset_id": "zoning-gzt-current-plan-2310574026033171506-7f09d2ecc27a",
+    "domain": "zoning",
+    "source_name": "MyPlan / GZT Current Plan",
+    "processing_mode": "zoning_csv",
+    "raw_relative_path": "data/raw/zoning/GZT_Current_Plan_2310574026033171506.csv",
+    "file_type": "csv",
+    "file_size": 43531026,
+    "sha256": "c4ba03c13634de1f186594b489c3fc0d2532407bc980e6a8abd8b4031da9ffac",
+    "discovered_at": "2026-09-07T01:03:22.640710Z",
+    "processed_at": "2026-09-07T01:20:51.536808Z",
+    "source_crs": null,
+    "output_crs": null,
+    "row_count": 85330,
+    "feature_count": null,
+    "geometry_type": null,
+    "processed_output_path": "data/processed/zoning-gzt-current-plan-2310574026033171506-7f09d2ecc27a.parquet",
+    "processed_output_paths": [
+      "data/processed/zoning-gzt-current-plan-2310574026033171506-7f09d2ecc27a.parquet"
+    ],
+    "status": "PROCESSED",
+    "limitations": [
+      "This CSV is tabular only and does not contain usable polygon geometry.",
+      "Shape__Area and Shape__Length are not treated as site geometry.",
+      "Official MyPlan spatial service retrieval is deferred and is not called in Module 4A.",
+      "No polygon geometry was generated from Shape__Area or Shape__Length.",
+      "Official MyPlan spatial service retrieval is deferred beyond Module 4A."
+    ],
+    "validation_errors": [],
+    "processing_errors": [],
+    "quality": {
+      "raw_file_exists": true,
+      "raw_file_immutable": true,
+      "columns": [
+        "OBJECTID",
+        "GZT Zone",
+        "Zone Original",
+        "Zone Description",
+        "Zone Link",
+        "Plan From",
+        "Plan To",
+        "Plan Name",
+        "Color",
+        "Local Authority",
+        "GZT Description",
+        "Link to GZT",
+        "Upload Date",
+        "Current Plan",
+        "Plan Level",
+        "Standardised Zoning Objective",
+        "Plan ID",
+        "LA Name",
+        "Shape__Area",
+        "Shape__Length",
+        "Zone Description"
+      ],
+      "missing_expected_columns": [],
+      "duplicate_headers": [
+        "Zone Description"
+      ],
+      "columns_written": [
+        "OBJECTID",
+        "GZT Zone",
+        "Zone Original",
+        "Zone Description",
+        "Zone Link",
+        "Plan From",
+        "Plan To",
+        "Plan Name",
+        "Color",
+        "Local Authority",
+        "GZT Description",
+        "Link to GZT",
+        "Upload Date",
+        "Current Plan",
+        "Plan Level",
+        "Standardised Zoning Objective",
+        "Plan ID",
+        "LA Name"
+      ],
+      "duplicate_plan_id_values": 85330,
+      "geometry_available": false
+    }
+  }
+]

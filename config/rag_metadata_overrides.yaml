@@ -1,0 +1,326 @@
+version: 1
+
+documents:
+  data/rag/primary/ireland/cru/current/CRU2025236_Large_Energy_User_connection_policy_decision_paper.pdf:
+    title: Large Energy User Connection Policy — Decision Paper CRU/2025236
+    issuer: Commission for Regulation of Utilities (CRU)
+    document_type: REGULATORY_DECISION
+    publication_date: '2025-12-12'
+    effective_date: '2025-12-12'
+    version: CRU/2025236
+    document_status: CURRENT
+    jurisdiction: IRELAND
+    jurisdiction_detail: Ireland
+    applicable_domains: [GRID, ENERGY, DATA_CENTRE_POLICY]
+    supersedes_path: data/rag/primary/ireland/cru/historical_proposed/CRU202504 LEU connection policy proposed decision_0.pdf
+    notes:
+      - Final/current CRU decision paper.
+      - Capacity accommodation remains a System Operator determination.
+    source_url: https://cruie-live-96ca64acab2247eca8a850a7e54b-5b34f62.divio-media.com/documents/CRU2025236_Large_Energy_User_connection_policy_decision_paper.pdf
+
+  data/rag/primary/ireland/cru/current/CRU202504 LEU connection policy proposed decision.pdf:
+    title: Large Energy User Connection Policy — Proposed Decision CRU/202504
+    issuer: Commission for Regulation of Utilities (CRU)
+    document_type: CONSULTATION_OR_PROPOSAL
+    document_status: PROPOSED
+    jurisdiction: IRELAND
+    jurisdiction_detail: Ireland
+    retrieval_eligible: true
+    requires_human_review: true
+    applicable_domains: [GRID, ENERGY, DATA_CENTRE_POLICY]
+    duplicate_of_path: data/rag/primary/ireland/cru/historical_proposed/CRU202504 LEU connection policy proposed decision_0.pdf
+    publication_date: '2025-02-18'
+    version: CRU/202504
+    notes:
+      - Filename/content identify a proposed decision; the current-folder placement does not make it current policy.
+      - Duplicate of the retained historical/proposed source-path record.
+
+  data/rag/primary/ireland/cru/historical_proposed/CRU202504 LEU connection policy proposed decision_0.pdf:
+    title: Large Energy User Connection Policy — Proposed Decision CRU/202504
+    issuer: Commission for Regulation of Utilities (CRU)
+    document_type: CONSULTATION_OR_PROPOSAL
+    document_status: PROPOSED
+    jurisdiction: IRELAND
+    jurisdiction_detail: Ireland
+    retrieval_eligible: true
+    requires_human_review: true
+    applicable_domains: [GRID, ENERGY, DATA_CENTRE_POLICY]
+    publication_date: '2025-02-18'
+    version: CRU/202504
+    notes:
+      - Proposed/historical policy paper; not the current final policy.
+
+  data/rag/primary/ireland/planning/national/1_National-Planning-Framework-First-Revision-April-2025.pdf:
+    title: National Planning Framework — First Revision
+    issuer: Government of Ireland
+    document_type: NATIONAL_PLANNING_FRAMEWORK
+    publication_date: '2025-04'
+    document_status: CURRENT
+    jurisdiction: IRELAND
+    jurisdiction_detail: Ireland
+    version: First Revision
+    applicable_domains: [PLANNING, INFRASTRUCTURE]
+    notes:
+      - Month precision is retained from the filename; no day was inferred.
+
+  data/rag/primary/ireland/planning/local_authority/fingal/fingal-development-plan-2023-2029-written-statement-consolidated-1.pdf:
+    title: Fingal Development Plan 2023–2029 — Written Statement Consolidated
+    issuer: Fingal County Council
+    document_type: LOCAL_DEVELOPMENT_PLAN
+    document_status: CURRENT
+    jurisdiction: LOCAL_AUTHORITY
+    jurisdiction_detail: Fingal
+    publication_date: '2026-03'
+    version: 2023-2029 consolidated
+    applicable_domains: [PLANNING]
+
+  data/rag/primary/ireland/planning/local_authority/fingal/fingal-development-plan-2023-2029-appendices-consolidated-1.pdf:
+    title: Fingal Development Plan 2023–2029 — Appendices Consolidated
+    issuer: Fingal County Council
+    document_type: LOCAL_DEVELOPMENT_PLAN_APPENDICES
+    document_status: CURRENT
+    jurisdiction: LOCAL_AUTHORITY
+    jurisdiction_detail: Fingal
+    publication_date: '2026-03'
+    version: 2023-2029 consolidated
+    applicable_domains: [PLANNING]
+
+  data/rag/primary/ireland/government/energy/Private_Wires_Policy_Statement.pdf:
+    title: Private Wires Policy Statement
+    document_type: GOVERNMENT_POLICY
+    document_status: CURRENT
+    jurisdiction: IRELAND
+    jurisdiction_detail: Ireland
+    issuer: Department of Climate, Energy and the Environment
+    publication_date: '2025-07'
+    notes:
+      - Month precision is retained from the cover; no day was inferred.
+    applicable_domains: [ENERGY, INFRASTRUCTURE]
+
+  data/rag/primary/ireland/government/energy/private_wires/Annex_I_-_General_Scheme_-_Private_Wires_Bill_2025_Amendments_to_Electricity_Regulation_Act_1999.pdf:
+    title: General Scheme — Private Wires Bill 2025 Amendments to Electricity Regulation Act 1999
+    document_type: BILL_GENERAL_SCHEME
+    document_status: PROPOSED
+    jurisdiction: IRELAND
+    jurisdiction_detail: Ireland
+    issuer: Department of Climate, Energy and the Environment
+    publication_date: '2025'
+    version: General Scheme 2025
+    requires_human_review: true
+    applicable_domains: [ENERGY, INFRASTRUCTURE]
+
+  data/rag/supporting/public_bodies/energy_policy/National_Energy_Demand_Strategy_Annual_Update_2026.pdf:
+    title: National Energy Demand Strategy — Annual Update 2026
+    document_type: ENERGY_POLICY_UPDATE
+    document_status: CURRENT
+    jurisdiction: IRELAND
+    jurisdiction_detail: Ireland
+    applicable_domains: [ENERGY, DATA_CENTRE_POLICY]
+
+  data/rag/supporting/public_bodies/infrastructure_policy/Accelerating_Infrastructure_Report_and_Action_Plan.pdf:
+    title: Accelerating Infrastructure Report and Action Plan
+    document_type: INFRASTRUCTURE_POLICY_REPORT
+    document_status: CURRENT
+    jurisdiction: IRELAND
+    jurisdiction_detail: Ireland
+    applicable_domains: [INFRASTRUCTURE, PLANNING]
+
+  data/rag/governance/responsible_ai/EU AI Act - DETE.pdf:
+    issuer: Department of Enterprise, Tourism and Employment (DETE)
+    document_type: RESPONSIBLE_AI_GOVERNANCE
+    jurisdiction: EUROPEAN_UNION
+    jurisdiction_detail: European Union
+    document_status: SUPPORTING
+    retrieval_eligible: false
+    requires_human_review: true
+    applicable_domains: [RESPONSIBLE_AI]
+
+  data/rag/primary/eu/biodiversity/Birds Directive - Environment - European Commission.pdf:
+    title: Birds Directive
+    issuer: European Commission
+    document_type: EU_BIODIVERSITY_POLICY_OVERVIEW
+    jurisdiction: EUROPEAN_UNION
+    jurisdiction_detail: European Union
+    applicable_domains: [BIODIVERSITY, ENVIRONMENT]
+    notes:
+      - European Commission overview material; it is not treated as the authentic legislative text.
+
+  data/rag/primary/eu/biodiversity/CELEX_01992L0043-20250714_EN_TXT.pdf:
+    title: Council Directive 92/43/EEC on the conservation of natural habitats and of wild fauna and flora
+    issuer: Council of the European Communities
+    document_type: EU_HABITATS_DIRECTIVE
+    jurisdiction: EUROPEAN_UNION
+    jurisdiction_detail: European Union
+    publication_date: '1992-05-21'
+    version: Consolidated text 2025-07-14
+    applicable_domains: [BIODIVERSITY, ENVIRONMENT]
+    notes:
+      - Directive date is taken from the document title page; the consolidated-text date is retained from the filename.
+      - The PDF itself warns that the authentic versions are the Official Journal texts available in EUR-Lex.
+
+  data/rag/primary/eu/biodiversity/CELEX_32009L0147_EN_TXT.pdf:
+    title: Directive 2009/147/EC on the conservation of wild birds
+    issuer: European Parliament and Council of the European Union
+    document_type: EU_BIRDS_DIRECTIVE
+    jurisdiction: EUROPEAN_UNION
+    jurisdiction_detail: European Union
+    publication_date: '2009-11-30'
+    version: Directive 2009/147/EC codified version
+    applicable_domains: [BIODIVERSITY, ENVIRONMENT]
+
+  data/rag/primary/eu/energy/CELEX_32023L1791_EN_TXT.pdf:
+    title: Directive (EU) 2023/1791 on energy efficiency
+    issuer: European Parliament and Council of the European Union
+    document_type: EU_ENERGY_EFFICIENCY_DIRECTIVE
+    jurisdiction: EUROPEAN_UNION
+    jurisdiction_detail: European Union
+    publication_date: '2023-09-13'
+    version: Directive (EU) 2023/1791 recast
+    applicable_domains: [ENERGY, EU_REPORTING]
+
+  data/rag/primary/eu/energy/Renewable Energy Directive.pdf:
+    title: Renewable Energy Directive
+    issuer: European Commission
+    document_type: EU_RENEWABLE_ENERGY_POLICY_OVERVIEW
+    jurisdiction: EUROPEAN_UNION
+    jurisdiction_detail: European Union
+    applicable_domains: [ENERGY, ENVIRONMENT]
+    notes:
+      - Overview material; no legal publication date or directive version is inferred from the summary PDF.
+
+  data/rag/primary/eu/environment/CELEX_02011L0092-20140515_EN_TXT.pdf:
+    title: Directive 2011/92/EU on the assessment of the effects of certain public and private projects on the environment
+    issuer: European Parliament and Council of the European Union
+    document_type: EU_ENVIRONMENTAL_IMPACT_ASSESSMENT_DIRECTIVE
+    jurisdiction: EUROPEAN_UNION
+    jurisdiction_detail: European Union
+    publication_date: '2011-12-13'
+    version: Directive 2011/92/EU codification; consolidated text 2014-05-15
+    applicable_domains: [ENVIRONMENT, PLANNING]
+    notes:
+      - Directive date is taken from the document title page; the consolidated-text date is retained from the filename.
+
+  data/rag/primary/ireland/government/government-statement-on-the-role-of-data-centres-in-irelands-enterprise-strategy.pdf:
+    title: Government Statement on the Role of Data Centres in Ireland's Enterprise Strategy
+    issuer: Government of Ireland
+    document_type: GOVERNMENT_POLICY_STATEMENT
+    jurisdiction: IRELAND
+    jurisdiction_detail: Ireland
+    publication_date: '2022-07'
+    applicable_domains: [DATA_CENTRE_POLICY, ENERGY]
+    notes:
+      - Month precision is retained from the cover; no day was inferred.
+
+  data/rag/primary/ireland/government/leap-large-energy-user-action-plan.pdf:
+    title: Government Large Energy User Action Plan (LEAP)
+    issuer: Department of Enterprise, Tourism and Employment (DETE)
+    document_type: GOVERNMENT_POLICY_ACTION_PLAN
+    jurisdiction: IRELAND
+    jurisdiction_detail: Ireland
+    publication_date: '2026-01-13'
+    applicable_domains: [ENERGY, DATA_CENTRE_POLICY, INFRASTRUCTURE]
+    notes:
+      - Publication date and issuer are supported by the organised curated source registry.
+
+  data/raw/grid/Data-Centre-Connection-Offer-Process-and-Policy-V3-May-2026.pdf:
+    title: Demand Connections — Data Centre Connection Offer Process and Policy Version 3
+    issuer: EirGrid
+    document_type: SYSTEM_OPERATOR_PROCEDURE
+    jurisdiction: IRELAND
+    jurisdiction_detail: Ireland
+    publication_date: '2026-05-20'
+    version: Version 3
+    applicable_domains: [GRID, ENERGY]
+    source_url: https://www.eirgrid.ie/industry/becoming-customer/demand-connections
+
+  data/raw/grid/Data-Centre-Constrained-Area-Overview-May-2026.pdf:
+    title: Data Centre Constrained Area Overview
+    issuer: EirGrid
+    document_type: SYSTEM_OPERATOR_TECHNICAL_OVERVIEW
+    jurisdiction: IRELAND
+    jurisdiction_detail: Ireland
+    publication_date: '2026-05'
+    applicable_domains: [GRID, ENERGY]
+    notes:
+      - Month precision is retained from the cover; no day was inferred.
+    source_url: https://www.eirgrid.ie/industry/becoming-customer/demand-connections
+
+  data/raw/grid/Data-Centre-Technical-Assessment-May-2026.pdf:
+    title: Data Centre Technical Assessment
+    issuer: EirGrid
+    document_type: SYSTEM_OPERATOR_TECHNICAL_ASSESSMENT
+    jurisdiction: IRELAND
+    jurisdiction_detail: Ireland
+    publication_date: '2026-05'
+    applicable_domains: [GRID, ENERGY]
+    notes:
+      - Month precision is retained from the cover; no day was inferred.
+    source_url: https://www.eirgrid.ie/industry/becoming-customer/demand-connections
+
+  data/raw/grid/EirGrid-Transmission-System-Map-February-2025.pdf:
+    title: EirGrid Transmission System Map
+    issuer: EirGrid
+    document_type: SYSTEM_OPERATOR_SYSTEM_MAP
+    jurisdiction: IRELAND
+    jurisdiction_detail: Ireland
+    publication_date: '2025-02'
+    applicable_domains: [GRID]
+    notes:
+      - Month precision is retained from the filename; the map page is visual and has no extractable text.
+
+  data/raw/water/Dublin _ Wastewater Treatment Capacity Register _ Uisce Éireann (formerly Irish Water).pdf:
+    title: Dublin Wastewater Treatment Capacity Register
+    issuer: Uisce Éireann
+    document_type: WATER_CAPACITY_REGISTER
+    jurisdiction: IRELAND
+    jurisdiction_detail: Ireland
+    applicable_domains: [WATER, INFRASTRUCTURE]
+    notes:
+      - The register itself states that capacity is indicative and subject to change; no issue date is visible in the extracted cover text.
+
+  data/raw/water/Dublin _ Water Supply Capacity Register _ Uisce Éireann (formerly Irish Water).pdf:
+    title: Dublin Water Supply Capacity Register
+    issuer: Uisce Éireann
+    document_type: WATER_CAPACITY_REGISTER
+    jurisdiction: IRELAND
+    jurisdiction_detail: Ireland
+    applicable_domains: [WATER, INFRASTRUCTURE]
+    notes:
+      - The register itself states that capacity is indicative and subject to change; no issue date is visible in the extracted cover text.
+
+  data/rag/curated/ireland_datacentre_screening/rag_records.jsonl:
+    title: Curated Ireland data-centre screening records
+    document_type: CURATED_KNOWLEDGE_RECORDS
+    document_status: SUPPORTING
+    retrieval_eligible: true
+    applicable_domains: [DATA_CENTRE_POLICY, GENERAL]
+    notes:
+      - Records remain atomic and preserve their own source references and quality metadata.
+
+  data/rag/curated/ireland_datacentre_screening/source_registry.json:
+    title: Curated RAG source registry
+    document_type: CURATED_PROVENANCE_METADATA
+    document_status: SUPPORTING
+    retrieval_eligible: false
+    applicable_domains: [GENERAL]
+
+  data/rag/curated/ireland_datacentre_screening/review_flags.jsonl:
+    title: Curated RAG review flags
+    document_type: CURATED_REVIEW_METADATA
+    document_status: SUPPORTING
+    retrieval_eligible: false
+    applicable_domains: [GENERAL]
+
+  data/rag/curated/ireland_datacentre_screening/rag_record_schema.json:
+    title: Curated RAG record schema
+    document_type: CURATED_SCHEMA
+    document_status: SUPPORTING
+    retrieval_eligible: false
+    applicable_domains: [GENERAL]
+
+  data/rag/curated/ireland_datacentre_screening/retrieval_eval_cases.jsonl:
+    title: Curated RAG retrieval evaluation cases
+    document_type: CURATED_EVALUATION_CASES
+    document_status: SUPPORTING
+    retrieval_eligible: false
+    applicable_domains: [GENERAL]

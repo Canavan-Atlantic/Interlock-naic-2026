@@ -1,0 +1,13 @@
+# Large permitted project data is stored through Git LFS.
+data/raw/planning/IrishPlanningApplications_7549531114849704649.geojson filter=lfs diff=lfs merge=lfs -text
+data/processed/ground-ie-gsi-groundwater-vulnerability-40k-ie26-itm-359eb644df99/IE_GSI_Groundwater_Vulnerability_40K_IE26_ITM.parquet filter=lfs diff=lfs merge=lfs -text
+data/raw/ground/IE_GSI_Groundwater_Vulnerability_40K_IE26_ITM.zip filter=lfs diff=lfs merge=lfs -text
+data/raw/flood/esds_floodmap_ext_f_c.zip filter=lfs diff=lfs merge=lfs -text
+data/rag/primary/ireland/planning/local_authority/fingal/fingal-development-plan-2023-2029-written-statement-consolidated-1.pdf filter=lfs diff=lfs merge=lfs -text
+data/processed/flood-esds-floodmap-ext-f-c-867e0faca644/esds_floodmap_ext_f_c_1000.parquet filter=lfs diff=lfs merge=lfs -text
+data/processed/flood-esds-floodmap-ext-f-c-867e0faca644/esds_floodmap_ext_f_c_0100.parquet filter=lfs diff=lfs merge=lfs -text
+data/processed/flood-esds-floodmap-ext-f-c-867e0faca644/esds_floodmap_ext_f_c_0010.parquet filter=lfs diff=lfs merge=lfs -text
+data/processed/heritage-smrzoneopendata-251201-e3f45c3e514f/SMRZoneOpenData_251201.parquet filter=lfs diff=lfs merge=lfs -text
+data/processed/planning-irishplanningapplications-7549531114849704649-b6efee79afc3.parquet filter=lfs diff=lfs merge=lfs -text
+data/processed/biodiversity-special-area-of-conservation-sac-itm-2026-01-744f84c8f69a/SAC_ITM_2026_01.parquet filter=lfs diff=lfs merge=lfs -text
+data/raw/heritage/SMRZoneOpenData_251201.zip filter=lfs diff=lfs merge=lfs -text

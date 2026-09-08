@@ -1,0 +1,29 @@
+{
+  "document_id": "rag-ireland-datacenter-screening-data-565160afbf0f",
+  "source_path": "data/rag/supporting/research/screening/ireland datacenter screening data.pdf",
+  "page_count": 2,
+  "no_text_pages": [],
+  "pages": [
+    {
+      "page": 1,
+      "text": "Ireland Data Centre Screening Matrix\nQuantitative Criteria and Regulatory Indicators for AI Agent Integration\n1. Core Grid & Access Hard Data (Fatal Flaw Thresholds)\n• Grid Consumption Share (22%): In 2024, data centres consumed 22% of Ireland's total metered\nelectricity. This rapid growth has reached grid capacity limits.\n• PR6 Investment Period Constraint (to 2030): System operators (EirGrid & ESB Networks) grid\ninvestment under the Price Review 6 (PR6) period (up to 2030) provides no additional capacity\nallowance for new data centre projects in the Greater Dublin Area unless they hold existing\nconnection contracts. The probability of connection for new Dublin sites without an active contract is\nnear 0%.\n• Strategic Green Energy Parks Scale: Regionally directed strategic hubs target large-scale\nco-located projects with a planning capacity in the hundreds of megawatts (MW).\n2. Green Energy & Co-location Quantitative Benchmarks\n• Corporate Power Purchase Agreements (CPPAs): New site selections must strictly bind to\nrenewable energy via CPPAs. Large-scale onshore/offshore wind and solar projects have\ntransitioned fully away from Public Service Obligation (PSO) subsidies to private CPPA structures.\n• National Biomethane Target (5.7 TWh): The Irish government has set a target of 5.7\nTerawatt-hours (TWh) of biomethane by 2030. Under the CRU December 2025 Large Energy User\nconnection policy, new data centres must provide dispatchable backup generation, with explicit\npolicy preferences for utilizing indigenous biomethane.\n3. EU Energy Efficiency & Digital Sovereignty Compliance\n• EU Tech Sovereignty Package: Formally adopted on June 3, 2026, establishing strict data centre\nperformance and governance mandates.\n• Mandatory Energy Efficiency Rating & Label: Following the 2024 baselining, the EU is rolling out\na Delegated Regulation that automatically generates an Electronic Sustainability Label and a\nmandatory rating classification based on actual data center operational metrics.\n• Minimum Performance Standards: Phased mandatory phase-out of low-efficiency,\nhigh-energy-consuming legacy infrastructure.\n4. Economic Impact & Investment Background Data\n• Tech Sector Output (20% GVA): The digital infrastructure-supported tech ecosystem contributed\napproximately €95 billion in 2023, representing 20% of Ireland's total Gross Value Added.\n• Employment Contribution (7%): As of Q4 2024, the sector directly employs 182,900 people (7% of\nIreland's workforce), with 21,000 workers specifically dedicated to data centre operations and direct\n",
+      "has_text": true,
+      "images": 0,
+      "drawings": 0,
+      "links": 0,
+      "width": 612.0,
+      "height": 792.0
+    },
+    {
+      "page": 2,
+      "text": "ecosystem services.\n• Global Investment Benchmarks: Global data centre investments doubled compared to 2022,\nreaching $500 billion in 2024. Global data centre power consumption stood at 415 TWh in 2024\n(1.5% of global power) and is projected to more than double by 2030.\n5. Regulatory Roadmap & AI Agent Compliance Calendar\nTimeline\nAuthority / Actor\nRegulatory Constraint / Objective\nFrom 2026\nEirGrid & ESB Networks\nEnforce rigid PR6 capital budgets; no new grid expansion\nfor uncontracted Dublin sites.\nWithin 2026\nDETE\nPublish National Planning Statement mapping out legally\nprotected Sustainable Energy Parks.\n2026 - 2027\nEU / Member States\nFull rollout of the June 2026 Energy Efficiency Labeling\nAct with rectification deadlines.\n2028+\nCRU & DECC\nImplement National Energy Demand Strategy (NEDS)\nwith stackable network tariffs rewarding load flexibility.\n",
+      "has_text": true,
+      "images": 0,
+      "drawings": 11,
+      "links": 0,
+      "width": 612.0,
+      "height": 792.0
+    }
+  ],
+  "ocr_used": false
+}

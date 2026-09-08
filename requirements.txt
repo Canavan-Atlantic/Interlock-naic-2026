@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+streamlit
+requests
+pytest
+httpx
+pandas
+geopandas
+pyarrow
+openpyxl
+PyYAML
+PyMuPDF
+python-docx
+numpy
+openai
+tiktoken

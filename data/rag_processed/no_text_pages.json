@@ -1,0 +1,149 @@
+{
+  "generated_at": "2026-09-08T00:28:07.849434+00:00",
+  "pages": [
+    {
+      "document_id": "rag-leap-large-energy-user-action-plan-486457470aff",
+      "title": "Government Large Energy User Action Plan (LEAP)",
+      "page": 1,
+      "source_path": "data/rag/primary/ireland/government/leap-large-energy-user-action-plan.pdf",
+      "classification": "COVER_TITLE",
+      "manual_review_required": false,
+      "basis": "Cover page contains image/design elements and is followed by the contents page.",
+      "images": 1,
+      "drawings": 1,
+      "links": 0
+    },
+    {
+      "document_id": "rag-leap-large-energy-user-action-plan-486457470aff",
+      "title": "Government Large Energy User Action Plan (LEAP)",
+      "page": 32,
+      "source_path": "data/rag/primary/ireland/government/leap-large-energy-user-action-plan.pdf",
+      "classification": "MAP_FIGURE",
+      "manual_review_required": true,
+      "basis": "Final LEAP graphic page; surrounding text identifies an illustrative green-energy-park graphic.",
+      "images": 0,
+      "drawings": 44,
+      "links": 0
+    },
+    {
+      "document_id": "rag-fingal-development-plan-2023-2029-appendices-consolidated-1-f1b259f0e43a",
+      "title": "Fingal Development Plan 2023–2029 — Appendices Consolidated",
+      "page": 145,
+      "source_path": "data/rag/primary/ireland/planning/local_authority/fingal/fingal-development-plan-2023-2029-appendices-consolidated-1.pdf",
+      "classification": "MAP_FIGURE",
+      "manual_review_required": true,
+      "basis": "Image-only Architectural Conservation Area map/figure between labelled ACA pages.",
+      "images": 1,
+      "drawings": 0,
+      "links": 0
+    },
+    {
+      "document_id": "rag-fingal-development-plan-2023-2029-appendices-consolidated-1-f1b259f0e43a",
+      "title": "Fingal Development Plan 2023–2029 — Appendices Consolidated",
+      "page": 147,
+      "source_path": "data/rag/primary/ireland/planning/local_authority/fingal/fingal-development-plan-2023-2029-appendices-consolidated-1.pdf",
+      "classification": "MAP_FIGURE",
+      "manual_review_required": true,
+      "basis": "Image-only Architectural Conservation Area map/figure between labelled ACA pages.",
+      "images": 1,
+      "drawings": 0,
+      "links": 0
+    },
+    {
+      "document_id": "rag-fingal-development-plan-2023-2029-appendices-consolidated-1-f1b259f0e43a",
+      "title": "Fingal Development Plan 2023–2029 — Appendices Consolidated",
+      "page": 155,
+      "source_path": "data/rag/primary/ireland/planning/local_authority/fingal/fingal-development-plan-2023-2029-appendices-consolidated-1.pdf",
+      "classification": "MAP_FIGURE",
+      "manual_review_required": true,
+      "basis": "Image-only Architectural Conservation Area map/figure between labelled ACA pages.",
+      "images": 1,
+      "drawings": 0,
+      "links": 0
+    },
+    {
+      "document_id": "rag-fingal-development-plan-2023-2029-appendices-consolidated-1-f1b259f0e43a",
+      "title": "Fingal Development Plan 2023–2029 — Appendices Consolidated",
+      "page": 168,
+      "source_path": "data/rag/primary/ireland/planning/local_authority/fingal/fingal-development-plan-2023-2029-appendices-consolidated-1.pdf",
+      "classification": "MAP_FIGURE",
+      "manual_review_required": true,
+      "basis": "Image-only Architectural Conservation Area map/figure between labelled ACA pages.",
+      "images": 1,
+      "drawings": 0,
+      "links": 0
+    },
+    {
+      "document_id": "rag-fingal-development-plan-2023-2029-appendices-consolidated-1-f1b259f0e43a",
+      "title": "Fingal Development Plan 2023–2029 — Appendices Consolidated",
+      "page": 290,
+      "source_path": "data/rag/primary/ireland/planning/local_authority/fingal/fingal-development-plan-2023-2029-appendices-consolidated-1.pdf",
+      "classification": "MAP_FIGURE",
+      "manual_review_required": true,
+      "basis": "Visual open-space provision diagram/legend page between appendix text pages.",
+      "images": 1,
+      "drawings": 1,
+      "links": 0
+    },
+    {
+      "document_id": "rag-sheet12-blanchardstown-north-2023-2029-varied-dbb3f0888cc4",
+      "title": "sheet12-blanchardstown-north-2023-2029 varied",
+      "page": 1,
+      "source_path": "data/rag/primary/ireland/planning/local_authority/fingal/sheet12-blanchardstown-north-2023-2029_varied.pdf",
+      "classification": "MAP_FIGURE",
+      "manual_review_required": true,
+      "basis": "Large-format map sheet with image objects and no extractable text.",
+      "images": 10,
+      "drawings": 0,
+      "links": 0
+    },
+    {
+      "document_id": "rag-sheet13-blanchardstown-south-2023-2029-varied-fce1e1b6406f",
+      "title": "sheet13-blanchardstown-south-2023-2029 varied",
+      "page": 1,
+      "source_path": "data/rag/primary/ireland/planning/local_authority/fingal/sheet13-blanchardstown-south-2023-2029_varied.pdf",
+      "classification": "MAP_FIGURE",
+      "manual_review_required": true,
+      "basis": "Large-format map sheet with image objects and no extractable text.",
+      "images": 10,
+      "drawings": 0,
+      "links": 0
+    },
+    {
+      "document_id": "rag-accelerating-infrastructure-report-and-action-plan-23f9d87c520d",
+      "title": "Accelerating Infrastructure Report and Action Plan",
+      "page": 2,
+      "source_path": "data/rag/supporting/public_bodies/infrastructure_policy/Accelerating_Infrastructure_Report_and_Action_Plan.pdf",
+      "classification": "COVER_TITLE",
+      "manual_review_required": false,
+      "basis": "Decorative title/cover design page; adjacent page contains the table of contents.",
+      "images": 0,
+      "drawings": 3,
+      "links": 0
+    },
+    {
+      "document_id": "rag-accelerating-infrastructure-report-and-action-plan-23f9d87c520d",
+      "title": "Accelerating Infrastructure Report and Action Plan",
+      "page": 139,
+      "source_path": "data/rag/supporting/public_bodies/infrastructure_policy/Accelerating_Infrastructure_Report_and_Action_Plan.pdf",
+      "classification": "INTENTIONALLY_BLANK",
+      "manual_review_required": false,
+      "basis": "Decorative end-matter page with no text; surrounding page is the acronym list and the next page is a back-cover design.",
+      "images": 0,
+      "drawings": 3,
+      "links": 0
+    },
+    {
+      "document_id": "rag-accelerating-infrastructure-report-and-action-plan-23f9d87c520d",
+      "title": "Accelerating Infrastructure Report and Action Plan",
+      "page": 140,
+      "source_path": "data/rag/supporting/public_bodies/infrastructure_policy/Accelerating_Infrastructure_Report_and_Action_Plan.pdf",
+      "classification": "COVER_TITLE",
+      "manual_review_required": false,
+      "basis": "Decorative back-cover/logo page with no policy prose.",
+      "images": 0,
+      "drawings": 165,
+      "links": 0
+    }
+  ]
+}

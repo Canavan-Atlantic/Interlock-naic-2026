@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/schemas/ireland-data-centre-rag-record-v1.json",
+  "title": "Ireland Data Centre Regulatory RAG Record",
+  "description": "A source-grounded English-language record for preliminary Ireland data-centre site screening. Each record should cover one atomic requirement, policy signal, procedure, or contextual indicator.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "version",
+    "title",
+    "jurisdiction",
+    "topic",
+    "document_type",
+    "legal_status",
+    "authority",
+    "applicability",
+    "screening_logic",
+    "content",
+    "sources",
+    "quality",
+    "last_verified"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^(IE|EU)-DC-[A-Z0-9-]+$",
+      "description": "Stable, human-readable record identifier; do not encode dates in the identifier."
+    },
+    "version": {"type": "string", "pattern": "^v[0-9]+\\.[0-9]+$"},
+    "title": {
+      "type": "object",
+      "required": ["en"],
+      "properties": {"en": {"type": "string"}},
+      "additionalProperties": false
+    },
+    "jurisdiction": {"type": "string", "enum": ["Ireland", "European Union"]},
+    "topic": {
+      "type": "string",
+      "enum": [
+        "grid_connection",
+        "renewable_energy",
+        "dispatchable_generation",
+        "site_location",
+        "planning_policy",
+        "energy_efficiency_reporting",
+        "gas_and_biomethane",
+        "market_context",
+        "source_quality"
+      ]
+    },
+    "document_type": {
+      "type": "string",
+      "enum": [
+        "regulatory_decision",
+        "system_operator_procedure",
+        "government_policy",
+        "eu_regulation",
+        "consultation_or_proposal",
+        "contextual_statistic",
+        "source_quality_flag"
+      ]
+    },
+    "legal_status": {
+      "type": "string",
+      "enum": [
+        "in_force",
+        "active_policy",
+        "implemented_procedure",
+        "proposal_or_consultation",
+        "context_only",
+        "needs_source_review"
+      ]
+    },
+    "authority": {"type": "string"},
+    "effective_date": {"type": ["string", "null"], "format": "date"},
+    "applicability": {
+      "type": "object",
+      "required": ["scope", "thresholds", "location_conditions"],
+      "properties": {
+        "scope": {"type": "string"},
+        "thresholds": {"type": "array", "items": {"type": "string"}},
+        "location_conditions": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
+    "screening_logic": {
+      "type": "object",
+      "required": ["inputs_required", "rule", "outcome_if_not_met", "agent_action"],
+      "properties": {
+        "inputs_required": {"type": "array", "items": {"type": "string"}},
+        "rule": {"type": "string"},
+        "outcome_if_not_met": {"type": "string"},
+        "agent_action": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "content": {
+      "type": "object",
+      "required": ["en", "retrieval_text"],
+      "properties": {
+        "en": {"type": "string"},
+        "retrieval_text": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "tags": {"type": "array", "items": {"type": "string"}},
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["source_id", "publisher", "title", "url", "publication_date", "source_tier"],
+        "properties": {
+          "source_id": {"type": "string"},
+          "publisher": {"type": "string"},
+          "title": {"type": "string"},
+          "url": {"type": "string", "format": "uri"},
+          "publication_date": {"type": ["string", "null"]},
+          "pinpoint": {"type": ["string", "null"]},
+          "source_tier": {"type": "string", "enum": ["primary", "user_provided", "secondary"]}
+        },
+        "additionalProperties": false
+      }
+    },
+    "quality": {
+      "type": "object",
+      "required": ["evidence_level", "confidence", "review_required", "notes"],
+      "properties": {
+        "evidence_level": {"type": "string", "enum": ["primary_official", "user_provided_unverified", "mixed"]},
+        "confidence": {"type": "string", "enum": ["high", "medium", "low"]},
+        "review_required": {"type": "boolean"},
+        "notes": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "last_verified": {"type": "string", "format": "date"}
+  }
+}

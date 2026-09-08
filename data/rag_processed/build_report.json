@@ -1,0 +1,272 @@
+{
+  "generated_at": "2026-09-08T00:28:40.610110+00:00",
+  "scope": "Module 5A deterministic policy knowledge-base foundation; not legal completeness",
+  "counts": {
+    "total_registered_documents": 50,
+    "active_retrieval_documents": 40,
+    "primary_current": 21,
+    "proposed_or_historical": 3,
+    "supporting_public_body": 9,
+    "supporting_industry": 4,
+    "supporting_research": 3,
+    "supporting_documents": 16,
+    "governance": 1,
+    "restricted": 1,
+    "archive": 3,
+    "duplicates": 1,
+    "failed_extraction_documents": 0,
+    "total_pages_extracted": 2139,
+    "total_active_chunks": 2361,
+    "curated_atomic_records": 12,
+    "pages_with_no_extractable_text": 12
+  },
+  "documents_missing_metadata": {
+    "publication_date": 32,
+    "effective_date": 49,
+    "version": 38,
+    "issuer": 27,
+    "jurisdiction": 13
+  },
+  "documents_pages_without_extractable_text": {
+    "rag-leap-large-energy-user-action-plan-486457470aff": [
+      1,
+      32
+    ],
+    "rag-fingal-development-plan-2023-2029-appendices-consolidated-1-f1b259f0e43a": [
+      145,
+      147,
+      155,
+      168,
+      290
+    ],
+    "rag-sheet12-blanchardstown-north-2023-2029-varied-dbb3f0888cc4": [
+      1
+    ],
+    "rag-sheet13-blanchardstown-south-2023-2029-varied-fce1e1b6406f": [
+      1
+    ],
+    "rag-accelerating-infrastructure-report-and-action-plan-23f9d87c520d": [
+      2,
+      139,
+      140
+    ]
+  },
+  "no_text_page_manual_review_count": 8,
+  "no_text_page_report": [
+    {
+      "document_id": "rag-leap-large-energy-user-action-plan-486457470aff",
+      "title": "Government Large Energy User Action Plan (LEAP)",
+      "page": 1,
+      "source_path": "data/rag/primary/ireland/government/leap-large-energy-user-action-plan.pdf",
+      "classification": "COVER_TITLE",
+      "manual_review_required": false,
+      "basis": "Cover page contains image/design elements and is followed by the contents page.",
+      "images": 1,
+      "drawings": 1,
+      "links": 0
+    },
+    {
+      "document_id": "rag-leap-large-energy-user-action-plan-486457470aff",
+      "title": "Government Large Energy User Action Plan (LEAP)",
+      "page": 32,
+      "source_path": "data/rag/primary/ireland/government/leap-large-energy-user-action-plan.pdf",
+      "classification": "MAP_FIGURE",
+      "manual_review_required": true,
+      "basis": "Final LEAP graphic page; surrounding text identifies an illustrative green-energy-park graphic.",
+      "images": 0,
+      "drawings": 44,
+      "links": 0
+    },
+    {
+      "document_id": "rag-fingal-development-plan-2023-2029-appendices-consolidated-1-f1b259f0e43a",
+      "title": "Fingal Development Plan 2023–2029 — Appendices Consolidated",
+      "page": 145,
+      "source_path": "data/rag/primary/ireland/planning/local_authority/fingal/fingal-development-plan-2023-2029-appendices-consolidated-1.pdf",
+      "classification": "MAP_FIGURE",
+      "manual_review_required": true,
+      "basis": "Image-only Architectural Conservation Area map/figure between labelled ACA pages.",
+      "images": 1,
+      "drawings": 0,
+      "links": 0
+    },
+    {
+      "document_id": "rag-fingal-development-plan-2023-2029-appendices-consolidated-1-f1b259f0e43a",
+      "title": "Fingal Development Plan 2023–2029 — Appendices Consolidated",
+      "page": 147,
+      "source_path": "data/rag/primary/ireland/planning/local_authority/fingal/fingal-development-plan-2023-2029-appendices-consolidated-1.pdf",
+      "classification": "MAP_FIGURE",
+      "manual_review_required": true,
+      "basis": "Image-only Architectural Conservation Area map/figure between labelled ACA pages.",
+      "images": 1,
+      "drawings": 0,
+      "links": 0
+    },
+    {
+      "document_id": "rag-fingal-development-plan-2023-2029-appendices-consolidated-1-f1b259f0e43a",
+      "title": "Fingal Development Plan 2023–2029 — Appendices Consolidated",
+      "page": 155,
+      "source_path": "data/rag/primary/ireland/planning/local_authority/fingal/fingal-development-plan-2023-2029-appendices-consolidated-1.pdf",
+      "classification": "MAP_FIGURE",
+      "manual_review_required": true,
+      "basis": "Image-only Architectural Conservation Area map/figure between labelled ACA pages.",
+      "images": 1,
+      "drawings": 0,
+      "links": 0
+    },
+    {
+      "document_id": "rag-fingal-development-plan-2023-2029-appendices-consolidated-1-f1b259f0e43a",
+      "title": "Fingal Development Plan 2023–2029 — Appendices Consolidated",
+      "page": 168,
+      "source_path": "data/rag/primary/ireland/planning/local_authority/fingal/fingal-development-plan-2023-2029-appendices-consolidated-1.pdf",
+      "classification": "MAP_FIGURE",
+      "manual_review_required": true,
+      "basis": "Image-only Architectural Conservation Area map/figure between labelled ACA pages.",
+      "images": 1,
+      "drawings": 0,
+      "links": 0
+    },
+    {
+      "document_id": "rag-fingal-development-plan-2023-2029-appendices-consolidated-1-f1b259f0e43a",
+      "title": "Fingal Development Plan 2023–2029 — Appendices Consolidated",
+      "page": 290,
+      "source_path": "data/rag/primary/ireland/planning/local_authority/fingal/fingal-development-plan-2023-2029-appendices-consolidated-1.pdf",
+      "classification": "MAP_FIGURE",
+      "manual_review_required": true,
+      "basis": "Visual open-space provision diagram/legend page between appendix text pages.",
+      "images": 1,
+      "drawings": 1,
+      "links": 0
+    },
+    {
+      "document_id": "rag-sheet12-blanchardstown-north-2023-2029-varied-dbb3f0888cc4",
+      "title": "sheet12-blanchardstown-north-2023-2029 varied",
+      "page": 1,
+      "source_path": "data/rag/primary/ireland/planning/local_authority/fingal/sheet12-blanchardstown-north-2023-2029_varied.pdf",
+      "classification": "MAP_FIGURE",
+      "manual_review_required": true,
+      "basis": "Large-format map sheet with image objects and no extractable text.",
+      "images": 10,
+      "drawings": 0,
+      "links": 0
+    },
+    {
+      "document_id": "rag-sheet13-blanchardstown-south-2023-2029-varied-fce1e1b6406f",
+      "title": "sheet13-blanchardstown-south-2023-2029 varied",
+      "page": 1,
+      "source_path": "data/rag/primary/ireland/planning/local_authority/fingal/sheet13-blanchardstown-south-2023-2029_varied.pdf",
+      "classification": "MAP_FIGURE",
+      "manual_review_required": true,
+      "basis": "Large-format map sheet with image objects and no extractable text.",
+      "images": 10,
+      "drawings": 0,
+      "links": 0
+    },
+    {
+      "document_id": "rag-accelerating-infrastructure-report-and-action-plan-23f9d87c520d",
+      "title": "Accelerating Infrastructure Report and Action Plan",
+      "page": 2,
+      "source_path": "data/rag/supporting/public_bodies/infrastructure_policy/Accelerating_Infrastructure_Report_and_Action_Plan.pdf",
+      "classification": "COVER_TITLE",
+      "manual_review_required": false,
+      "basis": "Decorative title/cover design page; adjacent page contains the table of contents.",
+      "images": 0,
+      "drawings": 3,
+      "links": 0
+    },
+    {
+      "document_id": "rag-accelerating-infrastructure-report-and-action-plan-23f9d87c520d",
+      "title": "Accelerating Infrastructure Report and Action Plan",
+      "page": 139,
+      "source_path": "data/rag/supporting/public_bodies/infrastructure_policy/Accelerating_Infrastructure_Report_and_Action_Plan.pdf",
+      "classification": "INTENTIONALLY_BLANK",
+      "manual_review_required": false,
+      "basis": "Decorative end-matter page with no text; surrounding page is the acronym list and the next page is a back-cover design.",
+      "images": 0,
+      "drawings": 3,
+      "links": 0
+    },
+    {
+      "document_id": "rag-accelerating-infrastructure-report-and-action-plan-23f9d87c520d",
+      "title": "Accelerating Infrastructure Report and Action Plan",
+      "page": 140,
+      "source_path": "data/rag/supporting/public_bodies/infrastructure_policy/Accelerating_Infrastructure_Report_and_Action_Plan.pdf",
+      "classification": "COVER_TITLE",
+      "manual_review_required": false,
+      "basis": "Decorative back-cover/logo page with no policy prose.",
+      "images": 0,
+      "drawings": 165,
+      "links": 0
+    }
+  ],
+  "extraction_failures": [],
+  "duplicate_documents": [
+    {
+      "document_id": "rag-cru202504-leu-connection-policy-proposed-decision-e2985e0a4ad5",
+      "source_path": "data/rag/primary/ireland/cru/current/CRU202504 LEU connection policy proposed decision.pdf",
+      "duplicate_of_document_id": "rag-cru202504-leu-connection-policy-proposed-decision-0-1d3af8ccb901"
+    }
+  ],
+  "ambiguous_documents": [],
+  "curated_review_flags": {
+    "total": 9,
+    "matched_to_records": 0,
+    "unmatched_flags_remain_non_trusted": 9
+  },
+  "curated_review_flag_audit": [
+    {
+      "flag_id": "FLAG-001",
+      "assessment": "A_ORIGINAL_SOURCE_CLAIM_ABSENT_FROM_CLEANED_RECORDS",
+      "matched_record_ids": [],
+      "trust_treatment": "NOT_TRUSTED_UNMATCHED"
+    },
+    {
+      "flag_id": "FLAG-002",
+      "assessment": "A_ORIGINAL_SOURCE_CLAIM_ABSENT_FROM_CLEANED_RECORDS",
+      "matched_record_ids": [],
+      "trust_treatment": "NOT_TRUSTED_UNMATCHED"
+    },
+    {
+      "flag_id": "FLAG-003",
+      "assessment": "A_ORIGINAL_SOURCE_CLAIM_ABSENT_FROM_CLEANED_RECORDS",
+      "matched_record_ids": [],
+      "trust_treatment": "NOT_TRUSTED_UNMATCHED"
+    },
+    {
+      "flag_id": "FLAG-004",
+      "assessment": "A_ORIGINAL_SOURCE_CLAIM_ABSENT_FROM_CLEANED_RECORDS",
+      "matched_record_ids": [],
+      "trust_treatment": "NOT_TRUSTED_UNMATCHED"
+    },
+    {
+      "flag_id": "FLAG-005",
+      "assessment": "A_ORIGINAL_SOURCE_CLAIM_ABSENT_FROM_CLEANED_RECORDS",
+      "matched_record_ids": [],
+      "trust_treatment": "NOT_TRUSTED_UNMATCHED"
+    },
+    {
+      "flag_id": "FLAG-006",
+      "assessment": "A_ORIGINAL_SOURCE_CLAIM_ABSENT_FROM_CLEANED_RECORDS",
+      "matched_record_ids": [],
+      "trust_treatment": "NOT_TRUSTED_UNMATCHED"
+    },
+    {
+      "flag_id": "FLAG-007",
+      "assessment": "A_ORIGINAL_SOURCE_CLAIM_ABSENT_FROM_CLEANED_RECORDS",
+      "matched_record_ids": [],
+      "trust_treatment": "NOT_TRUSTED_UNMATCHED"
+    },
+    {
+      "flag_id": "FLAG-008",
+      "assessment": "A_ORIGINAL_SOURCE_CLAIM_ABSENT_FROM_CLEANED_RECORDS",
+      "matched_record_ids": [],
+      "trust_treatment": "NOT_TRUSTED_UNMATCHED"
+    },
+    {
+      "flag_id": "FLAG-009",
+      "assessment": "A_ORIGINAL_SOURCE_CLAIM_ABSENT_FROM_CLEANED_RECORDS",
+      "matched_record_ids": [],
+      "trust_treatment": "NOT_TRUSTED_UNMATCHED"
+    }
+  ],
+  "ai_or_embedding_calls": 0
+}

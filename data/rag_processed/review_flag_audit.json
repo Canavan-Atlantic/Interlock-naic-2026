@@ -1,0 +1,177 @@
+{
+  "generated_at": "2026-09-08T00:28:07.849434+00:00",
+  "flags": [
+    {
+      "flag_id": "FLAG-001",
+      "source_id": "SRC-USER-PDF-20260906",
+      "original_claim": "PR6 runs to 2030 and provides no additional capacity for new data-centre projects in Greater Dublin; a new Dublin site without an existing connection contract has a near-zero probability of connection.",
+      "classification": "superseded_or_overbroad",
+      "risk": "high",
+      "why_flagged": "The current CRU/2025236 policy uses a System Operator assessment of the specific application and its location as constrained or unconstrained, and requires publication of current capacity constraints. The decision does not provide a numerical conclusion that Dublin projects without contracts have a near-zero connection probability.",
+      "production_treatment": "Do not embed as a hard-coded rejection rule or probability. Use IE-DC-LOCATION-001 and obtain current EirGrid/ESB Networks locational evidence for every screening case.",
+      "official_sources": [
+        "SRC-CRU-2025236",
+        "SRC-EIRGRID-DCCOPP-V3"
+      ],
+      "status": "do_not_embed_as_rule",
+      "last_reviewed": "2026-09-06",
+      "matched_record_ids": [],
+      "assessment": "A_ORIGINAL_SOURCE_CLAIM_ABSENT_FROM_CLEANED_RECORDS",
+      "trust_treatment": "NOT_TRUSTED_UNMATCHED",
+      "safe_reason": "The flag source_id is not present in any cleaned record source reference and the original claim has no exact match in the cleaned record payload; the unsupported claim remains outside the trusted active curated corpus."
+    },
+    {
+      "flag_id": "FLAG-002",
+      "source_id": "SRC-USER-PDF-20260906",
+      "original_claim": "New site selection must be strictly bound to renewable energy through a corporate power purchase agreement (CPPA).",
+      "classification": "overstated_requirement",
+      "risk": "high",
+      "why_flagged": "CRU/2025236 requires at least 80% of annual demand to be met by additional renewable electricity generated in the Republic of Ireland, but permits developers to develop generation directly or contract with other parties. It does not prescribe a CPPA as the sole legal route.",
+      "production_treatment": "Replace with IE-DC-RENEW-001. Ask for evidence of additionality, location, annual output, support-scheme status and contractual/development arrangements; do not make a CPPA the sole gateway condition.",
+      "official_sources": [
+        "SRC-CRU-2025236",
+        "SRC-CRU-NEWS-20251212"
+      ],
+      "status": "do_not_embed_as_rule",
+      "last_reviewed": "2026-09-06",
+      "matched_record_ids": [],
+      "assessment": "A_ORIGINAL_SOURCE_CLAIM_ABSENT_FROM_CLEANED_RECORDS",
+      "trust_treatment": "NOT_TRUSTED_UNMATCHED",
+      "safe_reason": "The flag source_id is not present in any cleaned record source reference and the original claim has no exact match in the cleaned record payload; the unsupported claim remains outside the trusted active curated corpus."
+    },
+    {
+      "flag_id": "FLAG-003",
+      "source_id": "SRC-USER-PDF-20260906",
+      "original_claim": "Under the December 2025 CRU large-energy-user connection policy, new data centres must provide dispatchable backup generation and the policy explicitly prefers indigenous biomethane.",
+      "classification": "partially_inaccurate",
+      "risk": "high",
+      "why_flagged": "For data centres at or above 10 MVA, CRU does require dispatchable onsite or proximate generation and/or storage matching MIC. However, the final decision expressly states that it introduces no new decision relating to gas-network connections. The document does not support an explicit biomethane-preference claim.",
+      "production_treatment": "Apply IE-DC-GRID-003 to the dispatchable electricity-asset requirement. Route gas and biomethane proposals to a separate gas and environmental-permitting workstream.",
+      "official_sources": [
+        "SRC-CRU-2025236"
+      ],
+      "status": "split_and_correct",
+      "last_reviewed": "2026-09-06",
+      "matched_record_ids": [],
+      "assessment": "A_ORIGINAL_SOURCE_CLAIM_ABSENT_FROM_CLEANED_RECORDS",
+      "trust_treatment": "NOT_TRUSTED_UNMATCHED",
+      "safe_reason": "The flag source_id is not present in any cleaned record source reference and the original claim has no exact match in the cleaned record payload; the unsupported claim remains outside the trusted active curated corpus."
+    },
+    {
+      "flag_id": "FLAG-004",
+      "source_id": "SRC-USER-PDF-20260906",
+      "original_claim": "The EU Tech Sovereignty Package was formally adopted on 3 June 2026 and imposes strict mandatory data-centre performance and governance requirements.",
+      "classification": "untraced_legal_claim",
+      "risk": "high",
+      "why_flagged": "The source PDF provides no legal instrument, EUR-Lex CELEX number or official link. Verified EU material shows that Regulation 2024/1364 is the first-phase reporting/KPI regulation; the March 2026 electronic-label notice describes a draft second-stage regulation and planned adoption, not the claimed formally adopted act.",
+      "production_treatment": "Do not put this claim into the in-force production-law layer unless a verifiable Official Journal legal text is supplied. Treat it as a regulatory watch item.",
+      "official_sources": [
+        "SRC-EU-REG-2024-1364",
+        "SRC-EC-RATING-CONSULTATION-20260327"
+      ],
+      "status": "needs_primary_citation",
+      "last_reviewed": "2026-09-06",
+      "matched_record_ids": [],
+      "assessment": "A_ORIGINAL_SOURCE_CLAIM_ABSENT_FROM_CLEANED_RECORDS",
+      "trust_treatment": "NOT_TRUSTED_UNMATCHED",
+      "safe_reason": "The flag source_id is not present in any cleaned record source reference and the original claim has no exact match in the cleaned record payload; the unsupported claim remains outside the trusted active curated corpus."
+    },
+    {
+      "flag_id": "FLAG-005",
+      "source_id": "SRC-USER-PDF-20260906",
+      "original_claim": "The EU has mandatory energy-efficiency ratings and automatically generated electronic sustainability labels for data centres.",
+      "classification": "legal_status_unconfirmed",
+      "risk": "high",
+      "why_flagged": "The final text of Regulation (EU) 2024/1364 is a first-phase measure that defines reporting information, KPIs and methodology for the European database. The European Commission's March 2026 page describes electronic labels under a second-stage draft. The source PDF provides no Official Journal citation that proves that stage is in force.",
+      "production_treatment": "Keep as a legal-status watch item in EU-DC-EFF-002. Do not state that electronic labelling is an in-force hard compliance condition until EUR-Lex is refreshed.",
+      "official_sources": [
+        "SRC-EU-REG-2024-1364",
+        "SRC-EC-RATING-CONSULTATION-20260327"
+      ],
+      "status": "needs_primary_citation",
+      "last_reviewed": "2026-09-06",
+      "matched_record_ids": [],
+      "assessment": "A_ORIGINAL_SOURCE_CLAIM_ABSENT_FROM_CLEANED_RECORDS",
+      "trust_treatment": "NOT_TRUSTED_UNMATCHED",
+      "safe_reason": "The flag source_id is not present in any cleaned record source reference and the original claim has no exact match in the cleaned record payload; the unsupported claim remains outside the trusted active curated corpus."
+    },
+    {
+      "flag_id": "FLAG-006",
+      "source_id": "SRC-USER-PDF-20260906",
+      "original_claim": "Low-efficiency, high-energy-consuming legacy infrastructure will be phased out under mandatory minimum performance standards.",
+      "classification": "future_policy_presented_as_rule",
+      "risk": "medium",
+      "why_flagged": "The European Commission's energy-performance page states that a future Data Centre Energy Efficiency Package will launch work on minimum performance standards. The reviewed materials do not establish an in-force phase-out mechanism.",
+      "production_treatment": "Do not treat as a current obligation. Retain it in a future-policy monitoring module and create a new in-force record only after a definitive regulation is published.",
+      "official_sources": [
+        "SRC-EC-DC-ENERGY-PERFORMANCE"
+      ],
+      "status": "monitor_only",
+      "last_reviewed": "2026-09-06",
+      "matched_record_ids": [],
+      "assessment": "A_ORIGINAL_SOURCE_CLAIM_ABSENT_FROM_CLEANED_RECORDS",
+      "trust_treatment": "NOT_TRUSTED_UNMATCHED",
+      "safe_reason": "The flag source_id is not present in any cleaned record source reference and the original claim has no exact match in the cleaned record payload; the unsupported claim remains outside the trusted active curated corpus."
+    },
+    {
+      "flag_id": "FLAG-007",
+      "source_id": "SRC-USER-PDF-20260906",
+      "original_claim": "DETE will publish a National Planning Statement during 2026 that maps legally protected Sustainable Energy Parks.",
+      "classification": "overstated_policy_timeline",
+      "risk": "medium",
+      "why_flagged": "The DETE announcement states that a forthcoming National Planning Statement will inform the green-energy-park approach. It neither fixes a definitive 2026 deadline nor establishes the claimed legally protected status for the parks.",
+      "production_treatment": "Use IE-DC-PLAN-001. Track the National Planning Statement as a prospective policy document and do not treat any anticipated park map as an existing legal restriction.",
+      "official_sources": [
+        "SRC-DETE-LEAP-20260113"
+      ],
+      "status": "monitor_only",
+      "last_reviewed": "2026-09-06",
+      "matched_record_ids": [],
+      "assessment": "A_ORIGINAL_SOURCE_CLAIM_ABSENT_FROM_CLEANED_RECORDS",
+      "trust_treatment": "NOT_TRUSTED_UNMATCHED",
+      "safe_reason": "The flag source_id is not present in any cleaned record source reference and the original claim has no exact match in the cleaned record payload; the unsupported claim remains outside the trusted active curated corpus."
+    },
+    {
+      "flag_id": "FLAG-008",
+      "source_id": "SRC-USER-PDF-20260906",
+      "original_claim": "From 2028, the CRU and DECC will implement a National Energy Demand Strategy (NEDS) with stackable network tariffs that reward load flexibility.",
+      "classification": "untraced_policy_claim",
+      "risk": "medium",
+      "why_flagged": "The source PDF provides no verifiable primary source. The reviewed CRU connection decision and DETE LEAP announcement do not verify this programme name, timetable or tariff arrangement.",
+      "production_treatment": "Do not add it to the production rules or compliance calendar. Obtain an official policy document, department link or CRU decision before creating a sourced RAG record.",
+      "official_sources": [
+        "SRC-CRU-2025236",
+        "SRC-DETE-LEAP-20260113"
+      ],
+      "status": "needs_primary_citation",
+      "last_reviewed": "2026-09-06",
+      "matched_record_ids": [],
+      "assessment": "A_ORIGINAL_SOURCE_CLAIM_ABSENT_FROM_CLEANED_RECORDS",
+      "trust_treatment": "NOT_TRUSTED_UNMATCHED",
+      "safe_reason": "The flag source_id is not present in any cleaned record source reference and the original claim has no exact match in the cleaned record payload; the unsupported claim remains outside the trusted active curated corpus."
+    },
+    {
+      "flag_id": "FLAG-009",
+      "source_id": "SRC-USER-PDF-20260906",
+      "original_claim": "The technology sector contributed about €95 billion GVA (20%) in 2023 and employed 182,900 people (7%) in Q4 2024, including 21,000 workers in data-centre operations and direct ecosystem services.",
+      "classification": "contextual_statistic_without_provenance",
+      "risk": "medium",
+      "why_flagged": "The source PDF provides no statistical publisher, definition, methodology or original link. Such macroeconomic statistics cannot decide site compliance or connection feasibility. The DETE announcement refers to approximately 21,000 direct employees and more than 180,000 ICT-ecosystem employees, but does not validate the other figures and definitions in the PDF.",
+      "production_treatment": "Do not use as a screening rule. It may become a time-stamped market-context record only after a CSO, DETE or other auditable primary source and a defined methodology are supplied.",
+      "official_sources": [
+        "SRC-DETE-LEAP-20260113"
+      ],
+      "status": "context_only_pending_source",
+      "last_reviewed": "2026-09-06",
+      "matched_record_ids": [],
+      "assessment": "A_ORIGINAL_SOURCE_CLAIM_ABSENT_FROM_CLEANED_RECORDS",
+      "trust_treatment": "NOT_TRUSTED_UNMATCHED",
+      "safe_reason": "The flag source_id is not present in any cleaned record source reference and the original claim has no exact match in the cleaned record payload; the unsupported claim remains outside the trusted active curated corpus."
+    }
+  ],
+  "summary": {
+    "total": 9,
+    "matched": 0,
+    "not_trusted_unmatched": 9
+  }
+}

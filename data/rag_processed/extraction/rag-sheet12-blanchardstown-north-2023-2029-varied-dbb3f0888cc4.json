@@ -1,0 +1,21 @@
+{
+  "document_id": "rag-sheet12-blanchardstown-north-2023-2029-varied-dbb3f0888cc4",
+  "source_path": "data/rag/primary/ireland/planning/local_authority/fingal/sheet12-blanchardstown-north-2023-2029_varied.pdf",
+  "page_count": 1,
+  "no_text_pages": [
+    1
+  ],
+  "pages": [
+    {
+      "page": 1,
+      "text": "",
+      "has_text": false,
+      "images": 10,
+      "drawings": 0,
+      "links": 0,
+      "width": 3371.038818359375,
+      "height": 2384.0400390625
+    }
+  ],
+  "ocr_used": false
+}

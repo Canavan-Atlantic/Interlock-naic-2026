@@ -1,0 +1,135 @@
+target_crs: EPSG:2157
+
+domains:
+  zoning:
+    sources:
+      - source_name: MyPlan / GZT Current Plan
+        patterns: ["*.csv"]
+        mode: zoning_csv
+        expected_columns:
+          - OBJECTID
+          - GZT Zone
+          - Zone Original
+          - Zone Description
+          - Plan From
+          - Plan To
+          - Plan Name
+          - Current Plan
+          - Plan Level
+          - Standardised Zoning Objective
+          - Plan ID
+          - LA Name
+          - Local Authority
+        required_columns: [OBJECTID, Plan Name]
+        limitations:
+          - This CSV is tabular only and does not contain usable polygon geometry.
+          - Shape__Area and Shape__Length are not treated as site geometry.
+          - Official MyPlan spatial service retrieval is deferred and is not called in Module 4A.
+
+  planning:
+    sources:
+      - source_name: National Irish Planning Applications
+        patterns: ["*.geojson", "*.json"]
+        mode: planning_geojson
+        expected_columns:
+          - PlanningAuthority
+          - ApplicationNumber
+          - DevelopmentDescription
+          - DevelopmentAddress
+          - DevelopmentPostcode
+          - ApplicationStatus
+          - ApplicationType
+          - Decision
+          - AreaofSite
+          - FloorArea
+          - LinkAppDetails
+          - ETL_DATE
+        required_columns: [PlanningAuthority, ApplicationNumber]
+        limitations:
+          - Applicant personal information is excluded from processed outputs.
+
+  biodiversity:
+    sources:
+      - source_name: NPWS SAC and SPA spatial data
+        patterns: ["*.zip"]
+        mode: spatial_zip
+        expected_columns: [SITECODE, SITE_NAME, COUNTY, HA, VERSION, URL]
+        required_columns: [SITECODE, SITE_NAME]
+        limitations:
+          - Source layers are standardised to EPSG:2157 while original CRS is recorded.
+
+  flood:
+    sources:
+      - source_name: OPW coastal and fluvial flood extents
+        patterns: ["*.zip"]
+        mode: spatial_zip
+        expected_columns: [UUID, PROJ_NAME, PROJ_TYPE]
+        required_columns: [PROJ_NAME]
+        limitations:
+          - Coastal/fluvial and return-period identity is retained as processed metadata.
+          - Flood extents are source evidence, not a project suitability decision.
+
+  grid:
+    sources:
+      - source_name: ESB Networks capacity heatmap
+        patterns: ["*.xlsx", "*.xls"]
+        mode: grid_excel
+        source_crs: EPSG:4326
+        header_row: 1
+        expected_columns:
+          - Station Name
+          - Transformer GroupID
+          - Primary kV
+          - Secondary voltage(s)
+          - Voltage Class
+          - Transformer Configuration
+          - Installed Capacity MVA
+          - Demand FirmCapacity MVA
+          - Demand Available MVA
+          - Parent Available MVA
+          - Demand Parent Constraint
+          - Parent Feeder
+          - Parent Station
+          - TSO Interface Station
+          - Comment
+          - Latitude
+          - Longitude
+        required_columns: [Station Name, Latitude, Longitude]
+        limitations:
+          - Public grid capacity data is indicative only.
+          - Capacity is not treated as a guaranteed project connection.
+      - source_name: EirGrid policy and technical documents
+        patterns: ["*.pdf"]
+        mode: register_only
+        limitations:
+          - Registered only in Module 4A; parsing, policy rules, and RAG are deferred to Module 5.
+
+  water:
+    sources:
+      - source_name: Uisce Éireann capacity-register documents
+        patterns: ["*.pdf"]
+        mode: register_only
+        limitations:
+          - Registered only; reliable structured extraction is deferred.
+          - Capacity indications are not treated as guaranteed connections.
+
+  heritage:
+    sources:
+      - source_name: National Monuments Service archaeological survey
+        patterns: ["*.zip"]
+        mode: spatial_zip
+        expected_columns: [SMRS, COUNTY, TOWNLAND, MONUMENT_CLASS, ZONE_ID_1, ITM_E, ITM_N, WEBSITE_LINK, ENTITY_ID, CLASS_CODE]
+        required_columns: [ZONE_ID]
+        limitations:
+          - Long WEB_NOTES and REFERENCES_ fields are excluded from core processed features.
+          - This source currently exposes ZONE_ID and geometry rather than the richer archaeological survey fields; missing fields are recorded.
+
+  ground:
+    sources:
+      - source_name: GSI groundwater vulnerability and karst datasets
+        patterns: ["*.zip"]
+        mode: spatial_zip
+        expected_columns: [geometry]
+        required_columns: []
+        limitations:
+          - Groundwater, karst landform, and traced-connection layers remain separate outputs where source schemas differ.
