@@ -53,6 +53,10 @@ def _document(*, benchmark_only: bool = False) -> ProjectDocument:
 def _write_project_artifacts(root: Path) -> None:
     processed = root / "data" / "project_evidence_processed" / "herbata"
     processed.mkdir(parents=True)
+    (processed / "document_registry.json").write_text(
+        json.dumps({"schema_version": 1, "project_id": HERBATA_PROJECT_ID, "documents": []}),
+        encoding="utf-8",
+    )
     citation = CitationReference(
         document_id="project-herbata-test",
         source_path="data/project_evidence/benchmarks/herbata/source_documents/project_input/synthetic.pdf",

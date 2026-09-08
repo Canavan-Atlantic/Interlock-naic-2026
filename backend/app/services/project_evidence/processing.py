@@ -228,6 +228,17 @@ def _write_staged_artifacts(
 ) -> None:
     _json_write(staging / "document_registry.json", {"schema_version": 1, "project_id": project_id, "documents": [item.model_dump(mode="json") for item in documents]})
     _jsonl_write(staging / "pages.jsonl", pages)
+    pages_dir = staging / "pages"
+    pages_dir.mkdir(parents=True, exist_ok=True)
+    for document_id in sorted({str(item["project_document_id"]) for item in pages}):
+        _json_write(
+            pages_dir / f"{document_id}.json",
+            {
+                "project_id": project_id,
+                "project_document_id": document_id,
+                "pages": [item for item in pages if item["project_document_id"] == document_id],
+            },
+        )
     _jsonl_write(staging / "chunks.jsonl", [item.model_dump(mode="json") for item in chunks])
     _jsonl_write(staging / "facts.jsonl", [item.model_dump(mode="json") for item in facts])
     _json_write(staging / "extraction_report.json", extraction_report)
@@ -289,13 +300,13 @@ def build_project_evidence(project_root: Path, *, manifest_path: Path | None = N
             "schema_version": 1,
             "project_id": HERBATA_PROJECT_ID,
             "themes": {
-                "environment": [by_key["appropriate_assessment"], by_key["biodiversity_eiar"]],
-                "biodiversity": [by_key["biodiversity_eiar"], by_key["appropriate_assessment"]],
-                "water": [by_key["water_hydrology_eiar"], by_key["uisce_feasibility"]],
-                "energy": [by_key["sources_of_energy"]],
-                "grid": [by_key["grid_substation"]],
-                "planning": [by_key["planning_engineering"], by_key["project_description"]],
-                "infrastructure": [by_key["material_assets_built_services"], by_key["planning_engineering"]],
+                "environment": [by_key["appropriate_assessment"]],
+                "biodiversity": [by_key["biodiversity_eiar"]],
+                "water": [by_key["water_hydrology_eiar"]],
+                "energy": [],
+                "grid": [],
+                "planning": [],
+                "infrastructure": [by_key["material_assets_built_services"]],
             },
         }
         extraction_report = {
@@ -312,6 +323,10 @@ def build_project_evidence(project_root: Path, *, manifest_path: Path | None = N
         processed_dir.mkdir(parents=True, exist_ok=True)
         for name in ("pages.jsonl", "chunks.jsonl", "facts.jsonl", "extraction_report.json", "benchmark_manifest.json"):
             shutil.copy2(staging / name, processed_dir / name)
+        pages_dir = processed_dir / "pages"
+        if pages_dir.exists():
+            shutil.rmtree(pages_dir)
+        shutil.copytree(staging / "pages", pages_dir)
         shutil.copy2(staging / "document_registry.json", processed_dir / "document_registry.json")
         index_dir.mkdir(parents=True, exist_ok=True)
         _json_write(index_dir / "manifest.json", {"schema_version": 1, "project_id": HERBATA_PROJECT_ID, "processed_path": PROCESSED_ROOT.joinpath("herbata").as_posix(), "documents": len(documents), "chunks": len(chunks), "facts": len(facts), "semantic_available": False, "retrieval_mode": "project_evidence_lexical"})
