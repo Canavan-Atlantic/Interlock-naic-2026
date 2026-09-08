@@ -1,5 +1,7 @@
 """Streamlit frontend for the INTERLOCK project-input and Module 4B workflow."""
 
+import hashlib
+import json
 import os
 
 import requests
@@ -59,6 +61,43 @@ def display_evidence_value(value: object) -> str:
     if value is None:
         return "—"
     return str(value)
+
+
+def build_evidence_agent_context(project: dict[str, object]) -> dict[str, object]:
+    """Build the shared ProjectContext from the already validated form values."""
+
+    stable_payload = json.dumps(project, sort_keys=True, default=str).encode("utf-8")
+    project_id = "streamlit-" + hashlib.sha256(stable_payload).hexdigest()[:12]
+    has_coordinates = project.get("latitude") is not None and project.get("longitude") is not None
+    return {
+        "project_id": project_id,
+        "project_name": project.get("project_name"),
+        "project_type": project.get("development_type"),
+        "assessment_workflow": "SITE_FEASIBILITY" if has_coordinates else "SITE_DISCOVERY",
+        "project_lifecycle_status": "UNKNOWN",
+        "location": {
+            "address": project.get("site_address"),
+            "latitude": project.get("latitude"),
+            "longitude": project.get("longitude"),
+            "local_authority": None,
+            "country": None,
+            "jurisdiction": "UNKNOWN",
+        },
+        "site_boundary": (
+            {"area_hectares": project.get("site_area_hectares")}
+            if project.get("site_area_hectares") is not None
+            else None
+        ),
+        "planned_power_mw": project.get("planned_power_demand_mw"),
+        "requested_mic_mva": project.get("requested_mic_mva"),
+        "power_strategy": project.get("power_strategy"),
+        "energy_strategy": project.get("energy_strategy"),
+        "phasing": project.get("project_phasing_notes"),
+        "project_stage": project.get("project_stage"),
+        "developer_inputs": {"source": "validated_streamlit_project_input"},
+        "uploaded_document_refs": [],
+        "source_project_input": project,
+    }
 
 
 def render_state(state: str | None) -> None:
@@ -165,6 +204,73 @@ def render_site_evidence(payload: dict[str, object]) -> None:
     timings = payload.get("timings_ms", {})
     if timings:
         st.caption("Execution timings (ms): " + ", ".join(f"{key}={value}" for key, value in timings.items()))
+
+
+def render_evidence_agent(payload: dict[str, object]) -> None:
+    """Render the evidence bundle without introducing an assessment decision."""
+
+    st.subheader("Evidence Agent")
+    st.caption("Deterministic evidence assembly only. No Advance/Hold/Reconfigure/Stop decision is produced.")
+    summary = payload.get("provenance_summary", {})
+    metrics = st.columns(4)
+    metrics[0].metric("Project", summary.get("developer_records", 0))
+    metrics[1].metric("GIS", summary.get("gis_records", 0))
+    metrics[2].metric("Policy", summary.get("policy_records", 0))
+    metrics[3].metric("Unknown / missing", summary.get("unknown_or_missing_count", 0))
+
+    records = payload.get("records", [])
+    if not isinstance(records, list):
+        records = []
+    sections = (
+        ("Project evidence", {"DEVELOPER_INPUT", "PROJECT_DOCUMENT"}),
+        ("Public/GIS evidence", {"DETERMINISTIC_GIS"}),
+        ("Policy/regulatory evidence", {"RAG_RETRIEVAL"}),
+    )
+    for title, creators in sections:
+        st.markdown(f"#### {title}")
+        selected = [item for item in records if item.get("created_by") in creators]
+        if not selected:
+            st.caption("No records in this class.")
+            continue
+        rows = [
+            {
+                "Domain": item.get("domain"),
+                "State": item.get("evidence_state"),
+                "Finding": item.get("finding") or item.get("fact"),
+                "Source": item.get("source_name"),
+                "Verification": item.get("verification_status"),
+            }
+            for item in selected
+        ]
+        st.dataframe(rows, hide_index=True)
+
+    for title, key in (
+        ("Unknowns / missing evidence", "missing_evidence"),
+        ("Dependencies", "dependencies"),
+        ("Potential contradictions", "potential_contradictions"),
+        ("Human reviews", "human_review_requests"),
+    ):
+        st.markdown(f"#### {title}")
+        values = payload.get(key, [])
+        if values:
+            st.json(values)
+        else:
+            st.caption("None recorded.")
+
+    citations = [
+        {
+            "document_id": item.get("source_document_id"),
+            "source": item.get("source_name"),
+            "citation": item.get("citation"),
+        }
+        for item in records
+        if item.get("source_document_id") or item.get("citation")
+    ]
+    st.markdown("#### Sources / citations")
+    if citations:
+        st.json(citations)
+    else:
+        st.caption("No structured citations recorded.")
 
 
 def render_retrieval_hit(hit: dict[str, object]) -> None:
@@ -285,6 +391,7 @@ with st.form("project_input_form"):
 st.session_state.setdefault("validation_payload", None)
 st.session_state.setdefault("evidence_payload", None)
 st.session_state.setdefault("site_evidence_payload", None)
+st.session_state.setdefault("evidence_agent_payload", None)
 
 if submitted:
     if not api_base_url:
@@ -316,6 +423,7 @@ if submitted:
 
             st.session_state["validation_payload"] = validation_payload
             st.session_state["site_evidence_payload"] = None
+            st.session_state["evidence_agent_payload"] = None
             try:
                 evidence_response = requests.post(
                     f"{api_base_url.rstrip('/')}/evidence/from-project",
@@ -416,9 +524,38 @@ if validation_payload:
             except (KeyError, TypeError, ValueError):
                 st.error("The backend returned an invalid site-evidence response.")
 
+    project_for_evidence = validation_payload["project"]
+    if st.button(
+        "Run Evidence Agent",
+        key="run_evidence_agent",
+        type="primary",
+        icon=":material/account_tree:",
+    ):
+        if not api_base_url:
+            st.error("The Evidence Agent could not run because the backend URL is not configured.")
+        else:
+            try:
+                agent_response = requests.post(
+                    f"{api_base_url.rstrip('/')}/agents/evidence",
+                    json=build_evidence_agent_context(project_for_evidence),
+                    timeout=240,
+                )
+                agent_response.raise_for_status()
+                st.session_state["evidence_agent_payload"] = agent_response.json()
+            except requests.HTTPError:
+                st.error("The Evidence Agent request was rejected by the backend.")
+            except requests.RequestException:
+                st.error("The Evidence Agent service is unavailable.")
+            except (KeyError, TypeError, ValueError):
+                st.error("The backend returned an invalid Evidence Agent response.")
+
     site_evidence_payload = st.session_state.get("site_evidence_payload")
     if site_evidence_payload:
         render_site_evidence(site_evidence_payload)
+
+    evidence_agent_payload = st.session_state.get("evidence_agent_payload")
+    if evidence_agent_payload:
+        render_evidence_agent(evidence_agent_payload)
 
 
 st.header("Policy & Regulatory Retrieval")

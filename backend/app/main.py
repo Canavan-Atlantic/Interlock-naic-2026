@@ -5,6 +5,8 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
 
+from .agents.evidence import DeterministicEvidenceAgent
+from .schemas.agents import EvidenceBundle, ProjectContext
 from .schemas.evidence import EvidenceLedger
 from .schemas.project import (
     ProjectInput,
@@ -72,6 +74,13 @@ def site_evidence(
             grid_min_primary_kv=grid_min_primary_kv,
         ),
     )
+
+
+@app.post("/agents/evidence", response_model=EvidenceBundle)
+def evidence_agent(project_context: ProjectContext) -> EvidenceBundle:
+    """Assemble provenance-preserving evidence without producing a decision."""
+
+    return DeterministicEvidenceAgent(PROJECT_ROOT).run(project_context)
 
 
 def _rag_registry_path() -> Path:
