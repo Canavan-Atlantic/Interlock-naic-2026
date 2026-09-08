@@ -29,3 +29,17 @@ POST /agents/evidence?include_project_documents=true&include_benchmark_documents
 The default early mode excludes `benchmark_only` documents. Validation mode opts in
 explicitly. No gold answers are stored in the benchmark manifest and no score,
 recommendation, or Module 11 validation is produced.
+
+## Canonical demo context
+
+The repeatable context fixture is
+`tests/fixtures/agents/herbata_project_context.json`, with field-level provenance
+in `herbata_project_context_provenance.json`. It populates only the documented
+project identity and location. The Grid Substation report page 23 provides labelled
+IRENET95/Irish Transverse Mercator centre coordinates (`X=686184.27765,
+Y=719497.0173`). The fixture converts those coordinates deterministically to WGS84
+using the existing `pyproj` capability; it does not geocode or guess. Load, MIC,
+energy strategy, boundary, phasing, and lifecycle/stage fields remain unknown.
+
+Project-document candidates remain Evidence Agent records and never overwrite this
+developer-supplied context.

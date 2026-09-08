@@ -1068,14 +1068,23 @@ class DeterministicEvidenceAgent:
         checked_at = _utc_now()
         options = options or EvidenceAgentOptions()
         project_input = _project_input_from_context(project_context)
+        stage_started = perf_counter()
         developer_records, warnings = self._developer_records(project_context, project_input, checked_at)
+        developer_elapsed_ms = round((perf_counter() - stage_started) * 1000, 3)
+        stage_started = perf_counter()
         gis_records, gis_warnings, gis_missing = self._gis_records(project_context, project_input)
+        gis_elapsed_ms = round((perf_counter() - stage_started) * 1000, 3)
+        stage_started = perf_counter()
         policy_records, policy_warnings, retrieval_gaps = self._policy_records(project_context, checked_at)
+        policy_elapsed_ms = round((perf_counter() - stage_started) * 1000, 3)
+        stage_started = perf_counter()
         project_document_records, project_document_warnings, project_document_gaps = self._project_document_records(
             project_context,
             checked_at,
             options,
         )
+        project_document_elapsed_ms = round((perf_counter() - stage_started) * 1000, 3)
+        stage_started = perf_counter()
         warnings.extend(_safe_text(item) for item in gis_warnings)
         warnings.extend(_safe_text(item) for item in policy_warnings)
         warnings.extend(_safe_text(item) for item in project_document_warnings)
@@ -1101,6 +1110,7 @@ class DeterministicEvidenceAgent:
             project_context.project_id,
         )
         records = _annotate_records(records, dependencies, contradictions, reviews)
+        assembly_elapsed_ms = round((perf_counter() - stage_started) * 1000, 3)
 
         domain_summary: dict[str, Any] = {}
         for record in records:
@@ -1125,6 +1135,14 @@ class DeterministicEvidenceAgent:
                 and bool(record.value.get("benchmark_only"))
                 for record in project_document_records
             ),
+            "timings_ms": {
+                "developer_input": developer_elapsed_ms,
+                "module_4b_gis": gis_elapsed_ms,
+                "module_5_policy_retrieval": policy_elapsed_ms,
+                "project_document_retrieval": project_document_elapsed_ms,
+                "assembly_deduplication": assembly_elapsed_ms,
+                "total": round((perf_counter() - started) * 1000, 3),
+            },
             "gis_records": sum(record.created_by == EvidenceCreatedBy.DETERMINISTIC_GIS for record in records),
             "policy_records": sum(record.created_by == EvidenceCreatedBy.RAG_RETRIEVAL for record in records),
             "unknown_or_missing_count": len(missing),

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from backend.app.agents.evidence import _policy_record
+from backend.app.agents.evidence import DeterministicEvidenceAgent, EvidenceAgentOptions, _policy_record
 from backend.app.schemas.agents import EvidenceSourceTrust, ProjectContext
 from backend.app.services.project_evidence.catalog import (
     HERBATA_DOCUMENT_ALLOWLIST,
@@ -101,6 +101,15 @@ def _write_project_artifacts(root: Path) -> None:
             source_url="https://example.invalid/synthetic.pdf",
             citation=citation,
         ),
+        ProjectEvidenceFact(
+            fact_id="fact-candidate-power",
+            project_document_id="project-herbata-test",
+            project_id=HERBATA_PROJECT_ID,
+            field_name="planned_power_mw",
+            value={"value": 120.0, "unit": "MW"},
+            source_url="https://example.invalid/synthetic.pdf",
+            citation=citation,
+        ),
     ]
     (processed / "chunks.jsonl").write_text("\n".join(item.model_dump_json() for item in chunks) + "\n", encoding="utf-8")
     (processed / "facts.jsonl").write_text("\n".join(item.model_dump_json() for item in facts) + "\n", encoding="utf-8")
@@ -121,6 +130,65 @@ def test_herbata_allowlist_is_finite_and_separates_benchmark_documents() -> None
     }
     assert sum(item.benchmark_only for item in HERBATA_DOCUMENT_ALLOWLIST) == 4
     assert all("herbatagdc.ie" in (item.direct_url or item.listing_url) for item in HERBATA_DOCUMENT_ALLOWLIST)
+
+
+def test_canonical_herbata_fixture_validates_with_field_provenance() -> None:
+    fixture_dir = Path(__file__).parent / "fixtures" / "agents"
+    context = ProjectContext.model_validate_json(
+        (fixture_dir / "herbata_project_context.json").read_text(encoding="utf-8")
+    )
+    provenance = json.loads(
+        (fixture_dir / "herbata_project_context_provenance.json").read_text(encoding="utf-8")
+    )
+    assert context.project_id == HERBATA_PROJECT_ID
+    assert context.location.latitude == pytest.approx(53.21888588126229)
+    assert context.location.longitude == pytest.approx(-6.709498983154712)
+    assert context.planned_power_mw is None
+    assert context.requested_mic_mva is None
+    assert provenance["location.latitude"]["source_coordinates"]["crs"] == "EPSG:2157"
+    assert "requested_mic_mva" in provenance["unknown_fields"]
+
+
+def test_missing_coordinates_remain_unknown_without_geocoding() -> None:
+    context = ProjectContext(project_id=HERBATA_PROJECT_ID)
+    assert context.location.latitude is None
+    assert context.location.longitude is None
+
+
+def test_project_candidates_do_not_overwrite_developer_context(tmp_path: Path) -> None:
+    _write_project_artifacts(tmp_path)
+    context = ProjectContext(project_id=HERBATA_PROJECT_ID, planned_power_mw=None)
+    agent = DeterministicEvidenceAgent(
+        tmp_path,
+        retrieval_runner=lambda *_: {"authoritative_results": [], "curated_results": [], "supporting_results": [], "gaps": [], "warnings": []},
+    )
+    bundle = agent.run(
+        context,
+        EvidenceAgentOptions(include_project_documents=True, include_benchmark_documents=False),
+    )
+    assert bundle.project_context.planned_power_mw is None
+    candidate = next(item for item in bundle.records if item.field_name == "project.planned_power_mw")
+    assert candidate.value["value"] == {"value": 120.0, "unit": "MW"}
+    assert candidate.source_trust == EvidenceSourceTrust.UNTRUSTED_PROJECT_DOCUMENT
+
+
+def test_evidence_agent_exposes_stage_timings_without_decision_logic(tmp_path: Path) -> None:
+    context = ProjectContext(project_id=HERBATA_PROJECT_ID)
+    agent = DeterministicEvidenceAgent(
+        tmp_path,
+        retrieval_runner=lambda *_: {"authoritative_results": [], "curated_results": [], "supporting_results": [], "gaps": [], "warnings": []},
+    )
+    bundle = agent.run(context, EvidenceAgentOptions(include_project_documents=False))
+    timings = bundle.provenance_summary["timings_ms"]
+    assert set(timings) == {
+        "developer_input",
+        "module_4b_gis",
+        "module_5_policy_retrieval",
+        "project_document_retrieval",
+        "assembly_deduplication",
+        "total",
+    }
+    assert "decision" not in bundle.model_dump()
 
 
 def test_mocked_listing_fixture_resolves_only_named_document() -> None:
