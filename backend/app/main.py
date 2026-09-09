@@ -7,7 +7,15 @@ from fastapi import FastAPI, HTTPException, Query
 
 from .agents.assessment import DeterministicAssessmentAgent
 from .agents.evidence import DeterministicEvidenceAgent, EvidenceAgentOptions
-from .schemas.agents import AssessmentRequest, AssessmentResult, EvidenceBundle, ProjectContext
+from .agents.explanation import DeterministicExplanationAgent, ExplanationAgentError
+from .schemas.agents import (
+    AssessmentRequest,
+    AssessmentResult,
+    EvidenceBundle,
+    ExplanationRequest,
+    ExplanationResult,
+    ProjectContext,
+)
 from .schemas.evidence import EvidenceLedger
 from .schemas.project import (
     ProjectInput,
@@ -102,6 +110,16 @@ def assessment_agent(request: AssessmentRequest) -> AssessmentResult:
     """Assess an existing EvidenceBundle without gathering new evidence."""
 
     return DeterministicAssessmentAgent().run(request)
+
+
+@app.post("/agents/explanation", response_model=ExplanationResult)
+def explanation_agent(request: ExplanationRequest) -> ExplanationResult:
+    """Explain an existing assessment without gathering evidence or deciding."""
+
+    try:
+        return DeterministicExplanationAgent().run(request)
+    except ExplanationAgentError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 def _rag_registry_path() -> Path:

@@ -2,7 +2,7 @@
 
 INTERLOCK is an early-stage decision-support platform for data-centre development. Its long-term purpose is to help a developer understand whether a development proposition is credible enough to progress, what could stop or delay it, what remains unknown, and what needs to happen next.
 
-## Current scope: Modules 1–7
+## Current scope: Modules 1–8
 
 Module 1 proves that a Streamlit frontend can communicate with a FastAPI backend and that both services can run with Docker Compose. Module 2 adds the structured developer project-input workflow. Module 3 converts that input into an in-memory evidence ledger. Module 4A adds deterministic raw-data inventory, validation, cleaning, provenance, and spatial standardisation. Module 4B adds deterministic site-level evidence queries over those processed outputs while retaining the Module 3 ledger and explicit limitations. Module 5A creates a deterministic, provenance-aware policy knowledge-base foundation. Module 5B adds authority-aware hybrid retrieval over that processed corpus without answer generation or project decisions.
 
@@ -128,6 +128,24 @@ The backend endpoint is `POST /agents/assessment`. The Streamlit developer
 flow runs it only after the Evidence Agent and displays findings grouped by
 domain, with supporting evidence IDs and citations retained in the input
 bundle.
+
+## Module 8 — Deterministic explanation
+
+Module 8 consumes an existing `AssessmentResult` and produces a concise,
+evidence-grounded `ExplanationResult`. It preserves `UNKNOWN`, `CONDITIONAL`,
+and `CONSTRAINED` status, source distinctions, dependencies, contradictions,
+specialist reviews, evidence IDs, and existing citations. It does not gather
+evidence, reinterpret policy, calculate a score, make a recommendation, or
+produce an `ADVANCE`, `HOLD`, `RECONFIGURE`, or `STOP` decision.
+
+The backend endpoint is `POST /agents/explanation`. The Streamlit developer
+flow now runs Evidence Agent → Assessment Agent → Explanation Agent and shows
+the executive explanation, prioritised findings, consolidated material-unknown
+themes, dependencies, contradictions, human reviews, consolidated next
+actions, and customer-facing citations. Detailed unknowns, actions, evidence
+IDs, and complete citations remain available through the provenance
+drill-down. The additive explanation fields preserve old valid contract
+payloads.
 
 ## Prerequisites
 

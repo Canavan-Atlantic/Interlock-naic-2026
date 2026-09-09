@@ -328,6 +328,65 @@ def render_assessment_agent(payload: dict[str, object]) -> None:
             st.caption("None recorded.")
 
 
+def render_explanation_agent(payload: dict[str, object]) -> None:
+    """Render the concise Module 8 explanation without adding a decision."""
+
+    st.subheader("Explanation Agent")
+    st.caption("Deterministic, evidence-grounded explanation only. No final project decision, score, or recommendation is produced.")
+    if payload.get("executive_summary"):
+        st.markdown(f"**Executive / project explanation:** {payload['executive_summary']}")
+
+    for title, key in (
+        ("Why it matters", "why_it_matters"),
+        ("Known facts", "known_facts"),
+        ("Constraints", "constraints"),
+        ("Conditional issues", "conditional_issues"),
+        ("Material unknown themes", "material_unknown_themes"),
+        ("Dependencies", "dependencies"),
+        ("Contradictions", "contradictions"),
+        ("Human reviews", "human_handoffs"),
+        ("Suggested next actions", "next_action_plan"),
+    ):
+        st.markdown(f"#### {title}")
+        values = payload.get(key, [])
+        if values:
+            st.json(values)
+        else:
+            st.caption("None recorded.")
+
+    st.markdown("#### Key findings")
+    key_findings = payload.get("key_findings", [])
+    if key_findings:
+        for item in key_findings:
+            st.write(str(item).split(" [finding:", 1)[0])
+        with st.expander("Finding traceability"):
+            st.json(key_findings)
+    else:
+        st.caption("None recorded.")
+
+    st.markdown("#### Customer-facing citations")
+    customer_citations = payload.get("customer_facing_citations", [])
+    if customer_citations:
+        st.json(customer_citations)
+    else:
+        st.caption("No structured evidence IDs or citations recorded.")
+
+    with st.expander("Complete provenance drill-down"):
+        st.json(
+            {
+                "evidence_ids": payload.get("evidence_ids", []),
+                "material_unknowns": payload.get("material_unknowns", []),
+                "next_actions": payload.get("next_actions", []),
+                "source_citations": payload.get("source_citations", []),
+            }
+        )
+
+    warnings = payload.get("warnings", [])
+    if warnings:
+        st.markdown("#### Explanation boundaries")
+        st.json(warnings)
+
+
 def render_retrieval_hit(hit: dict[str, object]) -> None:
     """Display one provenance-preserving retrieval result without interpreting it."""
 
@@ -448,6 +507,7 @@ st.session_state.setdefault("evidence_payload", None)
 st.session_state.setdefault("site_evidence_payload", None)
 st.session_state.setdefault("evidence_agent_payload", None)
 st.session_state.setdefault("assessment_payload", None)
+st.session_state.setdefault("explanation_payload", None)
 
 if submitted:
     if not api_base_url:
@@ -481,6 +541,7 @@ if submitted:
             st.session_state["site_evidence_payload"] = None
             st.session_state["evidence_agent_payload"] = None
             st.session_state["assessment_payload"] = None
+            st.session_state["explanation_payload"] = None
             try:
                 evidence_response = requests.post(
                     f"{api_base_url.rstrip('/')}/evidence/from-project",
@@ -616,6 +677,7 @@ if validation_payload:
                 agent_response.raise_for_status()
                 st.session_state["evidence_agent_payload"] = agent_response.json()
                 st.session_state["assessment_payload"] = None
+                st.session_state["explanation_payload"] = None
             except requests.HTTPError:
                 st.error("The Evidence Agent request was rejected by the backend.")
             except requests.RequestException:
@@ -650,6 +712,7 @@ if validation_payload:
                     )
                     assessment_response.raise_for_status()
                     st.session_state["assessment_payload"] = assessment_response.json()
+                    st.session_state["explanation_payload"] = None
                 except requests.HTTPError:
                     st.error("The Assessment Agent request was rejected by the backend.")
                 except requests.RequestException:
@@ -660,6 +723,37 @@ if validation_payload:
     assessment_payload = st.session_state.get("assessment_payload")
     if assessment_payload:
         render_assessment_agent(assessment_payload)
+        if st.button(
+            "Run Explanation",
+            key="run_explanation_agent",
+            type="primary",
+            icon=":material/description:",
+        ):
+            if not api_base_url:
+                st.error("The Explanation Agent could not run because the backend URL is not configured.")
+            else:
+                try:
+                    explanation_response = requests.post(
+                        f"{api_base_url.rstrip('/')}/agents/explanation",
+                        json={
+                            "project_context": assessment_payload.get("project_context"),
+                            "assessment_result": assessment_payload,
+                            "evidence_bundle": evidence_agent_payload,
+                        },
+                        timeout=30,
+                    )
+                    explanation_response.raise_for_status()
+                    st.session_state["explanation_payload"] = explanation_response.json()
+                except requests.HTTPError:
+                    st.error("The Explanation Agent request was rejected by the backend.")
+                except requests.RequestException:
+                    st.error("The Explanation Agent service is unavailable.")
+                except (KeyError, TypeError, ValueError):
+                    st.error("The backend returned an invalid Explanation Agent response.")
+
+        explanation_payload = st.session_state.get("explanation_payload")
+        if explanation_payload:
+            render_explanation_agent(explanation_payload)
 
 
 st.header("Policy & Regulatory Retrieval")

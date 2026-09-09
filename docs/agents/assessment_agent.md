@@ -75,8 +75,8 @@ customer decision.
 
 ## Boundary to later modules
 
-Module 7 stops at structured assessment. A future Explanation Agent may turn
-these findings into controlled explanations, and a future Orchestrator may
-compose workflow results. Neither is implemented here. No equal-weight
-0-100 score is used because a material constraint must not be averaged away
-by unrelated positive evidence.
+Module 7 stops at structured assessment. Module 8 consumes these findings
+through `ExplanationRequest` and turns them into controlled, evidence-traceable
+explanations without changing their status. A future Orchestrator may compose
+the workflow results. No equal-weight 0-100 score is used because a material
+constraint must not be averaged away by unrelated positive evidence.
