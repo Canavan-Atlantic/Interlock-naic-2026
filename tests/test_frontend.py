@@ -40,6 +40,75 @@ def test_frontend_new_assessment_keeps_validation_and_run_actions() -> None:
     assert all(item.value is None for item in app.number_input)
 
 
+def test_successful_assessment_queues_safe_navigation_and_persists_result(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[str] = []
+    result = json.loads((FIXTURES / "interlock_result_example.json").read_text(encoding="utf-8"))
+    result.update(
+        {
+            "run_id": "frontend-navigation-run",
+            "workflow_status": "REQUIRES_HUMAN_REVIEW",
+            "requires_human_review": True,
+            "stage_status": {"evidence": "COMPLETE", "assessment": "COMPLETE", "explanation": "COMPLETE"},
+            "stage_counts": {"evidence": 1, "assessment": 1, "explanation": 1},
+            "timings_ms": {"evidence": 3.0, "assessment": 2.0, "explanation": 1.0, "total": 6.0},
+            "human_reviews": [],
+        }
+    )
+    result["explanation_result"] = json.loads(
+        (FIXTURES / "explanation_result_example.json").read_text(encoding="utf-8")
+    )
+
+    class FakeResponse:
+        def __init__(self, payload: dict[str, object]) -> None:
+            self.payload = payload
+
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict[str, object]:
+            return self.payload
+
+    def fake_get(url: str, **_: object) -> FakeResponse:
+        assert url.endswith("/health")
+        return FakeResponse({"status": "ok"})
+
+    def fake_post(url: str, **_: object) -> FakeResponse:
+        calls.append(url)
+        if url.endswith("/project-input/validate"):
+            return FakeResponse({"status": "valid", "project": {}, "missing_or_unknown": []})
+        assert url.endswith("/interlock/run")
+        return FakeResponse(result)
+
+    monkeypatch.setattr("requests.get", fake_get)
+    monkeypatch.setattr("requests.post", fake_post)
+    monkeypatch.setenv("INTERLOCK_API_BASE_URL", "http://test-backend")
+
+    app = AppTest.from_file(APP_PATH, default_timeout=10).run()
+    app.session_state["active_page"] = "New Assessment"
+    app.run()
+    assert all(item.value is None for item in app.number_input)
+    run_button = next(button for button in app.button if button.label == "Run INTERLOCK assessment")
+
+    run_button.click().run()
+
+    assert not app.exception
+    assert app.session_state["interlock_payload"]["run_id"] == "frontend-navigation-run"
+    assert app.session_state["active_page"] == "Decision Pack"
+    assert app.pills[0].value == "Decision Pack"
+    assert any("INTERLOCK Development Readiness Decision Pack" in item.value for item in app.markdown)
+    assert any("Human review required" in item.value for item in app.markdown)
+    assert len([url for url in calls if url.endswith("/interlock/run")]) == 1
+
+    app.pills[0].select("Home").run()
+    assert not app.exception
+    assert app.session_state["active_page"] == "Home"
+    app.pills[0].select("Decision Pack").run()
+    assert not app.exception
+    assert app.session_state["active_page"] == "Decision Pack"
+    assert app.session_state["interlock_payload"]["run_id"] == "frontend-navigation-run"
+    assert len([url for url in calls if url.endswith("/interlock/run")]) == 1
+
+
 def test_decision_pack_renders_complete_review_payload_without_missing_keys() -> None:
     payload = json.loads((FIXTURES / "interlock_result_example.json").read_text(encoding="utf-8"))
     explanation = json.loads((FIXTURES / "explanation_result_example.json").read_text(encoding="utf-8"))

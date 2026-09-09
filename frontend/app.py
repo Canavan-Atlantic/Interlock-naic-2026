@@ -21,6 +21,9 @@ from components import (
 from styles import inject_styles
 
 
+NAVIGATION_PAGES = ("Home", "New Assessment", "Decision Pack", "Evidence", "Methodology")
+
+
 st.set_page_config(page_title="INTERLOCK · Canavan Atlantic", page_icon=":material/link:", layout="wide")
 inject_styles()
 
@@ -119,6 +122,15 @@ def backend_available(base_url: str | None) -> bool:
         return isinstance(payload, dict) and payload.get("status") == "ok"
     except (requests.RequestException, ValueError):
         return False
+
+
+def request_navigation(page: str) -> None:
+    """Queue navigation for the next rerun before the navigation widget renders."""
+
+    if page not in NAVIGATION_PAGES:
+        return
+    st.session_state["pending_navigation"] = page
+    st.rerun()
 
 
 def run_interlock(project_payload: dict[str, object], project_evidence_mode: str, api_base_url: str) -> None:
@@ -288,8 +300,7 @@ def render_assessment_page(api_base_url: str | None) -> None:
     if run_clicked:
         run_interlock(project_payload, project_evidence_mode, api_base_url)
         if st.session_state.get("interlock_payload"):
-            st.session_state["active_page"] = "Decision Pack"
-            st.rerun()
+            request_navigation("Decision Pack")
 
 
 def render_public_data_debug(project_payload: dict[str, object] | None, api_base_url: str | None) -> None:
@@ -437,6 +448,7 @@ def render_evidence_page(api_base_url: str | None) -> None:
 
 
 st.session_state.setdefault("active_page", "Home")
+st.session_state.setdefault("pending_navigation", None)
 for key in (
     "validation_payload",
     "submitted_project_payload",
@@ -449,6 +461,10 @@ for key in (
 ):
     st.session_state.setdefault(key, None)
 
+pending_navigation = st.session_state.pop("pending_navigation", None)
+if pending_navigation in NAVIGATION_PAGES:
+    st.session_state["active_page"] = pending_navigation
+
 
 st.title("INTERLOCK")
 st.caption("Canavan Atlantic · Data Centre Development Intelligence")
@@ -460,7 +476,7 @@ elif api_base_url:
 else:
     st.caption("Explore the methodology or prepare an assessment · backend connection not configured")
 
-pages = ["Home", "New Assessment", "Decision Pack", "Evidence", "Methodology"]
+pages = list(NAVIGATION_PAGES)
 active_page = st.pills("Primary navigation", pages, key="active_page", label_visibility="collapsed")
 if not active_page:
     active_page = st.session_state["active_page"]
@@ -468,11 +484,9 @@ if not active_page:
 if active_page == "Home":
     start_clicked, explore_clicked = render_home()
     if start_clicked:
-        st.session_state["active_page"] = "New Assessment"
-        st.rerun()
+        request_navigation("New Assessment")
     if explore_clicked:
-        st.session_state["active_page"] = "Methodology"
-        st.rerun()
+        request_navigation("Methodology")
 elif active_page == "New Assessment":
     render_assessment_page(api_base_url)
 elif active_page == "Decision Pack":
@@ -484,8 +498,7 @@ elif active_page == "Decision Pack":
         st.markdown('<h1 class="interlock-section-title">Your decision pack will appear here.</h1>', unsafe_allow_html=True)
         st.info("Start a new assessment to generate a traceable INTERLOCK result.")
         if st.button("Start a new site assessment", type="primary", icon=":material/arrow_forward:"):
-            st.session_state["active_page"] = "New Assessment"
-            st.rerun()
+            request_navigation("New Assessment")
 elif active_page == "Evidence":
     render_evidence_page(api_base_url)
 else:
