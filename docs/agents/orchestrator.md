@@ -38,6 +38,15 @@ Explanation failure preserves both prior outputs. Stage status, bounded error
 text, record/finding counts, timings, and `failure_stage` explain what
 happened without exposing stack traces or secrets.
 
+`stage_status` uses `COMPLETE` for a successfully finished stage, `FAILED`
+for a technical stage failure, and `SKIPPED` when an earlier failure prevents
+execution. `workflow_status=REQUIRES_HUMAN_REVIEW` is a successful automated
+workflow state, not a technical failure: all three stages can be `COMPLETE`
+while accountable human review remains unresolved. Technical failures use
+`FAILED` or `PARTIAL` separately. Review consolidation is a unique union of
+the upstream Evidence and Assessment review IDs; duplicate IDs merge evidence
+IDs and retain the strongest severity and known specialist role.
+
 Domain-level `UNKNOWN` and partial evidence remain valid pipeline inputs. A
 completed run with review requests is marked `REQUIRES_HUMAN_REVIEW` and
 exposes the structured requests; the orchestrator never treats review as

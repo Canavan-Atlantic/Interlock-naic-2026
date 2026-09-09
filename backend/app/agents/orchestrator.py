@@ -17,6 +17,7 @@ from ..schemas.agents import (
     ExplanationResult,
     InterlockResult,
     HumanReviewRequest,
+    HumanReviewStatus,
     ProjectContext,
     WorkflowStatus,
 )
@@ -53,19 +54,72 @@ def _reviews_for(
     evidence_bundle: EvidenceBundle | None,
     assessment_result: AssessmentResult | None,
 ) -> list[HumanReviewRequest]:
-    """Combine review requests without losing distinct review IDs."""
+    """Consolidate upstream review state without inventing review IDs."""
 
-    reviews: list[HumanReviewRequest] = []
-    seen: set[str] = set()
+    by_id: dict[str, HumanReviewRequest] = {}
     for candidates in (
         evidence_bundle.human_review_requests if evidence_bundle else [],
         assessment_result.human_reviews if assessment_result else [],
     ):
         for review in candidates:
-            if review.review_id not in seen:
-                reviews.append(review)
-                seen.add(review.review_id)
-    return reviews
+            existing = by_id.get(review.review_id)
+            if existing is None:
+                by_id[review.review_id] = review.model_copy(deep=True)
+                continue
+
+            # Assessment may refine the severity of an evidence-originated
+            # request.  Keep the stronger upstream severity, merge all
+            # evidence IDs, and never replace a known specialist role with
+            # UNKNOWN merely because the duplicate has weaker metadata.
+            current = existing
+            candidate = review
+            selected = (
+                candidate
+                if _severity_rank(candidate.severity) > _severity_rank(current.severity)
+                else current
+            ).model_copy(deep=True)
+            selected.evidence_ids = list(
+                dict.fromkeys([*current.evidence_ids, *candidate.evidence_ids])
+            )
+            if _role_value(selected.recommended_role) == "UNKNOWN":
+                alternate_role = (
+                    candidate.recommended_role
+                    if _role_value(current.recommended_role) == "UNKNOWN"
+                    else current.recommended_role
+                )
+                if _role_value(alternate_role) != "UNKNOWN":
+                    selected.recommended_role = alternate_role
+            if _review_is_unresolved(current) or _review_is_unresolved(candidate):
+                selected.status = HumanReviewStatus.REQUIRED.value
+            by_id[review.review_id] = selected
+    return list(by_id.values())
+
+
+def _severity_rank(value: object) -> int:
+    return {
+        "INFORMATIONAL": 0,
+        "MATERIAL": 1,
+        "HIGH_CONSEQUENCE": 2,
+    }.get(_enum_value(value), 1)
+
+
+def _role_value(value: object) -> str:
+    return _enum_value(value)
+
+
+def _review_is_unresolved(review: HumanReviewRequest) -> bool:
+    return _enum_value(review.status) not in {
+        HumanReviewStatus.COMPLETED.value,
+        HumanReviewStatus.NOT_REQUIRED.value,
+    }
+
+
+def _requires_human_review(reviews: list[HumanReviewRequest]) -> bool:
+    return any(_review_is_unresolved(review) for review in reviews)
+
+
+def _enum_value(value: object) -> str:
+    return str(getattr(value, "value", value))
 
 
 class DeterministicInterlockOrchestrator:
@@ -126,7 +180,7 @@ class DeterministicInterlockOrchestrator:
             explanation_result=explanation_result,
             workflow_status=workflow_status,
             human_reviews=reviews,
-            requires_human_review=bool(reviews),
+            requires_human_review=_requires_human_review(reviews),
             run_id=run_id,
             stage_status=stage_status,
             stage_errors=stage_errors,
@@ -254,7 +308,11 @@ class DeterministicInterlockOrchestrator:
         stage_counts[_STAGE_EXPLANATION] = len(explanation_result.key_findings)
         timings_ms["total"] = round((perf_counter() - started) * 1000, 3)
         reviews = _reviews_for(evidence_bundle, assessment_result)
-        workflow_status = WorkflowStatus.REQUIRES_HUMAN_REVIEW if reviews else WorkflowStatus.COMPLETE
+        workflow_status = (
+            WorkflowStatus.REQUIRES_HUMAN_REVIEW
+            if _requires_human_review(reviews)
+            else WorkflowStatus.COMPLETE
+        )
         return self._result(
             project_context,
             run_id=run_id,

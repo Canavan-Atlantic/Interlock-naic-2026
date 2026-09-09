@@ -18,6 +18,10 @@ from backend.app.schemas.agents import (
     ExplanationRequest,
     ExplanationResult,
     HumanReviewRequest,
+    HumanReviewRole,
+    HumanReviewSeverity,
+    HumanReviewStatus,
+    InterlockResult,
     ProjectContext,
     WorkflowStatus,
 )
@@ -245,6 +249,70 @@ def test_request_scoped_runs_do_not_leak_between_projects() -> None:
     assert second_result.evidence_bundle.project_context.project_id == "project-b"
 
 
+def test_two_projects_isolate_records_findings_reviews_citations_and_documents() -> None:
+    from backend.app.services.rag.models import CitationReference
+    from backend.app.schemas.agents import AssessmentFinding
+
+    first_context = _context("isolated-a")
+    second_context = _context("isolated-b")
+    first_review = HumanReviewRequest(
+        review_id="review-isolated-a",
+        project_id=first_context.project_id,
+        domain=Domain.GRID,
+        reason="A-only review.",
+        evidence_ids=["evidence-a"],
+    )
+    second_review = HumanReviewRequest(
+        review_id="review-isolated-b",
+        project_id=second_context.project_id,
+        domain=Domain.WATER,
+        reason="B-only review.",
+        evidence_ids=["evidence-b"],
+    )
+    first_evidence, first_assessment, first_explanation = _agents(first_context, review=first_review)
+    second_evidence, second_assessment, second_explanation = _agents(second_context, review=second_review)
+    first_record = first_evidence.bundle.records[0].model_copy(
+        update={"project_id": first_context.project_id, "evidence_id": "evidence-a"}
+    )
+    second_record = second_evidence.bundle.records[0].model_copy(
+        update={"project_id": second_context.project_id, "evidence_id": "evidence-b"}
+    )
+    first_evidence.bundle = first_evidence.bundle.model_copy(update={"records": [first_record]})
+    second_evidence.bundle = second_evidence.bundle.model_copy(update={"records": [second_record]})
+    first_assessment.result = AssessmentResult(
+        project_context=first_context,
+        findings=[AssessmentFinding(finding_id="finding-a", domain=Domain.GRID)],
+    )
+    second_assessment.result = AssessmentResult(
+        project_context=second_context,
+        findings=[AssessmentFinding(finding_id="finding-b", domain=Domain.WATER)],
+    )
+    first_explanation.result = ExplanationResult(
+        evidence_ids=["evidence-a"],
+        source_citations=[CitationReference(document_id="doc-a", source_path="a", locator="p.1")],
+    )
+    second_explanation.result = ExplanationResult(
+        evidence_ids=["evidence-b"],
+        source_citations=[CitationReference(document_id="doc-b", source_path="b", locator="p.1")],
+    )
+
+    first = _orchestrator(first_evidence, first_assessment, first_explanation).run(first_context)
+    second = _orchestrator(second_evidence, second_assessment, second_explanation).run(second_context)
+
+    assert first.evidence_bundle.records[0].evidence_id == "evidence-a"
+    assert second.evidence_bundle.records[0].evidence_id == "evidence-b"
+    assert first.assessment_result.findings[0].finding_id == "finding-a"
+    assert second.assessment_result.findings[0].finding_id == "finding-b"
+    assert [review.review_id for review in first.human_reviews] == ["review-isolated-a"]
+    assert [review.review_id for review in second.human_reviews] == ["review-isolated-b"]
+    assert first.explanation_result.evidence_ids == ["evidence-a"]
+    assert second.explanation_result.evidence_ids == ["evidence-b"]
+    assert first.explanation_result.source_citations[0].document_id == "doc-a"
+    assert second.explanation_result.source_citations[0].document_id == "doc-b"
+    assert first.timings_ms is not second.timings_ms
+    assert first.run_id != second.run_id
+
+
 def test_timings_counts_and_serialisation_are_present_without_decision_fields() -> None:
     context = _context()
     evidence, assessment, explanation = _agents(context)
@@ -453,3 +521,165 @@ def test_endpoint_defaults_to_non_benchmark_evidence_mode(monkeypatch) -> None:
     assert response.status_code == 200
     options = evidence.calls[-1][1]
     assert options.include_benchmark_documents is False
+
+
+def test_final_review_ids_are_exactly_the_unique_upstream_union() -> None:
+    context = _context()
+    evidence_review = HumanReviewRequest(
+        review_id="upstream-evidence-review",
+        project_id=context.project_id,
+        domain=Domain.GRID,
+        reason="Evidence review.",
+        evidence_ids=["evidence-a"],
+    )
+    assessment_review = HumanReviewRequest(
+        review_id="upstream-assessment-review",
+        project_id=context.project_id,
+        domain=Domain.PLANNING,
+        reason="Assessment review.",
+        evidence_ids=["evidence-b"],
+    )
+    evidence, assessment, explanation = _agents(context, review=evidence_review)
+    assessment.result = AssessmentResult(
+        project_context=context,
+        human_reviews=[evidence_review, assessment_review],
+    )
+    result = _orchestrator(evidence, assessment, explanation).run(context)
+
+    assert {item.review_id for item in result.human_reviews} == {
+        "upstream-evidence-review",
+        "upstream-assessment-review",
+    }
+    assert len(result.human_reviews) == 2
+
+
+def test_duplicate_reviews_keep_highest_severity_role_and_all_evidence_ids() -> None:
+    context = _context()
+    evidence_review = HumanReviewRequest(
+        review_id="review-merge-001",
+        project_id=context.project_id,
+        domain=Domain.GRID,
+        reason="Connection review.",
+        severity=HumanReviewSeverity.MATERIAL,
+        recommended_role=HumanReviewRole.GRID_ENGINEER,
+        evidence_ids=["evidence-a"],
+    )
+    assessment_review = evidence_review.model_copy(
+        update={
+            "severity": HumanReviewSeverity.HIGH_CONSEQUENCE,
+            "recommended_role": HumanReviewRole.UNKNOWN,
+            "evidence_ids": ["evidence-b"],
+        }
+    )
+    evidence, assessment, explanation = _agents(context, review=evidence_review)
+    assessment.result = AssessmentResult(project_context=context, human_reviews=[assessment_review])
+    result = _orchestrator(evidence, assessment, explanation).run(context)
+
+    merged = result.human_reviews[0]
+    assert merged.severity == HumanReviewSeverity.HIGH_CONSEQUENCE.value
+    assert merged.recommended_role == HumanReviewRole.GRID_ENGINEER.value
+    assert merged.evidence_ids == ["evidence-a", "evidence-b"]
+
+
+def test_completed_review_is_preserved_but_does_not_trigger_review_gate() -> None:
+    context = _context()
+    completed_review = HumanReviewRequest(
+        review_id="review-completed-001",
+        project_id=context.project_id,
+        domain=Domain.GRID,
+        reason="Already resolved upstream.",
+        status=HumanReviewStatus.COMPLETED,
+    )
+    evidence, assessment, explanation = _agents(context, review=completed_review)
+    result = _orchestrator(evidence, assessment, explanation).run(context)
+
+    assert result.human_reviews[0].review_id == "review-completed-001"
+    assert result.requires_human_review is False
+    assert result.workflow_status == WorkflowStatus.COMPLETE
+
+
+def test_review_required_overall_status_is_not_a_technical_failure() -> None:
+    context = _context()
+    review = HumanReviewRequest(
+        review_id="review-required-001",
+        project_id=context.project_id,
+        domain=Domain.GRID,
+        reason="Unresolved grid question.",
+    )
+    evidence, assessment, explanation = _agents(context, review=review)
+    result = _orchestrator(evidence, assessment, explanation).run(context)
+
+    assert result.stage_status == {
+        "evidence": "COMPLETE",
+        "assessment": "COMPLETE",
+        "explanation": "COMPLETE",
+    }
+    assert result.workflow_status == WorkflowStatus.REQUIRES_HUMAN_REVIEW
+    assert result.workflow_status not in {WorkflowStatus.FAILED, WorkflowStatus.PARTIAL}
+
+
+def test_legacy_shared_contract_payloads_still_deserialise() -> None:
+    legacy = json.loads(
+        (FIXTURES / "interlock_result_example.json").read_text(encoding="utf-8")
+    )
+    result = InterlockResult.model_validate(legacy)
+    evidence = EvidenceBundle.model_validate_json(
+        (FIXTURES / "evidence_bundle_example.json").read_text(encoding="utf-8")
+    )
+    assessment = AssessmentResult.model_validate_json(
+        (FIXTURES / "assessment_result_example.json").read_text(encoding="utf-8")
+    )
+    explanation = ExplanationResult.model_validate_json(
+        (FIXTURES / "explanation_result_example.json").read_text(encoding="utf-8")
+    )
+
+    assert result.workflow_status == WorkflowStatus.COMPLETE
+    assert result.evidence_bundle.project_context.project_id == evidence.project_context.project_id
+    assert result.assessment_result.project_context.project_id == assessment.project_context.project_id
+    assert explanation.model_dump(mode="json")
+    assert result.run_id is None
+    assert result.stage_status == {}
+
+
+def test_api_failure_result_is_structured_without_internal_details(monkeypatch) -> None:
+    from backend.app import main as main_module
+
+    context = _context("safe-api-project")
+    evidence, assessment, explanation = _agents(
+        context,
+        evidence_error=RuntimeError(
+            "Traceback: C:\\private\\project\\secret.py OPENAI_API_KEY=sk-test-secret"
+        ),
+    )
+    orchestrator = _orchestrator(evidence, assessment, explanation)
+    monkeypatch.setattr(main_module, "DeterministicInterlockOrchestrator", lambda _root: orchestrator)
+
+    response = TestClient(main_module.app).post(
+        "/interlock/run",
+        json=context.model_dump(mode="json"),
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    serialized = response.text
+    assert payload["workflow_status"] == "FAILED"
+    assert payload["stage_status"]["evidence"] == "FAILED"
+    assert payload["stage_status"]["assessment"] == "SKIPPED"
+    assert payload["evidence_bundle"] is None
+    assert "Traceback" not in serialized
+    assert "private\\project" not in serialized
+    assert "sk-test-secret" not in serialized
+
+
+def test_individual_agent_routes_remain_registered_alongside_orchestrator() -> None:
+    from backend.app.main import app
+
+    routes = {
+        (method, route.path)
+        for route in app.routes
+        for method in getattr(route, "methods", set())
+    }
+    assert ("POST", "/agents/evidence") in routes
+    assert ("POST", "/agents/assessment") in routes
+    assert ("POST", "/agents/explanation") in routes
+    assert ("POST", "/interlock/run") in routes
