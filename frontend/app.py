@@ -283,6 +283,51 @@ def render_evidence_agent(payload: dict[str, object]) -> None:
         st.caption("No structured citations recorded.")
 
 
+def render_assessment_agent(payload: dict[str, object]) -> None:
+    """Render Module 7 findings without adding a final project decision."""
+
+    st.subheader("Assessment Agent")
+    st.caption("Deterministic constraint assessment only. No Advance/Hold/Reconfigure/Stop decision is produced.")
+    findings = payload.get("findings", [])
+    if not isinstance(findings, list):
+        findings = []
+    for domain in sorted({str(item.get("domain")) for item in findings if isinstance(item, dict)}):
+        st.markdown(f"#### {domain}")
+        rows = [
+            {
+                "Status": item.get("status"),
+                "Impact": item.get("decision_impact") or "—",
+                "Constraint": item.get("constraint") or "—",
+                "Unknowns": "; ".join(item.get("material_unknowns") or []) or "—",
+                "Evidence IDs": "; ".join(item.get("evidence_ids") or []) or "—",
+                "Human review": item.get("human_review_required", False),
+            }
+            for item in findings
+            if isinstance(item, dict) and str(item.get("domain")) == domain
+        ]
+        st.dataframe(rows, hide_index=True)
+
+    contradiction_findings = [
+        item
+        for item in findings
+        if isinstance(item, dict)
+        and "conflicting evidence" in str(item.get("decision_impact") or "").casefold()
+    ]
+    for title, key, override in (
+        ("Constraints", "constraints"),
+        ("Material unknowns", "material_unknowns"),
+        ("Dependencies", "dependencies"),
+        ("Contradictions (as conditional findings)", "contradictions", contradiction_findings),
+        ("Human reviews", "human_reviews"),
+    ):
+        st.markdown(f"#### {title}")
+        values = override if override is not None else payload.get(key, [])
+        if values:
+            st.json(values)
+        else:
+            st.caption("None recorded.")
+
+
 def render_retrieval_hit(hit: dict[str, object]) -> None:
     """Display one provenance-preserving retrieval result without interpreting it."""
 
@@ -402,6 +447,7 @@ st.session_state.setdefault("validation_payload", None)
 st.session_state.setdefault("evidence_payload", None)
 st.session_state.setdefault("site_evidence_payload", None)
 st.session_state.setdefault("evidence_agent_payload", None)
+st.session_state.setdefault("assessment_payload", None)
 
 if submitted:
     if not api_base_url:
@@ -434,6 +480,7 @@ if submitted:
             st.session_state["validation_payload"] = validation_payload
             st.session_state["site_evidence_payload"] = None
             st.session_state["evidence_agent_payload"] = None
+            st.session_state["assessment_payload"] = None
             try:
                 evidence_response = requests.post(
                     f"{api_base_url.rstrip('/')}/evidence/from-project",
@@ -568,6 +615,7 @@ if validation_payload:
                 )
                 agent_response.raise_for_status()
                 st.session_state["evidence_agent_payload"] = agent_response.json()
+                st.session_state["assessment_payload"] = None
             except requests.HTTPError:
                 st.error("The Evidence Agent request was rejected by the backend.")
             except requests.RequestException:
@@ -582,6 +630,36 @@ if validation_payload:
     evidence_agent_payload = st.session_state.get("evidence_agent_payload")
     if evidence_agent_payload:
         render_evidence_agent(evidence_agent_payload)
+        if st.button(
+            "Run Assessment",
+            key="run_assessment_agent",
+            type="primary",
+            icon=":material/assessment:",
+        ):
+            if not api_base_url:
+                st.error("The Assessment Agent could not run because the backend URL is not configured.")
+            else:
+                try:
+                    assessment_response = requests.post(
+                        f"{api_base_url.rstrip('/')}/agents/assessment",
+                        json={
+                            "project_context": evidence_agent_payload.get("project_context"),
+                            "evidence_bundle": evidence_agent_payload,
+                        },
+                        timeout=30,
+                    )
+                    assessment_response.raise_for_status()
+                    st.session_state["assessment_payload"] = assessment_response.json()
+                except requests.HTTPError:
+                    st.error("The Assessment Agent request was rejected by the backend.")
+                except requests.RequestException:
+                    st.error("The Assessment Agent service is unavailable.")
+                except (KeyError, TypeError, ValueError):
+                    st.error("The backend returned an invalid Assessment Agent response.")
+
+    assessment_payload = st.session_state.get("assessment_payload")
+    if assessment_payload:
+        render_assessment_agent(assessment_payload)
 
 
 st.header("Policy & Regulatory Retrieval")
