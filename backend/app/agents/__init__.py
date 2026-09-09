@@ -8,6 +8,11 @@ from .evidence import (
     build_retrieval_requests,
 )
 from .explanation import DeterministicExplanationAgent, ExplanationAgentError
+from .orchestrator import (
+    DeterministicInterlockOrchestrator,
+    InterlockOrchestrator,
+    OrchestratorOptions,
+)
 
 __all__ = [
     "AssessmentAgentError",
@@ -17,5 +22,8 @@ __all__ = [
     "DeterministicExplanationAgent",
     "EvidenceAgentError",
     "ExplanationAgentError",
+    "DeterministicInterlockOrchestrator",
+    "InterlockOrchestrator",
+    "OrchestratorOptions",
     "build_retrieval_requests",
 ]
