@@ -8,12 +8,14 @@ from fastapi import FastAPI, HTTPException, Query
 from .agents.assessment import DeterministicAssessmentAgent
 from .agents.evidence import DeterministicEvidenceAgent, EvidenceAgentOptions
 from .agents.explanation import DeterministicExplanationAgent, ExplanationAgentError
+from .agents.orchestrator import DeterministicInterlockOrchestrator, OrchestratorOptions
 from .schemas.agents import (
     AssessmentRequest,
     AssessmentResult,
     EvidenceBundle,
     ExplanationRequest,
     ExplanationResult,
+    InterlockResult,
     ProjectContext,
 )
 from .schemas.evidence import EvidenceLedger
@@ -120,6 +122,26 @@ def explanation_agent(request: ExplanationRequest) -> ExplanationResult:
         return DeterministicExplanationAgent().run(request)
     except ExplanationAgentError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.post("/interlock/run", response_model=InterlockResult)
+def interlock_run(
+    project_context: ProjectContext,
+    include_project_documents: bool = Query(default=True),
+    include_benchmark_documents: bool = Query(default=False),
+    run_id: str | None = Query(default=None, min_length=1),
+) -> InterlockResult:
+    """Run the fixed Evidence -> Assessment -> Explanation workflow."""
+
+    orchestrator = DeterministicInterlockOrchestrator(PROJECT_ROOT)
+    return orchestrator.run(
+        project_context,
+        OrchestratorOptions(
+            include_project_documents=include_project_documents,
+            include_benchmark_documents=include_benchmark_documents,
+            run_id=run_id,
+        ),
+    )
 
 
 def _rag_registry_path() -> Path:

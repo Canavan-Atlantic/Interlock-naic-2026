@@ -10,7 +10,8 @@ consultants, and technical decision-makers.
 Module 8 does not gather evidence, call GIS or RAG, interpret policy
 independently, resolve contradictions, calculate a score, make a
 recommendation, or produce an `ADVANCE`, `HOLD`, `RECONFIGURE`, or `STOP`
-decision. The future Module 9 orchestrator remains outside this module.
+decision. Module 9 composes this agent through the shared `InterlockResult`
+contract without changing the explanation logic.
 
 The agent preserves the assessment's `UNKNOWN`, `CONDITIONAL`, `CONSTRAINED`,
 and `CLEAR` classifications. In particular:

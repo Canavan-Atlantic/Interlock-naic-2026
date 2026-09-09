@@ -387,6 +387,76 @@ def render_explanation_agent(payload: dict[str, object]) -> None:
         st.json(warnings)
 
 
+def render_interlock_result(payload: dict[str, object]) -> None:
+    """Render the composed workflow while keeping decisions out of the UI."""
+
+    st.subheader("INTERLOCK workflow")
+    st.caption(
+        "Fixed Evidence → Assessment → Explanation pipeline. It reports evidence, constraints, "
+        "unknowns, and human review; it does not produce a final project decision."
+    )
+    status = str(payload.get("workflow_status", "UNKNOWN"))
+    reviews = payload.get("human_reviews", [])
+    if not isinstance(reviews, list):
+        reviews = []
+    metrics = st.columns(4)
+    metrics[0].metric("Workflow status", status)
+    metrics[1].metric("Human reviews", len(reviews))
+    metrics[2].metric("Evidence records", (payload.get("stage_counts") or {}).get("evidence", 0))
+    metrics[3].metric("Total time (ms)", (payload.get("timings_ms") or {}).get("total", 0))
+
+    stage_status = payload.get("stage_status", {})
+    timings = payload.get("timings_ms", {})
+    if stage_status:
+        st.caption(
+            "Stages: "
+            + ", ".join(
+                f"{stage}={stage_status.get(stage)} ({timings.get(stage, 0)} ms)"
+                for stage in ("evidence", "assessment", "explanation")
+            )
+        )
+    if payload.get("requires_human_review"):
+        st.warning("This run requires human review. No approval or final decision is implied.")
+
+    context = payload.get("project_context", {})
+    if isinstance(context, dict):
+        with st.container(border=True):
+            st.markdown("#### Project summary")
+            st.write(
+                f"**{context.get('project_name') or context.get('project_id') or 'Project'}** — "
+                f"{context.get('project_type') or 'Type unknown'}; "
+                f"lifecycle: {context.get('project_lifecycle_status', 'UNKNOWN')}; "
+                f"jurisdiction: {(context.get('location') or {}).get('jurisdiction', 'UNKNOWN')}"
+            )
+
+    explanation = payload.get("explanation_result")
+    if not isinstance(explanation, dict):
+        explanation = {}
+    if explanation.get("executive_summary"):
+        st.markdown(f"**Executive / project explanation:** {explanation['executive_summary']}")
+
+    for title, key in (
+        ("Material findings", "key_findings"),
+        ("Constraints", "constraints"),
+        ("Unknown themes", "material_unknown_themes"),
+        ("Dependencies", "dependencies"),
+        ("Contradictions", "contradictions"),
+        ("Human reviews", "human_reviews"),
+        ("Next actions", "next_action_plan"),
+        ("Customer-facing citations", "customer_facing_citations"),
+    ):
+        st.markdown(f"#### {title}")
+        values = reviews if key == "human_reviews" else explanation.get(key, [])
+        if values:
+            st.json(values)
+        else:
+            st.caption("None recorded.")
+
+    stage_errors = payload.get("stage_errors", {})
+    if stage_errors:
+        st.error("Workflow stage failure: " + "; ".join(str(value) for value in stage_errors.values()))
+
+
 def render_retrieval_hit(hit: dict[str, object]) -> None:
     """Display one provenance-preserving retrieval result without interpreting it."""
 
@@ -508,6 +578,7 @@ st.session_state.setdefault("site_evidence_payload", None)
 st.session_state.setdefault("evidence_agent_payload", None)
 st.session_state.setdefault("assessment_payload", None)
 st.session_state.setdefault("explanation_payload", None)
+st.session_state.setdefault("interlock_payload", None)
 
 if submitted:
     if not api_base_url:
@@ -542,6 +613,7 @@ if submitted:
             st.session_state["evidence_agent_payload"] = None
             st.session_state["assessment_payload"] = None
             st.session_state["explanation_payload"] = None
+            st.session_state["interlock_payload"] = None
             try:
                 evidence_response = requests.post(
                     f"{api_base_url.rstrip('/')}/evidence/from-project",
@@ -652,6 +724,42 @@ if validation_payload:
         ],
         help="Project documents remain separate from authoritative Module 5 policy evidence. Validation explicitly includes benchmark-only documents.",
     )
+    if st.button(
+        "Run INTERLOCK",
+        key="run_interlock",
+        type="primary",
+        icon=":material/account_tree:",
+        help="Run the fixed Evidence → Assessment → Explanation workflow.",
+    ):
+        if not api_base_url:
+            st.error("The INTERLOCK workflow could not run because the backend URL is not configured.")
+        else:
+            try:
+                interlock_response = requests.post(
+                    f"{api_base_url.rstrip('/')}/interlock/run",
+                    params={
+                        "include_project_documents": "true",
+                        "include_benchmark_documents": str(project_evidence_mode.endswith("Validation")).lower(),
+                    },
+                    json=build_evidence_agent_context(
+                        project_for_evidence,
+                        project_evidence_mode=project_evidence_mode,
+                    ),
+                    timeout=300,
+                )
+                interlock_response.raise_for_status()
+                st.session_state["interlock_payload"] = interlock_response.json()
+            except requests.HTTPError:
+                st.error("The INTERLOCK workflow request was rejected by the backend.")
+            except requests.RequestException:
+                st.error("The INTERLOCK workflow service is unavailable.")
+            except (KeyError, TypeError, ValueError):
+                st.error("The backend returned an invalid INTERLOCK workflow response.")
+
+    interlock_payload = st.session_state.get("interlock_payload")
+    if interlock_payload:
+        render_interlock_result(interlock_payload)
+
     if st.button(
         "Run Evidence Agent",
         key="run_evidence_agent",

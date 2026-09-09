@@ -45,15 +45,12 @@ and document status models.
 - Module 3 owns deterministic evidence capture and the base evidence record.
 - Module 4B owns deterministic domain evidence calculations.
 - Module 5A/5B own corpus provenance and retrieval citations.
-- Module 6.0 owns the shared shapes that let future agents exchange those
+- Module 6.0 owns the shared shapes that let the agents exchange those
   results without losing provenance.
-- The future Evidence Agent developer can build evidence collection against
-  `EvidenceAgent` and `EvidenceBundle`; the Assessment Agent developer can
-  build domain findings against `AssessmentRequest` and `AssessmentResult`;
-  the Explanation Agent developer can build customer-facing explanations
-  against `ExplanationRequest` and `ExplanationResult`; and the Orchestrator
-  developer can compose `InterlockResult` without changing the lower-level
-  contracts.
+- The Evidence, Assessment, and Explanation implementations use their
+  existing contracts directly. Module 9 composes them through
+  `InterlockResult` without changing lower-level evidence or assessment
+  meaning.
 - Future concrete agents own orchestration and interpretation only within
   these boundaries. They must not overwrite deterministic facts.
 - Human specialists remain the authority for material, high-consequence, or
