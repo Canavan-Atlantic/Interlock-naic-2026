@@ -2,7 +2,7 @@
 
 INTERLOCK is an early-stage decision-support platform for data-centre development. Its long-term purpose is to help a developer understand whether a development proposition is credible enough to progress, what could stop or delay it, what remains unknown, and what needs to happen next.
 
-## Current scope: Modules 1–6.0
+## Current scope: Modules 1–7
 
 Module 1 proves that a Streamlit frontend can communicate with a FastAPI backend and that both services can run with Docker Compose. Module 2 adds the structured developer project-input workflow. Module 3 converts that input into an in-memory evidence ledger. Module 4A adds deterministic raw-data inventory, validation, cleaning, provenance, and spatial standardisation. Module 4B adds deterministic site-level evidence queries over those processed outputs while retaining the Module 3 ledger and explicit limitations. Module 5A creates a deterministic, provenance-aware policy knowledge-base foundation. Module 5B adds authority-aware hybrid retrieval over that processed corpus without answer generation or project decisions.
 
@@ -114,6 +114,20 @@ The Evidence Agent endpoint accepts `include_project_documents=true` and
 Evidence Agent panel exposes Normal project, Herbata Early Evidence, and Herbata
 Validation modes. Project-document records retain source URLs/page citations and
 cannot masquerade as authoritative policy.
+
+## Module 7 — Deterministic constraint assessment
+
+Module 7 consumes an existing Evidence Agent bundle through the shared
+`AssessmentRequest` contract and returns an `AssessmentResult`. It preserves
+unknowns, lifecycle distinctions, source authority, dependencies,
+contradictions, and selective human review. It does not gather new evidence,
+call GIS/RAG, use an LLM, calculate an equal-weight score, or produce an
+Advance/Hold/Reconfigure/Stop decision.
+
+The backend endpoint is `POST /agents/assessment`. The Streamlit developer
+flow runs it only after the Evidence Agent and displays findings grouped by
+domain, with supporting evidence IDs and citations retained in the input
+bundle.
 
 ## Prerequisites
 

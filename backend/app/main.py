@@ -5,8 +5,9 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
 
+from .agents.assessment import DeterministicAssessmentAgent
 from .agents.evidence import DeterministicEvidenceAgent, EvidenceAgentOptions
-from .schemas.agents import EvidenceBundle, ProjectContext
+from .schemas.agents import AssessmentRequest, AssessmentResult, EvidenceBundle, ProjectContext
 from .schemas.evidence import EvidenceLedger
 from .schemas.project import (
     ProjectInput,
@@ -94,6 +95,13 @@ def evidence_agent(
     if include_project_documents and not include_benchmark_documents:
         return agent.run(project_context)
     return agent.run(project_context, options)
+
+
+@app.post("/agents/assessment", response_model=AssessmentResult)
+def assessment_agent(request: AssessmentRequest) -> AssessmentResult:
+    """Assess an existing EvidenceBundle without gathering new evidence."""
+
+    return DeterministicAssessmentAgent().run(request)
 
 
 def _rag_registry_path() -> Path:
