@@ -1,66 +1,33 @@
-"""Streamlit frontend for the INTERLOCK project-input and Module 4B workflow."""
+"""Polished Streamlit frontend for the INTERLOCK development journey."""
+
+from __future__ import annotations
 
 import hashlib
 import json
 import os
+from typing import Any
 
 import requests
 import streamlit as st
 
+from components import (
+    as_dict,
+    as_list,
+    render_decision_pack,
+    render_evidence_view,
+    render_home,
+    render_methodology,
+)
+from styles import inject_styles
 
-st.set_page_config(page_title="INTERLOCK", page_icon=":material/link:", layout="centered")
 
-st.title("INTERLOCK")
-st.subheader("Data Centre Development Intelligence")
-st.write("Evidence-linked decision support for early data-centre development.")
-
-
-api_base_url = os.getenv("INTERLOCK_API_BASE_URL")
-
-if not api_base_url:
-    st.error("Backend connection is not configured. Set INTERLOCK_API_BASE_URL.")
-else:
-    try:
-        health_response = requests.get(
-            f"{api_base_url.rstrip('/')}/health",
-            timeout=5,
-        )
-        health_response.raise_for_status()
-        health_payload = health_response.json()
-
-        if isinstance(health_payload, dict) and health_payload.get("status") == "ok":
-            st.success("Backend connected")
-        else:
-            st.error("Backend responded, but its health status was not OK.")
-    except requests.RequestException as exc:
-        st.error(f"Backend connection failed: {exc}")
-    except ValueError:
-        st.error("Backend returned an invalid health response.")
+st.set_page_config(page_title="INTERLOCK · Canavan Atlantic", page_icon=":material/link:", layout="wide")
+inject_styles()
 
 
 def optional_text(value: str) -> str | None:
-    """Convert an empty form text value to an explicit missing value."""
-
     cleaned = value.strip()
     return cleaned or None
-
-
-def display_value(value: object) -> str:
-    """Format null and Unknown values clearly in the submitted summary."""
-
-    if value is None:
-        return "Unknown / not provided"
-    if value == "Unknown":
-        return "Unknown"
-    return str(value)
-
-
-def display_evidence_value(value: object) -> str:
-    """Format a ledger value without conflating Unknown and not provided."""
-
-    if value is None:
-        return "—"
-    return str(value)
 
 
 def build_evidence_agent_context(
@@ -68,7 +35,7 @@ def build_evidence_agent_context(
     *,
     project_evidence_mode: str = "Normal project",
 ) -> dict[str, object]:
-    """Build the shared ProjectContext from the already validated form values."""
+    """Build the real ProjectContext payload without inventing missing values."""
 
     stable_payload = json.dumps(project, sort_keys=True, default=str).encode("utf-8")
     project_id = "streamlit-" + hashlib.sha256(stable_payload).hexdigest()[:12]
@@ -84,7 +51,7 @@ def build_evidence_agent_context(
             "address": project.get("site_address"),
             "latitude": project.get("latitude"),
             "longitude": project.get("longitude"),
-            "local_authority": None,
+            "local_authority": project.get("local_authority"),
             "country": "Ireland" if herbata_mode else None,
             "jurisdiction": "IRELAND" if herbata_mode else "UNKNOWN",
         },
@@ -104,869 +71,422 @@ def build_evidence_agent_context(
             "project_evidence_mode": project_evidence_mode,
         },
         "uploaded_document_refs": [],
-        "source_project_input": project,
+        "source_project_input": {
+            key: value for key, value in project.items() if key != "local_authority"
+        },
     }
 
 
-def render_state(state: str | None) -> None:
-    """Render controlled FACT/UNKNOWN/LIMITATION labels without recommendations."""
-
-    if state == "FACT":
-        st.success("FACT")
-    elif state == "UNKNOWN":
-        st.info("UNKNOWN")
-    else:
-        st.warning("LIMITATION")
-
-
-def render_site_domain(payload: dict[str, object]) -> None:
-    """Display a compact, transparent domain result from the site-evidence API."""
-
-    render_state(str(payload.get("evidence_state", "UNKNOWN")))
-    if payload.get("status") == "ERROR":
-        st.error(str(payload.get("reason", "Domain evidence failed.")))
-    elif payload.get("reason"):
-        st.info(str(payload["reason"]))
-
-    if "intersects" in payload:
-        st.write(f"**Intersects:** {payload['intersects']}")
-    if "project_point_intersects" in payload:
-        st.write(f"**Project point intersects:** {payload['project_point_intersects']}")
-    if "counts_within_radii" in payload:
-        st.write("**Counts within configured radii:**")
-        st.table(payload["counts_within_radii"])
-    if "nearby_records" in payload and payload["nearby_records"]:
-        st.write("**Nearby records:**")
-        st.dataframe(payload["nearby_records"], hide_index=True)
-    if "nearby_assets" in payload and payload["nearby_assets"]:
-        st.write("**Nearby contextual assets:**")
-        st.dataframe(payload["nearby_assets"], hide_index=True)
-    for key in (
-        "nearest_protected_site",
-        "nearest_zone",
-        "nearest_landform",
-        "nearest_connection",
-        "intersections",
-        "intersecting_zones",
-        "intersecting_connections",
-        "documents",
-        "policy_documents",
-    ):
-        value = payload.get(key)
-        if value:
-            st.write(f"**{key.replace('_', ' ').title()}:**")
-            st.json(value)
-    if payload.get("limitations"):
-        st.caption("Limitation: " + " ".join(str(item) for item in payload["limitations"]))
+def project_payload_from_form(
+    project_name: str,
+    development_type: str,
+    project_stage: str,
+    site_address: str,
+    local_authority: str,
+    latitude: float | None,
+    longitude: float | None,
+    site_area_hectares: float | None,
+    planned_power_demand_mw: float | None,
+    requested_mic_mva: float | None,
+    power_strategy: str,
+    energy_strategy: str,
+    project_phasing_notes: str,
+) -> dict[str, object]:
+    return {
+        "project_name": optional_text(project_name),
+        "development_type": optional_text(development_type),
+        "project_stage": project_stage,
+        "site_address": optional_text(site_address),
+        "local_authority": optional_text(local_authority),
+        "latitude": latitude,
+        "longitude": longitude,
+        "site_area_hectares": site_area_hectares,
+        "planned_power_demand_mw": planned_power_demand_mw,
+        "requested_mic_mva": requested_mic_mva,
+        "power_strategy": power_strategy,
+        "energy_strategy": optional_text(energy_strategy),
+        "project_phasing_notes": optional_text(project_phasing_notes),
+    }
 
 
-def render_site_evidence(payload: dict[str, object]) -> None:
-    """Render only the requested Module 4B evidence preview sections."""
+def backend_available(base_url: str | None) -> bool:
+    if not base_url:
+        return False
+    try:
+        response = requests.get(f"{base_url.rstrip('/')}/health", timeout=5)
+        response.raise_for_status()
+        payload = response.json()
+        return isinstance(payload, dict) and payload.get("status") == "ok"
+    except (requests.RequestException, ValueError):
+        return False
 
-    st.subheader("Public data evidence")
-    st.caption("Deterministic public-data evidence only. No overall recommendation is produced.")
-    location = payload.get("project_location", {})
-    with st.container(border=True):
-        st.write(
-            f"**Location:** {location.get('latitude')}, {location.get('longitude')} WGS84 → "
-            f"{location.get('easting')}, {location.get('northing')} {location.get('transformed_crs')}"
+
+def run_interlock(project_payload: dict[str, object], project_evidence_mode: str, api_base_url: str) -> None:
+    """Validate once, then call the orchestrator once with safe customer errors."""
+
+    validation_payload = {key: value for key, value in project_payload.items() if key != "local_authority"}
+    try:
+        validation_response = requests.post(
+            f"{api_base_url.rstrip('/')}/project-input/validate",
+            json=validation_payload,
+            timeout=15,
         )
-        st.write(f"**Checked:** {location.get('checked_at')}")
-
-    tab_names = [
-        "Biodiversity",
-        "Flood",
-        "Planning",
-        "Heritage",
-        "Ground",
-        "Grid",
-        "Zoning",
-        "Water",
-    ]
-    tabs = st.tabs(tab_names)
-    for tab, key in zip(tabs, [name.lower() for name in tab_names]):
-        with tab:
-            section = payload.get(key, {})
-            if isinstance(section, dict):
-                if key == "biodiversity":
-                    for subkey in ("sac", "spa"):
-                        st.markdown(f"#### {subkey.upper()}")
-                        render_site_domain(section.get(subkey, {}))
-                elif key == "flood":
-                    for subkey in ("coastal", "fluvial"):
-                        st.markdown(f"#### {subkey.title()}")
-                        for layer in section.get(subkey, []):
-                            with st.container(border=True):
-                                st.write(
-                                    f"**{layer.get('source_layer')} · return period "
-                                    f"{layer.get('return_period')}**"
-                                )
-                                render_site_domain(layer)
-                elif key == "ground":
-                    for subkey in ("groundwater", "karst_landforms", "karst_connections"):
-                        st.markdown(f"#### {subkey.replace('_', ' ').title()}")
-                        render_site_domain(section.get(subkey, {}))
-                else:
-                    render_site_domain(section)
-
-    timings = payload.get("timings_ms", {})
-    if timings:
-        st.caption("Execution timings (ms): " + ", ".join(f"{key}={value}" for key, value in timings.items()))
-
-
-def render_evidence_agent(payload: dict[str, object]) -> None:
-    """Render the evidence bundle without introducing an assessment decision."""
-
-    st.subheader("Evidence Agent")
-    st.caption("Deterministic evidence assembly only. No Advance/Hold/Reconfigure/Stop decision is produced.")
-    summary = payload.get("provenance_summary", {})
-    metrics = st.columns(4)
-    metrics[0].metric("Project", summary.get("developer_records", 0))
-    metrics[1].metric("GIS", summary.get("gis_records", 0))
-    metrics[2].metric("Policy", summary.get("policy_records", 0))
-    metrics[3].metric("Unknown / missing", summary.get("unknown_or_missing_count", 0))
-
-    records = payload.get("records", [])
-    if not isinstance(records, list):
-        records = []
-    sections = (
-        ("Developer input", {"DEVELOPER_INPUT"}),
-        ("Project documents (untrusted evidence)", {"PROJECT_DOCUMENT"}),
-        ("Public/GIS evidence", {"DETERMINISTIC_GIS"}),
-        ("Policy/regulatory evidence", {"RAG_RETRIEVAL"}),
-    )
-    for title, creators in sections:
-        st.markdown(f"#### {title}")
-        selected = [item for item in records if item.get("created_by") in creators]
-        if not selected:
-            st.caption("No records in this class.")
-            continue
-        rows = [
-            {
-                "Domain": item.get("domain"),
-                "State": item.get("evidence_state"),
-                "Finding": item.get("finding") or item.get("fact"),
-                "Source": item.get("source_name"),
-                "Trust boundary": item.get("source_trust"),
-                "Verification": item.get("verification_status"),
-            }
-            for item in selected
-        ]
-        st.dataframe(rows, hide_index=True)
-
-    for title, key in (
-        ("Unknowns / missing evidence", "missing_evidence"),
-        ("Dependencies", "dependencies"),
-        ("Potential contradictions", "potential_contradictions"),
-        ("Human reviews", "human_review_requests"),
-    ):
-        st.markdown(f"#### {title}")
-        values = payload.get(key, [])
-        if values:
-            st.json(values)
-        else:
-            st.caption("None recorded.")
-
-    citations = [
-        {
-            "document_id": item.get("source_document_id"),
-            "source": item.get("source_name"),
-            "citation": item.get("citation"),
-        }
-        for item in records
-        if item.get("source_document_id") or item.get("citation")
-    ]
-    st.markdown("#### Sources / citations")
-    if citations:
-        st.json(citations)
-    else:
-        st.caption("No structured citations recorded.")
-
-
-def render_assessment_agent(payload: dict[str, object]) -> None:
-    """Render Module 7 findings without adding a final project decision."""
-
-    st.subheader("Assessment Agent")
-    st.caption("Deterministic constraint assessment only. No Advance/Hold/Reconfigure/Stop decision is produced.")
-    findings = payload.get("findings", [])
-    if not isinstance(findings, list):
-        findings = []
-    for domain in sorted({str(item.get("domain")) for item in findings if isinstance(item, dict)}):
-        st.markdown(f"#### {domain}")
-        rows = [
-            {
-                "Status": item.get("status"),
-                "Impact": item.get("decision_impact") or "—",
-                "Constraint": item.get("constraint") or "—",
-                "Unknowns": "; ".join(item.get("material_unknowns") or []) or "—",
-                "Evidence IDs": "; ".join(item.get("evidence_ids") or []) or "—",
-                "Human review": item.get("human_review_required", False),
-            }
-            for item in findings
-            if isinstance(item, dict) and str(item.get("domain")) == domain
-        ]
-        st.dataframe(rows, hide_index=True)
-
-    contradiction_findings = [
-        item
-        for item in findings
-        if isinstance(item, dict)
-        and "conflicting evidence" in str(item.get("decision_impact") or "").casefold()
-    ]
-    for title, key, override in (
-        ("Constraints", "constraints"),
-        ("Material unknowns", "material_unknowns"),
-        ("Dependencies", "dependencies"),
-        ("Contradictions (as conditional findings)", "contradictions", contradiction_findings),
-        ("Human reviews", "human_reviews"),
-    ):
-        st.markdown(f"#### {title}")
-        values = override if override is not None else payload.get(key, [])
-        if values:
-            st.json(values)
-        else:
-            st.caption("None recorded.")
-
-
-def render_explanation_agent(payload: dict[str, object]) -> None:
-    """Render the concise Module 8 explanation without adding a decision."""
-
-    st.subheader("Explanation Agent")
-    st.caption("Deterministic, evidence-grounded explanation only. No final project decision, score, or recommendation is produced.")
-    if payload.get("executive_summary"):
-        st.markdown(f"**Executive / project explanation:** {payload['executive_summary']}")
-
-    for title, key in (
-        ("Why it matters", "why_it_matters"),
-        ("Known facts", "known_facts"),
-        ("Constraints", "constraints"),
-        ("Conditional issues", "conditional_issues"),
-        ("Material unknown themes", "material_unknown_themes"),
-        ("Dependencies", "dependencies"),
-        ("Contradictions", "contradictions"),
-        ("Human reviews", "human_handoffs"),
-        ("Suggested next actions", "next_action_plan"),
-    ):
-        st.markdown(f"#### {title}")
-        values = payload.get(key, [])
-        if values:
-            st.json(values)
-        else:
-            st.caption("None recorded.")
-
-    st.markdown("#### Key findings")
-    key_findings = payload.get("key_findings", [])
-    if key_findings:
-        for item in key_findings:
-            st.write(str(item).split(" [finding:", 1)[0])
-        with st.expander("Finding traceability"):
-            st.json(key_findings)
-    else:
-        st.caption("None recorded.")
-
-    st.markdown("#### Customer-facing citations")
-    customer_citations = payload.get("customer_facing_citations", [])
-    if customer_citations:
-        st.json(customer_citations)
-    else:
-        st.caption("No structured evidence IDs or citations recorded.")
-
-    with st.expander("Complete provenance drill-down"):
-        st.json(
-            {
-                "evidence_ids": payload.get("evidence_ids", []),
-                "material_unknowns": payload.get("material_unknowns", []),
-                "next_actions": payload.get("next_actions", []),
-                "source_citations": payload.get("source_citations", []),
-            }
-        )
-
-    warnings = payload.get("warnings", [])
-    if warnings:
-        st.markdown("#### Explanation boundaries")
-        st.json(warnings)
-
-
-def render_interlock_result(payload: dict[str, object]) -> None:
-    """Render the composed workflow while keeping decisions out of the UI."""
-
-    st.subheader("INTERLOCK workflow")
-    st.caption(
-        "Fixed Evidence → Assessment → Explanation pipeline. It reports evidence, constraints, "
-        "unknowns, and human review; it does not produce a final project decision."
-    )
-    status = str(payload.get("workflow_status", "UNKNOWN"))
-    reviews = payload.get("human_reviews", [])
-    if not isinstance(reviews, list):
-        reviews = []
-    metrics = st.columns(4)
-    metrics[0].metric("Workflow status", status)
-    metrics[1].metric("Human reviews", len(reviews))
-    metrics[2].metric("Evidence records", (payload.get("stage_counts") or {}).get("evidence", 0))
-    metrics[3].metric("Total time (ms)", (payload.get("timings_ms") or {}).get("total", 0))
-
-    stage_status = payload.get("stage_status", {})
-    timings = payload.get("timings_ms", {})
-    if stage_status:
-        st.caption(
-            "Stages: "
-            + ", ".join(
-                f"{stage}={stage_status.get(stage)} ({timings.get(stage, 0)} ms)"
-                for stage in ("evidence", "assessment", "explanation")
-            )
-        )
-    if payload.get("requires_human_review"):
-        st.warning("This run requires human review. No approval or final decision is implied.")
-
-    context = payload.get("project_context", {})
-    if isinstance(context, dict):
-        with st.container(border=True):
-            st.markdown("#### Project summary")
-            st.write(
-                f"**{context.get('project_name') or context.get('project_id') or 'Project'}** — "
-                f"{context.get('project_type') or 'Type unknown'}; "
-                f"lifecycle: {context.get('project_lifecycle_status', 'UNKNOWN')}; "
-                f"jurisdiction: {(context.get('location') or {}).get('jurisdiction', 'UNKNOWN')}"
-            )
-
-    explanation = payload.get("explanation_result")
-    if not isinstance(explanation, dict):
-        explanation = {}
-    if explanation.get("executive_summary"):
-        st.markdown(f"**Executive / project explanation:** {explanation['executive_summary']}")
-
-    for title, key in (
-        ("Material findings", "key_findings"),
-        ("Constraints", "constraints"),
-        ("Unknown themes", "material_unknown_themes"),
-        ("Dependencies", "dependencies"),
-        ("Contradictions", "contradictions"),
-        ("Human reviews", "human_reviews"),
-        ("Next actions", "next_action_plan"),
-        ("Customer-facing citations", "customer_facing_citations"),
-    ):
-        st.markdown(f"#### {title}")
-        values = reviews if key == "human_reviews" else explanation.get(key, [])
-        if values:
-            st.json(values)
-        else:
-            st.caption("None recorded.")
-
-    stage_errors = payload.get("stage_errors", {})
-    if stage_errors:
-        st.error("Workflow stage failure: " + "; ".join(str(value) for value in stage_errors.values()))
-
-
-def render_retrieval_hit(hit: dict[str, object]) -> None:
-    """Display one provenance-preserving retrieval result without interpreting it."""
-
-    st.markdown(
-        f"**{hit.get('title', 'Untitled')}** · {hit.get('source_class')} · "
-        f"{hit.get('document_status')}"
-    )
-    st.caption(
-        f"{hit.get('issuer') or 'Issuer unknown'} · {hit.get('citation') or 'Citation unavailable'} · "
-        f"verification: {hit.get('verification_status')}"
-    )
-    st.write(str(hit.get("text", "")))
-    st.caption(
-        "Retrieval ranks: "
-        f"lexical={hit.get('lexical_rank') or '—'}, semantic={hit.get('semantic_rank') or '—'}, "
-        f"fusion={hit.get('fusion_score') or '—'}"
-    )
-
-
-def render_retrieval_group(title: str, hits: list[dict[str, object]]) -> None:
-    """Display one retrieval result class, keeping authority classes separate."""
-
-    st.subheader(title)
-    if not hits:
-        st.caption("No results in this class.")
+        validation_response.raise_for_status()
+        st.session_state["validation_payload"] = validation_response.json()
+    except (requests.RequestException, ValueError, TypeError):
+        st.error("Project input could not be validated. Check the required fields and try again.")
         return
-    for index, hit in enumerate(hits, start=1):
-        with st.container(border=True):
-            st.caption(f"Result {index}")
-            render_retrieval_hit(hit)
 
-
-st.header("New Site Assessment")
-
-with st.form("project_input_form"):
-    st.markdown("#### Project")
-    project_name = st.text_input("Project Name (optional)")
-    development_type = st.text_input("Development Type", value="Data Centre")
-    project_stage = st.selectbox(
-        "Project Stage",
-        options=[
-            "Site Discovery",
-            "Early Feasibility",
-            "Deliverability Validation",
-            "Design Definition",
-            "Planning Readiness",
-            "Planning Approved",
-            "Construction",
-            "Unknown",
-        ],
-        index=7,
+    context_payload = build_evidence_agent_context(
+        project_payload,
+        project_evidence_mode=project_evidence_mode,
     )
-
-    st.markdown("#### Site")
-    site_address = st.text_input("Site Address (optional)")
-    latitude = st.number_input(
-        "Latitude (optional)",
-        min_value=-90.0,
-        max_value=90.0,
-        value=None,
-        step=0.0001,
-        format="%.4f",
-    )
-    longitude = st.number_input(
-        "Longitude (optional)",
-        min_value=-180.0,
-        max_value=180.0,
-        value=None,
-        step=0.0001,
-        format="%.4f",
-    )
-    site_area_hectares = st.number_input(
-        "Site Area (hectares, optional)",
-        min_value=0.0,
-        value=None,
-        step=0.1,
-        format="%.2f",
-    )
-
-    st.markdown("#### Power & Energy")
-    planned_power_demand_mw = st.number_input(
-        "Planned Power Demand (MW, optional)",
-        min_value=0.0,
-        value=None,
-        step=1.0,
-        format="%.2f",
-    )
-    requested_mic_mva = st.number_input(
-        "Requested MIC (MVA, optional)",
-        min_value=0.0,
-        value=None,
-        step=1.0,
-        format="%.2f",
-    )
-    power_strategy = st.selectbox(
-        "Power Strategy",
-        options=[
-            "Existing Grid Connection",
-            "New Grid Connection",
-            "Developer-Built Substation",
-            "Hybrid / Alternative Strategy",
-            "Unknown",
-        ],
-        index=4,
-    )
-    energy_strategy = st.text_input(
-        "Energy Strategy (optional)",
-        placeholder="Enter a known strategy or leave blank",
-    )
-
-    st.markdown("#### Additional Information")
-    project_phasing_notes = st.text_area("Project Phasing / Notes (optional)")
-
-    submitted = st.form_submit_button("Validate Project Input")
-
-st.session_state.setdefault("validation_payload", None)
-st.session_state.setdefault("evidence_payload", None)
-st.session_state.setdefault("site_evidence_payload", None)
-st.session_state.setdefault("evidence_agent_payload", None)
-st.session_state.setdefault("assessment_payload", None)
-st.session_state.setdefault("explanation_payload", None)
-st.session_state.setdefault("interlock_payload", None)
-
-if submitted:
-    if not api_base_url:
-        st.error("Project input could not be validated because the backend URL is not configured.")
-    else:
-        project_payload = {
-            "project_name": optional_text(project_name),
-            "development_type": optional_text(development_type),
-            "project_stage": project_stage,
-            "site_address": optional_text(site_address),
-            "latitude": latitude,
-            "longitude": longitude,
-            "site_area_hectares": site_area_hectares,
-            "planned_power_demand_mw": planned_power_demand_mw,
-            "requested_mic_mva": requested_mic_mva,
-            "power_strategy": power_strategy,
-            "energy_strategy": optional_text(energy_strategy),
-            "project_phasing_notes": optional_text(project_phasing_notes),
-        }
-
+    with st.status("Running INTERLOCK", expanded=True) as progress:
+        st.write("Gathering project evidence")
+        st.write("Checking authoritative sources and dependencies")
+        st.write("Preparing a traceable explanation")
         try:
-            validation_response = requests.post(
-                f"{api_base_url.rstrip('/')}/project-input/validate",
-                json=project_payload,
-                timeout=10,
+            response = requests.post(
+                f"{api_base_url.rstrip('/')}/interlock/run",
+                params={
+                    "include_project_documents": "true",
+                    "include_benchmark_documents": str(project_evidence_mode.endswith("Validation")).lower(),
+                },
+                json=context_payload,
+                timeout=300,
             )
-            validation_response.raise_for_status()
-            validation_payload = validation_response.json()
-
-            st.session_state["validation_payload"] = validation_payload
-            st.session_state["site_evidence_payload"] = None
-            st.session_state["evidence_agent_payload"] = None
-            st.session_state["assessment_payload"] = None
-            st.session_state["explanation_payload"] = None
-            st.session_state["interlock_payload"] = None
-            try:
-                evidence_response = requests.post(
-                    f"{api_base_url.rstrip('/')}/evidence/from-project",
-                    json=project_payload,
-                    timeout=10,
-                )
-                evidence_response.raise_for_status()
-                evidence_payload = evidence_response.json()
-
-                st.session_state["evidence_payload"] = evidence_payload
-            except requests.HTTPError:
-                st.error("The project was validated, but the initial evidence ledger could not be generated.")
-                st.session_state["evidence_payload"] = None
-            except requests.RequestException:
-                st.error("The project was validated, but the evidence service is unavailable.")
-                st.session_state["evidence_payload"] = None
-            except (KeyError, TypeError, ValueError):
-                st.error("The backend returned an invalid evidence-ledger response.")
-                st.session_state["evidence_payload"] = None
-        except requests.HTTPError as exc:
-            detail = "The submitted project input was rejected."
-            try:
-                error_payload = exc.response.json()
-                if isinstance(error_payload, dict) and error_payload.get("detail"):
-                    detail = "The submitted project input was rejected by the backend."
-            except (ValueError, AttributeError):
-                pass
-            st.error(detail)
-        except requests.RequestException:
-            st.error("Project input could not be validated because the backend is unavailable.")
-        except (KeyError, TypeError, ValueError):
-            st.error("The backend returned an invalid validation response.")
+            response.raise_for_status()
+            payload = response.json()
+            st.session_state["submitted_project_payload"] = project_payload
+            st.session_state["interlock_payload"] = payload
+            workflow_status = str(payload.get("workflow_status") or "UNKNOWN")
+            if workflow_status in {"FAILED", "PARTIAL"}:
+                progress.update(label="INTERLOCK could not complete the assessment", state="error")
+            else:
+                progress.update(label="INTERLOCK analysis complete", state="complete")
+        except requests.HTTPError:
+            progress.update(label="INTERLOCK could not complete the assessment", state="error")
+            st.error("INTERLOCK could not complete the assessment. The backend returned a controlled error.")
+        except (requests.RequestException, ValueError, TypeError):
+            progress.update(label="INTERLOCK service unavailable", state="error")
+            st.error("INTERLOCK is temporarily unavailable. No assessment result was created.")
 
 
-validation_payload = st.session_state.get("validation_payload")
-if validation_payload:
-    st.success("Project input validated")
-    st.subheader("Submitted project")
-    for field_name, value in validation_payload["project"].items():
-        label = field_name.replace("_", " ").title()
-        st.write(f"**{label}:** {display_value(value)}")
-
-    st.subheader("Information still missing or unknown")
-    missing_fields = validation_payload.get("missing_or_unknown", [])
-    if missing_fields:
-        for field_name in missing_fields:
-            st.markdown(f"- {field_name.replace('_', ' ').title()}")
-    else:
-        st.write("No fields are currently missing or marked Unknown.")
-
-    evidence_payload = st.session_state.get("evidence_payload")
-    if evidence_payload:
-        st.subheader("Initial Evidence Ledger")
-        count_columns = st.columns(3)
-        count_columns[0].metric("Provided", evidence_payload["provided_count"])
-        count_columns[1].metric("Unknown", evidence_payload["unknown_count"])
-        count_columns[2].metric("Not provided", evidence_payload["not_provided_count"])
-        evidence_rows = [
-            {
-                "Category": entry["category"],
-                "Evidence": entry["fact"],
-                "Value": display_evidence_value(entry["value"]),
-                "Unit": entry["unit"] or "—",
-                "State": entry["evidence_state"],
-                "Source": entry["source_name"],
-                "Confidence": entry["confidence"],
-                "Review Status": entry["review_status"],
-            }
-            for entry in evidence_payload["entries"]
-        ]
-        st.table(evidence_rows)
-        st.caption(
-            "Customer-provided information has not yet been independently verified. "
-            "Public-data checks add evidence; they do not replace customer evidence."
+def render_assessment_page(api_base_url: str | None) -> None:
+    st.markdown('<p class="interlock-section-kicker">New assessment</p>', unsafe_allow_html=True)
+    st.markdown('<h1 class="interlock-section-title">Start with what you know.</h1>', unsafe_allow_html=True)
+    st.markdown(
+        '<p class="interlock-section-copy">You can begin with incomplete information. INTERLOCK preserves missing information as unknown rather than guessing.</p>',
+        unsafe_allow_html=True,
+    )
+    with st.form("project_input_form", border=True):
+        st.markdown("#### Project")
+        project_name = st.text_input("Project name (optional)")
+        development_type = st.text_input("Project type", value="Data Centre")
+        project_stage = st.selectbox(
+            "Project stage",
+            options=[
+                "Site Discovery",
+                "Early Feasibility",
+                "Deliverability Validation",
+                "Design Definition",
+                "Planning Readiness",
+                "Planning Approved",
+                "Construction",
+                "Unknown",
+            ],
+            index=7,
         )
 
-        project_for_evidence = validation_payload["project"]
-        if project_for_evidence.get("latitude") is None or project_for_evidence.get("longitude") is None:
-            st.info("Provide both latitude and longitude to run the public data evidence check.")
-        elif st.button(
-            "Run Public Data Evidence Check",
-            key="run_site_evidence",
-            type="primary",
-            icon=":material/search:",
-        ):
-            try:
-                site_response = requests.post(
-                    f"{api_base_url.rstrip('/')}/evidence/site",
-                    json=project_for_evidence,
-                    timeout=180,
-                )
-                site_response.raise_for_status()
-                st.session_state["site_evidence_payload"] = site_response.json()
-            except requests.HTTPError:
-                st.error("The project was validated, but the public data evidence check failed.")
-            except requests.RequestException:
-                st.error("The public data evidence service is unavailable.")
-            except (KeyError, TypeError, ValueError):
-                st.error("The backend returned an invalid site-evidence response.")
+        st.markdown("#### Location")
+        site_address = st.text_input("Address (optional)")
+        local_authority = st.text_input("Local authority (optional)")
+        location_columns = st.columns(2)
+        latitude = location_columns[0].number_input(
+            "Latitude (optional)", min_value=-90.0, max_value=90.0, value=None, step=0.0001, format="%.4f"
+        )
+        longitude = location_columns[1].number_input(
+            "Longitude (optional)", min_value=-180.0, max_value=180.0, value=None, step=0.0001, format="%.4f"
+        )
 
-    project_for_evidence = validation_payload["project"]
-    project_evidence_mode = st.selectbox(
-        "Project evidence mode",
-        options=[
-            "Normal project",
-            "Herbata benchmark — Early Evidence",
-            "Herbata benchmark — Validation",
-        ],
-        help="Project documents remain separate from authoritative Module 5 policy evidence. Validation explicitly includes benchmark-only documents.",
+        st.markdown("#### Power & energy")
+        power_columns = st.columns(2)
+        planned_power_demand_mw = power_columns[0].number_input(
+            "Planned power (MW, optional)", min_value=0.0, value=None, step=1.0, format="%.2f"
+        )
+        requested_mic_mva = power_columns[1].number_input(
+            "Requested MIC (MVA, optional)", min_value=0.0, value=None, step=1.0, format="%.2f"
+        )
+        power_strategy = st.selectbox(
+            "Power strategy",
+            options=[
+                "Existing Grid Connection",
+                "New Grid Connection",
+                "Developer-Built Substation",
+                "Hybrid / Alternative Strategy",
+                "Unknown",
+            ],
+            index=4,
+        )
+        energy_strategy = st.text_input("Energy strategy (optional)")
+
+        st.markdown("#### Project information")
+        site_area_hectares = st.number_input(
+            "Site area (hectares, optional)", min_value=0.0, value=None, step=0.1, format="%.2f"
+        )
+        project_phasing_notes = st.text_area("Phasing and notes (optional)")
+        project_evidence_mode = st.selectbox(
+            "Project evidence mode",
+            options=[
+                "Normal project",
+                "Herbata benchmark — Early Evidence",
+                "Herbata benchmark — Validation",
+            ],
+            help="Early Evidence excludes benchmark-only records. Validation explicitly enables them for demonstration.",
+        )
+        st.caption("Blank numeric fields remain unknown; they are never converted to zero.")
+        with st.container(horizontal=True, horizontal_alignment="right"):
+            validate_only = st.form_submit_button("Validate Project Input")
+            run_clicked = st.form_submit_button(
+                "Run INTERLOCK assessment",
+                type="primary",
+                icon=":material/arrow_forward:",
+            )
+
+    if not (validate_only or run_clicked):
+        return
+    project_payload = project_payload_from_form(
+        project_name,
+        development_type,
+        project_stage,
+        site_address,
+        local_authority,
+        latitude,
+        longitude,
+        site_area_hectares,
+        planned_power_demand_mw,
+        requested_mic_mva,
+        power_strategy,
+        energy_strategy,
+        project_phasing_notes,
     )
-    if st.button(
-        "Run INTERLOCK",
-        key="run_interlock",
-        type="primary",
-        icon=":material/account_tree:",
-        help="Run the fixed Evidence → Assessment → Explanation workflow.",
-    ):
-        if not api_base_url:
-            st.error("The INTERLOCK workflow could not run because the backend URL is not configured.")
-        else:
-            try:
-                interlock_response = requests.post(
-                    f"{api_base_url.rstrip('/')}/interlock/run",
-                    params={
-                        "include_project_documents": "true",
-                        "include_benchmark_documents": str(project_evidence_mode.endswith("Validation")).lower(),
-                    },
-                    json=build_evidence_agent_context(
-                        project_for_evidence,
-                        project_evidence_mode=project_evidence_mode,
-                    ),
-                    timeout=300,
-                )
-                interlock_response.raise_for_status()
-                st.session_state["interlock_payload"] = interlock_response.json()
-            except requests.HTTPError:
-                st.error("The INTERLOCK workflow request was rejected by the backend.")
-            except requests.RequestException:
-                st.error("The INTERLOCK workflow service is unavailable.")
-            except (KeyError, TypeError, ValueError):
-                st.error("The backend returned an invalid INTERLOCK workflow response.")
-
-    interlock_payload = st.session_state.get("interlock_payload")
-    if interlock_payload:
-        render_interlock_result(interlock_payload)
-
-    if st.button(
-        "Run Evidence Agent",
-        key="run_evidence_agent",
-        type="primary",
-        icon=":material/account_tree:",
-    ):
-        if not api_base_url:
-            st.error("The Evidence Agent could not run because the backend URL is not configured.")
-        else:
-            try:
-                agent_response = requests.post(
-                    f"{api_base_url.rstrip('/')}/agents/evidence",
-                    params={
-                        "include_project_documents": "true",
-                        "include_benchmark_documents": str(project_evidence_mode.endswith("Validation")).lower(),
-                    },
-                    json=build_evidence_agent_context(
-                        project_for_evidence,
-                        project_evidence_mode=project_evidence_mode,
-                    ),
-                    timeout=240,
-                )
-                agent_response.raise_for_status()
-                st.session_state["evidence_agent_payload"] = agent_response.json()
-                st.session_state["assessment_payload"] = None
-                st.session_state["explanation_payload"] = None
-            except requests.HTTPError:
-                st.error("The Evidence Agent request was rejected by the backend.")
-            except requests.RequestException:
-                st.error("The Evidence Agent service is unavailable.")
-            except (KeyError, TypeError, ValueError):
-                st.error("The backend returned an invalid Evidence Agent response.")
-
-    site_evidence_payload = st.session_state.get("site_evidence_payload")
-    if site_evidence_payload:
-        render_site_evidence(site_evidence_payload)
-
-    evidence_agent_payload = st.session_state.get("evidence_agent_payload")
-    if evidence_agent_payload:
-        render_evidence_agent(evidence_agent_payload)
-        if st.button(
-            "Run Assessment",
-            key="run_assessment_agent",
-            type="primary",
-            icon=":material/assessment:",
-        ):
-            if not api_base_url:
-                st.error("The Assessment Agent could not run because the backend URL is not configured.")
-            else:
-                try:
-                    assessment_response = requests.post(
-                        f"{api_base_url.rstrip('/')}/agents/assessment",
-                        json={
-                            "project_context": evidence_agent_payload.get("project_context"),
-                            "evidence_bundle": evidence_agent_payload,
-                        },
-                        timeout=30,
-                    )
-                    assessment_response.raise_for_status()
-                    st.session_state["assessment_payload"] = assessment_response.json()
-                    st.session_state["explanation_payload"] = None
-                except requests.HTTPError:
-                    st.error("The Assessment Agent request was rejected by the backend.")
-                except requests.RequestException:
-                    st.error("The Assessment Agent service is unavailable.")
-                except (KeyError, TypeError, ValueError):
-                    st.error("The backend returned an invalid Assessment Agent response.")
-
-    assessment_payload = st.session_state.get("assessment_payload")
-    if assessment_payload:
-        render_assessment_agent(assessment_payload)
-        if st.button(
-            "Run Explanation",
-            key="run_explanation_agent",
-            type="primary",
-            icon=":material/description:",
-        ):
-            if not api_base_url:
-                st.error("The Explanation Agent could not run because the backend URL is not configured.")
-            else:
-                try:
-                    explanation_response = requests.post(
-                        f"{api_base_url.rstrip('/')}/agents/explanation",
-                        json={
-                            "project_context": assessment_payload.get("project_context"),
-                            "assessment_result": assessment_payload,
-                            "evidence_bundle": evidence_agent_payload,
-                        },
-                        timeout=30,
-                    )
-                    explanation_response.raise_for_status()
-                    st.session_state["explanation_payload"] = explanation_response.json()
-                except requests.HTTPError:
-                    st.error("The Explanation Agent request was rejected by the backend.")
-                except requests.RequestException:
-                    st.error("The Explanation Agent service is unavailable.")
-                except (KeyError, TypeError, ValueError):
-                    st.error("The backend returned an invalid Explanation Agent response.")
-
-        explanation_payload = st.session_state.get("explanation_payload")
-        if explanation_payload:
-            render_explanation_agent(explanation_payload)
-
-
-st.header("Policy & Regulatory Retrieval")
-st.caption(
-    "Developer/debug view for Module 5B. It retrieves cited evidence only; it does not generate a regulatory conclusion, score, or recommendation."
-)
-st.session_state.setdefault("rag_search_payload", None)
-
-with st.form("rag_search_form", border=True):
-    rag_query = st.text_area(
-        "Policy or regulatory question",
-        placeholder="What connection requirements apply to a large data centre in Ireland?",
-        height=90,
-    )
-    rag_workflow_label = st.selectbox(
-        "Workflow",
-        options=[
-            "Any workflow",
-            "SITE_DISCOVERY",
-            "SITE_FEASIBILITY",
-            "POLICY_REGULATORY_INTELLIGENCE",
-        ],
-    )
-    rag_domains = st.multiselect(
-        "Domains",
-        options=[
-            "GRID",
-            "ENERGY",
-            "PLANNING",
-            "BIODIVERSITY",
-            "ENVIRONMENT",
-            "WATER",
-            "DATA_CENTRE_POLICY",
-            "INFRASTRUCTURE",
-            "EU_REPORTING",
-            "RESPONSIBLE_AI",
-            "GENERAL",
-        ],
-    )
-    rag_jurisdiction = st.selectbox(
-        "Jurisdiction",
-        options=["Any jurisdiction", "IRELAND", "EU", "LOCAL_AUTHORITY"],
-    )
-    rag_local_authority = st.text_input(
-        "Local authority (optional)",
-        placeholder="Fingal or Wicklow",
-    )
-    rag_include_historical = st.checkbox("Include proposed/historical policy")
-    rag_include_supporting = st.checkbox("Include industry/research supporting material")
-    rag_top_k = st.number_input("Results per class", min_value=1, max_value=20, value=8, step=1)
-    rag_submitted = st.form_submit_button("Run retrieval", type="primary", icon=":material/search:")
-
-if rag_submitted:
     if not api_base_url:
-        st.error("Retrieval could not run because the backend URL is not configured.")
-    elif not rag_query.strip():
-        st.error("Enter a policy or regulatory question.")
-    else:
-        rag_payload = {
-            "query": rag_query,
-            "workflow": None if rag_workflow_label == "Any workflow" else rag_workflow_label,
-            "domains": rag_domains,
-            "jurisdiction": None if rag_jurisdiction == "Any jurisdiction" else rag_jurisdiction,
-            "local_authority": optional_text(rag_local_authority),
-            "include_historical": rag_include_historical,
-            "include_supporting": rag_include_supporting,
-            "top_k": int(rag_top_k),
-        }
+        st.error("The backend connection is not configured. Set INTERLOCK_API_BASE_URL to run an assessment.")
+        return
+    if validate_only:
+        validation_payload = {key: value for key, value in project_payload.items() if key != "local_authority"}
         try:
-            rag_response = requests.post(
-                f"{api_base_url.rstrip('/')}/rag/search",
-                json=rag_payload,
+            response = requests.post(
+                f"{api_base_url.rstrip('/')}/project-input/validate", json=validation_payload, timeout=15
+            )
+            response.raise_for_status()
+            st.session_state["validation_payload"] = response.json()
+            st.session_state["submitted_project_payload"] = project_payload
+            st.success("Project input validated. Run INTERLOCK when you are ready.")
+        except (requests.RequestException, ValueError, TypeError):
+            st.error("Project input could not be validated. Check the required fields and try again.")
+    if run_clicked:
+        run_interlock(project_payload, project_evidence_mode, api_base_url)
+        if st.session_state.get("interlock_payload"):
+            st.session_state["active_page"] = "Decision Pack"
+            st.rerun()
+
+
+def render_public_data_debug(project_payload: dict[str, object] | None, api_base_url: str | None) -> None:
+    if not api_base_url or not project_payload:
+        st.caption("Validate a project and configure the backend to use the public-data debug check.")
+        return
+    if project_payload.get("latitude") is None or project_payload.get("longitude") is None:
+        st.info("Provide latitude and longitude to run the Module 4B public-data check.")
+        return
+    if st.button("Run public data evidence check", key="debug_site_evidence", icon=":material/search:"):
+        try:
+            response = requests.post(
+                f"{api_base_url.rstrip('/')}/evidence/site",
+                json={key: value for key, value in project_payload.items() if key != "local_authority"},
+                timeout=180,
+            )
+            response.raise_for_status()
+            st.session_state["site_evidence_payload"] = response.json()
+        except (requests.RequestException, ValueError, TypeError):
+            st.error("The public-data evidence check could not be completed.")
+    if st.session_state.get("site_evidence_payload"):
+        st.json(st.session_state["site_evidence_payload"])
+
+
+def render_rag_debug(api_base_url: str | None) -> None:
+    with st.form("rag_search_form", border=True):
+        query = st.text_area("Policy or regulatory question", placeholder="What connection requirements apply in Ireland?")
+        workflow = st.selectbox("Workflow", ["Any workflow", "SITE_DISCOVERY", "SITE_FEASIBILITY", "POLICY_REGULATORY_INTELLIGENCE"])
+        domains = st.multiselect("Domains", ["GRID", "ENERGY", "PLANNING", "BIODIVERSITY", "ENVIRONMENT", "WATER", "INFRASTRUCTURE", "GENERAL"])
+        jurisdiction = st.selectbox("Jurisdiction", ["Any jurisdiction", "IRELAND", "EU", "LOCAL_AUTHORITY"])
+        local_authority = st.text_input("Local authority (optional)")
+        include_historical = st.checkbox("Include proposed / historical policy")
+        include_supporting = st.checkbox("Include industry / research supporting material")
+        top_k = st.number_input("Results per class", min_value=1, max_value=20, value=8, step=1)
+        submitted = st.form_submit_button("Run retrieval", type="primary", icon=":material/search:")
+    if submitted:
+        if not api_base_url:
+            st.error("The retrieval service is not configured.")
+        elif not query.strip():
+            st.error("Enter a policy or regulatory question.")
+        else:
+            try:
+                response = requests.post(
+                    f"{api_base_url.rstrip('/')}/rag/search",
+                    json={
+                        "query": query,
+                        "workflow": None if workflow == "Any workflow" else workflow,
+                        "domains": domains,
+                        "jurisdiction": None if jurisdiction == "Any jurisdiction" else jurisdiction,
+                        "local_authority": optional_text(local_authority),
+                        "include_historical": include_historical,
+                        "include_supporting": include_supporting,
+                        "top_k": int(top_k),
+                    },
+                    timeout=30,
+                )
+                response.raise_for_status()
+                st.session_state["rag_search_payload"] = response.json()
+            except (requests.RequestException, ValueError, TypeError):
+                st.error("The policy retrieval request could not be completed.")
+    payload = st.session_state.get("rag_search_payload")
+    if payload:
+        st.caption(f"Mode: {payload.get('retrieval_mode')} · semantic available: {payload.get('semantic_available')}")
+        for warning in as_list(payload.get("warnings")):
+            st.warning(str(warning))
+        for group_name, key in (
+            ("Current authoritative evidence", "authoritative_results"),
+            ("Trusted curated records", "curated_results"),
+            ("Supporting evidence", "supporting_results"),
+            ("Proposed / historical evidence", "historical_results"),
+        ):
+            results = as_list(payload.get(key))
+            st.markdown(f"#### {group_name}")
+            if results:
+                for result in results:
+                    item = as_dict(result)
+                    with st.container(border=True):
+                        st.markdown(f"**{item.get('title') or 'Untitled'}** · {item.get('source_class') or 'Source class unknown'}")
+                        st.caption(str(item.get("citation") or "Citation unavailable"))
+                        st.write(str(item.get("text") or ""))
+            else:
+                st.caption("No results in this class.")
+
+
+def render_individual_agent_debug(context_payload: dict[str, object] | None, api_base_url: str | None) -> None:
+    if not context_payload or not api_base_url:
+        st.caption("Run a validated assessment to use the individual agent endpoints.")
+        return
+    if st.button("Run Evidence Agent endpoint", key="debug_evidence_agent", icon=":material/account_tree:"):
+        try:
+            response = requests.post(
+                f"{api_base_url.rstrip('/')}/agents/evidence",
+                json=context_payload,
+                timeout=240,
+            )
+            response.raise_for_status()
+            st.session_state["evidence_agent_payload"] = response.json()
+        except (requests.RequestException, ValueError, TypeError):
+            st.error("The Evidence Agent endpoint could not be completed.")
+    evidence_payload = st.session_state.get("evidence_agent_payload")
+    if evidence_payload and st.button("Run Assessment Agent endpoint", key="debug_assessment_agent", icon=":material/assessment:"):
+        try:
+            response = requests.post(
+                f"{api_base_url.rstrip('/')}/agents/assessment",
+                json={"project_context": evidence_payload.get("project_context"), "evidence_bundle": evidence_payload},
                 timeout=30,
             )
-            rag_response.raise_for_status()
-            st.session_state["rag_search_payload"] = rag_response.json()
-        except requests.HTTPError as exc:
-            detail = "The retrieval request was rejected by the backend."
-            try:
-                error_payload = exc.response.json()
-                if isinstance(error_payload, dict) and error_payload.get("detail"):
-                    detail = str(error_payload["detail"])
-            except (ValueError, AttributeError):
-                pass
-            st.error(detail)
-        except requests.RequestException:
-            st.error("The retrieval service is unavailable.")
-        except ValueError:
-            st.error("The backend returned an invalid retrieval response.")
+            response.raise_for_status()
+            st.session_state["assessment_payload"] = response.json()
+        except (requests.RequestException, ValueError, TypeError):
+            st.error("The Assessment Agent endpoint could not be completed.")
+    assessment_payload = st.session_state.get("assessment_payload")
+    if assessment_payload and st.button("Run Explanation Agent endpoint", key="debug_explanation_agent", icon=":material/description:"):
+        try:
+            response = requests.post(
+                f"{api_base_url.rstrip('/')}/agents/explanation",
+                json={
+                    "project_context": assessment_payload.get("project_context"),
+                    "assessment_result": assessment_payload,
+                    "evidence_bundle": evidence_payload,
+                },
+                timeout=30,
+            )
+            response.raise_for_status()
+            st.session_state["explanation_payload"] = response.json()
+        except (requests.RequestException, ValueError, TypeError):
+            st.error("The Explanation Agent endpoint could not be completed.")
+    for key in ("evidence_agent_payload", "assessment_payload", "explanation_payload"):
+        if st.session_state.get(key):
+            with st.expander(f"Raw {key.replace('_', ' ')}"):
+                st.json(st.session_state[key])
 
-rag_search_payload = st.session_state.get("rag_search_payload")
-if rag_search_payload:
-    if rag_search_payload.get("warnings"):
-        for warning in rag_search_payload["warnings"]:
-            st.warning(str(warning))
-    st.caption(
-        f"Mode: {rag_search_payload.get('retrieval_mode')} · "
-        f"semantic available: {rag_search_payload.get('semantic_available')}"
-    )
-    for gap in rag_search_payload.get("gaps", []):
-        st.info(f"Evidence gap: {gap.get('message', gap.get('type'))}")
-    render_retrieval_group("Current authoritative evidence", rag_search_payload.get("authoritative_results", []))
-    render_retrieval_group("Trusted curated records", rag_search_payload.get("curated_results", []))
-    render_retrieval_group("Supporting evidence", rag_search_payload.get("supporting_results", []))
-    render_retrieval_group("Proposed / historical evidence", rag_search_payload.get("historical_results", []))
-    if rag_search_payload.get("comparison_candidates"):
-        with st.expander("Comparison candidates"):
-            st.json(rag_search_payload["comparison_candidates"])
+
+def render_evidence_page(api_base_url: str | None) -> None:
+    render_evidence_view(st.session_state.get("interlock_payload"))
+    with st.expander("Developer / debug tools"):
+        st.markdown("#### Module 4B public-data check")
+        render_public_data_debug(st.session_state.get("submitted_project_payload"), api_base_url)
+        st.markdown("#### Module 5B policy retrieval")
+        render_rag_debug(api_base_url)
+        st.markdown("#### Individual Module 6–8 endpoints")
+        submitted = st.session_state.get("submitted_project_payload")
+        context = build_evidence_agent_context(submitted) if submitted else None
+        render_individual_agent_debug(context, api_base_url)
+
+
+st.session_state.setdefault("active_page", "Home")
+for key in (
+    "validation_payload",
+    "submitted_project_payload",
+    "interlock_payload",
+    "site_evidence_payload",
+    "evidence_agent_payload",
+    "assessment_payload",
+    "explanation_payload",
+    "rag_search_payload",
+):
+    st.session_state.setdefault(key, None)
+
+
+st.title("INTERLOCK")
+st.caption("Canavan Atlantic · Data Centre Development Intelligence")
+api_base_url = os.getenv("INTERLOCK_API_BASE_URL")
+if backend_available(api_base_url):
+    st.caption("Backend connected · Evidence-led workflow ready")
+elif api_base_url:
+    st.caption("Backend unavailable · Connect the backend to run an assessment")
+else:
+    st.caption("Explore the methodology or prepare an assessment · backend connection not configured")
+
+pages = ["Home", "New Assessment", "Decision Pack", "Evidence", "Methodology"]
+active_page = st.pills("Primary navigation", pages, key="active_page", label_visibility="collapsed")
+if not active_page:
+    active_page = st.session_state["active_page"]
+
+if active_page == "Home":
+    start_clicked, explore_clicked = render_home()
+    if start_clicked:
+        st.session_state["active_page"] = "New Assessment"
+        st.rerun()
+    if explore_clicked:
+        st.session_state["active_page"] = "Methodology"
+        st.rerun()
+elif active_page == "New Assessment":
+    render_assessment_page(api_base_url)
+elif active_page == "Decision Pack":
+    payload = st.session_state.get("interlock_payload")
+    if payload:
+        render_decision_pack(payload)
+    else:
+        st.markdown('<p class="interlock-section-kicker">Project / assessment result</p>', unsafe_allow_html=True)
+        st.markdown('<h1 class="interlock-section-title">Your decision pack will appear here.</h1>', unsafe_allow_html=True)
+        st.info("Start a new assessment to generate a traceable INTERLOCK result.")
+        if st.button("Start a new site assessment", type="primary", icon=":material/arrow_forward:"):
+            st.session_state["active_page"] = "New Assessment"
+            st.rerun()
+elif active_page == "Evidence":
+    render_evidence_page(api_base_url)
+else:
+    render_methodology()
