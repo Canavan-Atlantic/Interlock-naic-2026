@@ -140,8 +140,12 @@ produce an `ADVANCE`, `HOLD`, `RECONFIGURE`, or `STOP` decision.
 
 The backend endpoint is `POST /agents/explanation`. The Streamlit developer
 flow now runs Evidence Agent → Assessment Agent → Explanation Agent and shows
-the executive explanation, prioritised findings, unknowns, dependencies,
-contradictions, human reviews, next actions, and evidence traceability.
+the executive explanation, prioritised findings, consolidated material-unknown
+themes, dependencies, contradictions, human reviews, consolidated next
+actions, and customer-facing citations. Detailed unknowns, actions, evidence
+IDs, and complete citations remain available through the provenance
+drill-down. The additive explanation fields preserve old valid contract
+payloads.
 
 ## Prerequisites
 

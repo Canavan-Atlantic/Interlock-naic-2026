@@ -24,7 +24,12 @@ from .common import (
     WorkflowStatus,
 )
 from .evidence import AgentEvidenceState, EvidenceBundle, EvidenceRecord
-from .explanation import ExplanationRequest, ExplanationResult
+from .explanation import (
+    ExplanationAction,
+    ExplanationRequest,
+    ExplanationResult,
+    ExplanationUnknownTheme,
+)
 from .interfaces import AssessmentAgent, EvidenceAgent, ExplanationAgent
 from .result import InterlockResult
 
@@ -45,8 +50,10 @@ __all__ = [
     "EvidenceSourceTrust",
     "EvidenceRecord",
     "ExplanationAgent",
+    "ExplanationAction",
     "ExplanationRequest",
     "ExplanationResult",
+    "ExplanationUnknownTheme",
     "HumanReviewRequest",
     "HumanReviewRole",
     "HumanReviewStatus",

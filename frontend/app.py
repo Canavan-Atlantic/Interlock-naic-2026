@@ -337,16 +337,15 @@ def render_explanation_agent(payload: dict[str, object]) -> None:
         st.markdown(f"**Executive / project explanation:** {payload['executive_summary']}")
 
     for title, key in (
-        ("Key findings", "key_findings"),
         ("Why it matters", "why_it_matters"),
         ("Known facts", "known_facts"),
         ("Constraints", "constraints"),
         ("Conditional issues", "conditional_issues"),
-        ("Material unknowns", "material_unknowns"),
+        ("Material unknown themes", "material_unknown_themes"),
         ("Dependencies", "dependencies"),
         ("Contradictions", "contradictions"),
         ("Human reviews", "human_handoffs"),
-        ("Suggested next actions", "next_actions"),
+        ("Suggested next actions", "next_action_plan"),
     ):
         st.markdown(f"#### {title}")
         values = payload.get(key, [])
@@ -355,15 +354,32 @@ def render_explanation_agent(payload: dict[str, object]) -> None:
         else:
             st.caption("None recorded.")
 
-    st.markdown("#### Evidence IDs / citations")
-    evidence_ids = payload.get("evidence_ids", [])
-    citations = payload.get("source_citations", [])
-    if evidence_ids:
-        st.write("Evidence IDs: " + "; ".join(str(item) for item in evidence_ids))
-    if citations:
-        st.json(citations)
-    if not evidence_ids and not citations:
+    st.markdown("#### Key findings")
+    key_findings = payload.get("key_findings", [])
+    if key_findings:
+        for item in key_findings:
+            st.write(str(item).split(" [finding:", 1)[0])
+        with st.expander("Finding traceability"):
+            st.json(key_findings)
+    else:
+        st.caption("None recorded.")
+
+    st.markdown("#### Customer-facing citations")
+    customer_citations = payload.get("customer_facing_citations", [])
+    if customer_citations:
+        st.json(customer_citations)
+    else:
         st.caption("No structured evidence IDs or citations recorded.")
+
+    with st.expander("Complete provenance drill-down"):
+        st.json(
+            {
+                "evidence_ids": payload.get("evidence_ids", []),
+                "material_unknowns": payload.get("material_unknowns", []),
+                "next_actions": payload.get("next_actions", []),
+                "source_citations": payload.get("source_citations", []),
+            }
+        )
 
     warnings = payload.get("warnings", [])
     if warnings:

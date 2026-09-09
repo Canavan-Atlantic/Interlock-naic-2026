@@ -52,6 +52,15 @@ have the Module 7 result.
 - referenced evidence IDs and existing structured citations;
 - assessment warnings and Module 8 boundary warnings.
 
+The original `material_unknowns`, `next_actions`, `evidence_ids`, and
+`source_citations` fields remain unchanged as detailed compatibility and
+provenance views. The additive `material_unknown_themes`, `next_action_plan`,
+and `customer_facing_citations` fields are concise customer-facing views. Each
+theme and action retains its underlying finding IDs, dependency IDs, evidence
+IDs, specialist roles where available, and direct citations. Old valid
+requests and results therefore remain deserialisable without creating two
+incompatible `ExplanationResult` formats.
+
 ## Deterministic prioritisation
 
 Findings are ordered by consequence and unresolvedness:
@@ -63,8 +72,13 @@ Findings are ordered by consequence and unresolvedness:
 5. clear/supporting findings.
 
 Every finding remains available as one concise summary item; lower-priority
-items are not silently discarded. Detailed evidence records remain in the
-Module 6 bundle rather than being repeated as a large evidence dump.
+items are not silently discarded. Equivalent unknowns are grouped into
+material themes using explicit issue keywords and domain fallback. Unrelated
+unknowns remain separate. Equivalent evidence-required-next items are grouped
+into action themes using the same deterministic issue vocabulary, while the
+original action text remains available in `source_actions`. Detailed evidence
+records remain in the Module 6 bundle rather than being repeated as a large
+evidence dump.
 
 ## Evidence grounding and citations
 
@@ -76,8 +90,11 @@ customer-facing facts, evidence IDs, and citations. Benchmark-only Herbata
 records therefore cannot leak into the early-evidence explanation.
 
 Existing `CitationReference` objects are copied without fabricated page,
-section, or source locations. Evidence IDs are retained in material summary
-items and the result-level evidence list.
+section, or source locations. Up to three directly linked citations per
+customer-facing theme/action/finding are selected deterministically for
+`customer_facing_citations`; the complete set remains in `source_citations`.
+Evidence IDs are retained in themes/actions, material summary items, and the
+result-level evidence list.
 
 ## Dependencies, contradictions, and human reviews
 
@@ -101,6 +118,8 @@ Run Explanation Agent
 ```
 
 It displays the executive explanation, key findings, constraints, conditional
-issues, unknowns, dependencies, contradictions, human reviews, next actions,
-and evidence IDs/citations. It remains a debug workflow and is not the final
+issues, consolidated unknown themes, dependencies, contradictions, human
+reviews, consolidated next actions, and customer-facing citations. A
+complete-provenance drill-down retains the detailed unknowns, actions,
+evidence IDs, and citations. It remains a debug workflow and is not the final
 Decision Pack frontend.
