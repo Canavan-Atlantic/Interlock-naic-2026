@@ -187,6 +187,66 @@ def _review_role(domain: Domain) -> HumanReviewRole:
     return HumanReviewRole.DEVELOPER
 
 
+def _review_role_for_issue(domain: Domain, text: str) -> HumanReviewRole:
+    """Choose the specialist role from the issue, not only record domain."""
+
+    lower = text.casefold()
+    if any(term in lower for term in ("mic", "energisation", "energization", "grid connection", "connection offer")):
+        return HumanReviewRole.GRID_ENGINEER
+    return _review_role(domain)
+
+
+def _review_issue_key(domain: Domain, role: HumanReviewRole, text: str) -> tuple[str, str, str]:
+    """Return a stable role/domain/underlying-issue consolidation key."""
+
+    lower = " ".join(text.split()).casefold()
+    domain_alias = _value(domain)
+    if any(term in lower for term in ("mic", "energisation", "energization", "grid connection", "connection offer", "grid readiness", "grid asset")):
+        domain_alias = Domain.GRID.value
+        issue = "grid-connection-readiness"
+    elif "renewable" in lower or "commissioned" in lower or "commissioning" in lower:
+        domain_alias = Domain.ENERGY.value
+        issue = "renewable-commissioning"
+    elif any(term in lower for term in ("zoning", "local-authority planning", "local planning", "development-plan", "development plan")):
+        domain_alias = Domain.PLANNING.value
+        issue = "planning-evidence"
+    elif any(term in lower for term in ("water", "wastewater", "water capacity", "water connection")):
+        domain_alias = Domain.WATER.value
+        issue = "water-connection-readiness"
+    elif "project-document" in lower or "project document" in lower or "non-authoritative" in lower:
+        issue = "project-document-verification"
+    elif "conflicting evidence" in lower or "scope mismatch" in lower or "scope" in lower and "confirm" in lower:
+        issue = "contradiction"
+    else:
+        issue = lower
+    return domain_alias, _value(role), issue
+
+
+def _material_unknown_requires_review(
+    domain: Domain,
+    records: list[EvidenceRecord],
+    missing: list[str],
+) -> bool:
+    """Only escalate unknowns that need specialist or progression judgment."""
+
+    text = " ".join([*(_record_text(record) for record in records), *missing]).casefold()
+    if any(term in text for term in ("mic", "energisation", "energization", "grid connection", "connection offer")):
+        return True
+    if domain == Domain.GRID:
+        return any(term in text for term in ("connection", "capacity"))
+    if domain == Domain.PLANNING:
+        return any(term in text for term in ("zoning", "planning", "local authority", "development plan"))
+    if domain == Domain.WATER:
+        return any(term in text for term in ("water", "wastewater", "capacity", "connection"))
+    if domain == Domain.BIODIVERSITY:
+        return any(term in text for term in ("sac", "spa", "ecology", "biodiversity", "aa"))
+    if domain == Domain.ENVIRONMENT:
+        return any(term in text for term in ("environment", "flood", "ground", "eia", "heritage", "archaeology"))
+    if domain == Domain.ENERGY:
+        return any(term in text for term in ("renewable", "commission", "dispatchable", "storage"))
+    return False
+
+
 def _severity_value(value: Any) -> int:
     return {
         HumanReviewSeverity.INFORMATIONAL.value: 0,
@@ -413,7 +473,7 @@ class DeterministicAssessmentAgent:
                     unknowns=missing or [f"{_value(domain)} evidence remains incomplete."],
                     impact="The available evidence is insufficient to establish this domain as resolved.",
                     required_next=missing,
-                    review=domain in _HIGH_CONSEQUENCE_DOMAINS or bool(unknown_records),
+                    review=_material_unknown_requires_review(domain, records, missing),
                 )
             elif records and not any(finding.domain == domain for finding in findings):
                 if project_document_ids and not (authoritative_ids or any(_is_deterministic(record) for record in records)):
@@ -431,7 +491,7 @@ class DeterministicAssessmentAgent:
                         "CONDITIONAL",
                         evidence_ids=domain_ids,
                         impact="Evidence is available for this domain, but it does not by itself establish complete project readiness or absence of risk.",
-                        review=domain in _HIGH_CONSEQUENCE_DOMAINS,
+                        review=False,
                     )
                 else:
                     add_finding(
@@ -460,15 +520,18 @@ class DeterministicAssessmentAgent:
         project_id: str,
     ) -> list[HumanReviewRequest]:
         reviews: list[HumanReviewRequest] = []
-        by_key: dict[tuple[str, str], HumanReviewRequest] = {}
+        by_key: dict[tuple[str, str, str], HumanReviewRequest] = {}
 
         def add(
             domain: Domain,
             reason: str,
             evidence_ids: Iterable[str],
             severity: HumanReviewSeverity,
+            issue_text: str | None = None,
         ) -> None:
-            key = (_value(domain), " ".join(reason.split()).casefold())
+            issue_context = issue_text or reason
+            role = _review_role_for_issue(domain, issue_context)
+            key = _review_issue_key(domain, role, issue_context)
             current = by_key.get(key)
             if current is not None:
                 current.evidence_ids = _unique([*current.evidence_ids, *evidence_ids])
@@ -481,7 +544,7 @@ class DeterministicAssessmentAgent:
                 domain=domain,
                 reason=reason,
                 severity=severity,
-                recommended_role=_review_role(domain),
+                recommended_role=role,
                 evidence_ids=_unique(evidence_ids),
                 status="REQUIRED",
             )
@@ -489,7 +552,8 @@ class DeterministicAssessmentAgent:
             reviews.append(review)
 
         for review in existing:
-            key = (_value(review.domain), " ".join(review.reason.split()).casefold())
+            role = HumanReviewRole(_value(review.recommended_role))
+            key = _review_issue_key(Domain(_value(review.domain)), role, review.reason)
             existing_copy = review.model_copy(deep=True)
             current = by_key.get(key)
             if current is None:
@@ -510,7 +574,16 @@ class DeterministicAssessmentAgent:
                 else HumanReviewSeverity.MATERIAL
             )
             reason = finding.decision_impact or "Review the material assessment finding and its evidence."
-            add(Domain(_value(finding.domain)), reason, finding.evidence_ids, severity)
+            issue_context = " ".join(
+                [reason, *finding.material_unknowns, *finding.evidence_required_next]
+            )
+            add(
+                Domain(_value(finding.domain)),
+                reason,
+                finding.evidence_ids,
+                severity,
+                issue_text=issue_context,
+            )
         return reviews
 
 

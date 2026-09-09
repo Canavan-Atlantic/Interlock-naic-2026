@@ -133,12 +133,21 @@ def test_missing_mic_remains_unknown() -> None:
     assert finding.material_unknowns
     assert finding.evidence_ids == ["ev-mic"]
     assert "MIC not provided" in result.material_unknowns
+    assert any(review.recommended_role == HumanReviewRole.GRID_ENGINEER for review in result.human_reviews)
 
 
 def test_unknown_zoning_remains_unknown() -> None:
     result = _assess(_bundle([_record("ev-zoning", Domain.PLANNING, "zoning.status", "Zoning is unknown", value=None, state=AgentEvidenceState.UNKNOWN, missing_evidence=["usable site-specific zoning evidence"])]))
 
     assert _finding(result, Domain.PLANNING, "UNKNOWN").evidence_ids == ["ev-zoning"]
+    assert any(review.recommended_role == HumanReviewRole.PLANNING_CONSULTANT for review in result.human_reviews)
+
+
+def test_harmless_general_unknown_does_not_create_human_review() -> None:
+    result = _assess(_bundle([_record("ev-note", Domain.GENERAL, "project_note", "Optional note is unknown.", value=None, state=AgentEvidenceState.UNKNOWN)]))
+
+    assert _finding(result, Domain.GENERAL, "UNKNOWN")
+    assert not result.human_reviews
 
 
 def test_water_feasibility_does_not_equal_secured_connection() -> None:
@@ -147,6 +156,7 @@ def test_water_feasibility_does_not_equal_secured_connection() -> None:
     finding = _finding(result, Domain.WATER, "CONDITIONAL")
     assert "does not establish a secured" in (finding.decision_impact or "")
     assert "ev-water" in finding.evidence_ids
+    assert result.human_reviews
 
 
 def test_proposed_grid_infrastructure_does_not_equal_energised() -> None:
@@ -186,6 +196,7 @@ def test_contextual_grid_asset_does_not_become_confirmed_capacity() -> None:
 
     finding = _finding(result, Domain.GRID, "CONDITIONAL")
     assert "do not establish available capacity" in (finding.decision_impact or "")
+    assert any(review.severity == HumanReviewSeverity.HIGH_CONSEQUENCE for review in result.human_reviews)
 
 
 def test_no_spatial_intersection_does_not_become_no_environmental_risk() -> None:
@@ -265,6 +276,50 @@ def test_related_human_reviews_are_aggregated_without_losing_evidence_ids() -> N
     matching = [review for review in result.human_reviews if review.domain == Domain.GRID and "grid status" in review.reason.casefold()]
     assert len(matching) == 1
     assert matching[0].evidence_ids == ["ev-a", "ev-b"]
+
+
+def test_identical_upstream_and_assessment_issue_is_one_review() -> None:
+    record = _record("ev-agreement", Domain.GRID, "grid_connection_agreement", "A connection agreement is recorded.")
+    upstream = HumanReviewRequest(
+        review_id="review-upstream-grid",
+        project_id="assessment-test-project",
+        domain=Domain.GRID,
+        reason="A connection agreement or feasibility statement does not establish energisation or a secured MIC.",
+        severity=HumanReviewSeverity.MATERIAL,
+        recommended_role=HumanReviewRole.GRID_ENGINEER,
+        evidence_ids=["ev-upstream"],
+    )
+    result = _assess(_bundle([record], human_review_requests=[upstream]))
+
+    matching = [review for review in result.human_reviews if review.recommended_role == HumanReviewRole.GRID_ENGINEER and "energisation" in review.reason]
+    assert len(matching) == 1
+    assert matching[0].review_id == "review-upstream-grid"
+    assert matching[0].evidence_ids == ["ev-upstream", "ev-agreement"]
+
+
+def test_unrelated_same_domain_issues_remain_separate() -> None:
+    reviews = [
+        HumanReviewRequest(
+            review_id="review-planning-zoning",
+            project_id="assessment-test-project",
+            domain=Domain.PLANNING,
+            reason="Confirm zoning evidence.",
+            recommended_role=HumanReviewRole.PLANNING_CONSULTANT,
+            evidence_ids=["ev-zoning"],
+        ),
+        HumanReviewRequest(
+            review_id="review-planning-scope",
+            project_id="assessment-test-project",
+            domain=Domain.PLANNING,
+            reason="Confirm the conflicting project scope.",
+            severity=HumanReviewSeverity.HIGH_CONSEQUENCE,
+            recommended_role=HumanReviewRole.PLANNING_CONSULTANT,
+            evidence_ids=["ev-scope"],
+        ),
+    ]
+    result = _assess(_bundle([], human_review_requests=reviews))
+
+    assert {review.review_id for review in result.human_reviews} == {"review-planning-zoning", "review-planning-scope"}
 
 
 def test_deterministic_gis_provenance_is_not_rewritten() -> None:
