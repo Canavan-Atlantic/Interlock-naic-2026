@@ -2,7 +2,7 @@
 
 INTERLOCK is an early-stage decision-support platform for data-centre development. Its long-term purpose is to help a developer understand whether a development proposition is credible enough to progress, what could stop or delay it, what remains unknown, and what needs to happen next.
 
-## Current scope: Modules 1–9
+## Current scope: Modules 1–10
 
 Module 1 proves that a Streamlit frontend can communicate with a FastAPI backend and that both services can run with Docker Compose. Module 2 adds the structured developer project-input workflow. Module 3 converts that input into an in-memory evidence ledger. Module 4A adds deterministic raw-data inventory, validation, cleaning, provenance, and spatial standardisation. Module 4B adds deterministic site-level evidence queries over those processed outputs while retaining the Module 3 ledger and explicit limitations. Module 5A creates a deterministic, provenance-aware policy knowledge-base foundation. Module 5B adds authority-aware hybrid retrieval over that processed corpus without answer generation or project decisions.
 
@@ -158,6 +158,26 @@ project documents remain excluded by default; enable them explicitly for the
 existing Herbata validation mode. The Streamlit application exposes the same
 workflow through **Run INTERLOCK**. Module 9 adds no RAG calls, LLM calls,
 scoring, recommendations, or final project decision.
+
+## Module 10 — Decision Pack frontend
+
+Module 10 adds the polished Streamlit journey: Home, New Assessment, Decision
+Pack, Evidence, and Methodology. The primary assessment action calls
+`POST /interlock/run` and renders the real `InterlockResult` as an evidence-led
+development readiness pack. It keeps `UNKNOWN` distinct from failure, presents
+human review as an accountable workflow state, distinguishes project evidence
+from authoritative policy, and does not add scores, fabricated metrics, or
+unsupported `ADVANCE`/`HOLD`/`RECONFIGURE`/`STOP` decisions.
+
+Run the frontend directly with:
+
+```powershell
+$env:INTERLOCK_API_BASE_URL = "http://localhost:8000"
+py -m streamlit run frontend/app.py
+```
+
+The existing Module 4B and Module 5B developer tools remain available under
+the Evidence page's Developer / debug tools expander.
 
 ## Prerequisites
 
