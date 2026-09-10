@@ -15,6 +15,7 @@ from frontend.components import (
     HERO_ASSET_PATH,
     LOGO_ASSET_PATH,
     WHITE_LOGO_ASSET_PATH,
+    hero_background_css,
     hero_asset_style,
     source_label,
     status_label,
@@ -49,6 +50,8 @@ def test_frontend_uses_supplied_hero_and_extracted_brand_assets() -> None:
     assert LOGO_ASSET_PATH.is_file()
     assert WHITE_LOGO_ASSET_PATH.is_file()
     assert "data:image/png;base64," in hero_asset_style()
+    assert 'background-image: linear-gradient' in hero_background_css()
+    assert 'url("data:image/png;base64,' in hero_background_css()
 
     app = AppTest.from_file(APP_PATH, default_timeout=10).run()
 
@@ -271,7 +274,11 @@ def test_frontend_status_and_source_labels_are_customer_safe() -> None:
 
 def test_frontend_uses_brand_navigation_and_action_styles() -> None:
     assert 'button[aria-pressed="true"]' in BRAND_CSS
-    assert "border-bottom: 2px solid var(--interlock-turquoise)" in BRAND_CSS
+    assert "border-bottom: 3px solid var(--interlock-turquoise)" in BRAND_CSS
     assert "background: var(--interlock-red)" not in BRAND_CSS
     assert "background: var(--interlock-turquoise)" in BRAND_CSS
     assert "interlock-site-header" in BRAND_CSS
+    assert "max-height: 52px" in BRAND_CSS
+    assert "max-height: 55px" in BRAND_CSS
+    assert "background-position: center 55%" in BRAND_CSS
+    assert "margin: -8.6rem" not in BRAND_CSS

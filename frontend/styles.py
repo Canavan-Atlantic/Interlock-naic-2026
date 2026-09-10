@@ -25,16 +25,16 @@ html, body, [class*="css"] { font-family: "Montserrat", "Aptos", "Segoe UI", Ari
 [data-testid="stHeader"] { background: transparent; height: 0; }
 [data-testid="stDecoration"], [data-testid="stToolbar"] { display: none; }
 [data-testid="stMainBlockContainer"] {
-  width: 100%; max-width: 1600px; padding-top: 0.2rem;
-  padding-left: clamp(1rem, 4vw, 4rem); padding-right: clamp(1rem, 4vw, 4rem);
+  width: 100%; max-width: 1600px; margin: 0 auto; padding-top: 0.2rem;
+  padding-left: clamp(2rem, 3.3vw, 3rem); padding-right: clamp(2rem, 3.3vw, 3rem);
 }
 
 .interlock-site-header {
   align-items: center; border-bottom: 1px solid var(--interlock-line); display: flex;
-  justify-content: space-between; min-height: 76px; padding: 0 0.2rem;
+  height: 72px; justify-content: space-between; min-height: 72px; padding: 0 0.2rem;
 }
-.interlock-ca-brand { align-items: center; display: flex; min-width: 12rem; }
-.interlock-ca-logo { display: block; height: auto; max-width: 12.8rem; width: 100%; }
+.interlock-ca-brand { align-items: center; display: flex; flex: 0 0 220px; min-width: 220px; }
+.interlock-site-header img.interlock-ca-logo { display: block !important; height: auto !important; max-height: 52px !important; max-width: 220px !important; object-fit: contain; width: 210px !important; }
 .interlock-ca-fallback { color: var(--interlock-teal); font-size: 1rem; font-weight: 800; letter-spacing: 0.1em; line-height: 1; }
 .interlock-ca-fallback small { color: var(--interlock-navy); display: block; font-size: 0.62rem; letter-spacing: 0.28em; margin-top: 0.3rem; }
 .interlock-profile { align-items: center; color: var(--interlock-ink); display: flex; font-size: 0.78rem; gap: 0.45rem; justify-content: flex-end; min-width: 14rem; }
@@ -45,39 +45,43 @@ html, body, [class*="css"] { font-family: "Montserrat", "Aptos", "Segoe UI", Ari
 
 /* The keyed widget remains functional, but visually reads as web navigation. */
 [data-testid="stPills"] {
-  border-bottom: 0; height: 76px; margin: -76px clamp(11rem, 17vw, 19rem) 1.25rem clamp(15rem, 24vw, 27rem);
+  border-bottom: 0; height: 72px; margin: -72px clamp(11rem, 17vw, 19rem) 1.25rem clamp(15rem, 24vw, 27rem);
   padding: 0; position: relative; z-index: 4;
 }
-[data-testid="stPills"] > div { align-items: center; gap: clamp(0.35rem, 2.5vw, 2rem); height: 76px; justify-content: center; }
-[data-testid="stPills"] button {
+[data-testid="stPills"] > div { align-items: center; gap: clamp(0.35rem, 2.5vw, 2rem); height: 72px; justify-content: center; }
+[data-testid="stPills"] button,
+[data-testid="stPills"] button[aria-pressed="false"],
+[data-testid="stPills"] button[aria-pressed="true"] {
   background: transparent !important; border: 0 !important; border-radius: 0 !important;
   box-shadow: none !important; color: var(--interlock-navy) !important; font-size: 0.78rem;
   font-weight: 600; min-height: 2.6rem; padding: 0.7rem 0.1rem 0.55rem;
 }
 [data-testid="stPills"] button:hover { color: var(--interlock-teal) !important; }
 [data-testid="stPills"] button[aria-pressed="true"] {
-  background: transparent !important; border-bottom: 2px solid var(--interlock-turquoise) !important;
-  color: var(--interlock-navy) !important; font-weight: 800;
+  background: transparent !important; border-bottom: 3px solid var(--interlock-turquoise) !important;
+  color: var(--interlock-navy) !important; font-weight: 800; outline: 0 !important;
 }
+[data-testid="stPills"] button::before, [data-testid="stPills"] button::after { border: 0 !important; box-shadow: none !important; }
 
-.interlock-hero {
+.st-key-hero_shell {
   background-color: #3d746d;
   background-image:
-    linear-gradient(90deg, rgba(3, 50, 65, 0.98) 0%, rgba(3, 65, 75, 0.93) 25%, rgba(3, 65, 75, 0.62) 43%, rgba(3, 65, 75, 0.2) 60%, rgba(0, 0, 0, 0) 75%),
+    linear-gradient(90deg, rgba(2, 49, 63, 0.97) 0%, rgba(2, 55, 67, 0.88) 28%, rgba(2, 55, 67, 0.55) 43%, rgba(2, 55, 67, 0.18) 58%, rgba(0, 0, 0, 0.02) 72%),
     var(--interlock-hero-image, linear-gradient(180deg, #b8d6d2 0%, #9fc8c2 42%, #7da69a 43%, #537f73 58%, #2c5f5d 59%, #113b49 100%));
-  background-position: center 55%; background-size: cover; box-shadow: 0 18px 42px rgba(6, 55, 71, 0.18);
-  min-height: 31rem; overflow: hidden; padding: clamp(3rem, 7vw, 5.5rem) clamp(1.5rem, 6vw, 6rem); position: relative;
+  background-position: center 55%; background-repeat: no-repeat; background-size: cover;
+  box-shadow: 0 18px 42px rgba(6, 55, 71, 0.18); display: flex; flex-direction: column;
+  justify-content: flex-start; min-height: 470px; overflow: hidden; padding: 38px 60px 34px; position: relative;
 }
-.interlock-hero::after { border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 50%; content: ""; height: 34rem; opacity: 0.7; position: absolute; right: -11rem; top: -14rem; transform: rotate(-17deg) skewX(-18deg); width: 54rem; }
-.interlock-hero-content { max-width: 41rem; position: relative; z-index: 1; }
+.st-key-hero_shell::after { border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 50%; content: ""; height: 34rem; opacity: 0.45; pointer-events: none; position: absolute; right: -11rem; top: -14rem; transform: rotate(-17deg) skewX(-18deg); width: 54rem; }
+.st-key-hero_shell .interlock-hero-content { max-width: 480px; position: relative; z-index: 1; }
 .interlock-hero-kicker { color: #ffffff; font-size: 0.74rem; font-weight: 800; letter-spacing: 0.2em; margin: 0 0 0.8rem; }
 .interlock-eyebrow { color: var(--interlock-aqua); font-size: 0.73rem; font-weight: 800; letter-spacing: 0.16em; margin: 0 0 1.4rem; }
-.interlock-hero h1 { color: #ffffff; font-size: clamp(3.15rem, 6vw, 4.8rem); letter-spacing: -0.055em; line-height: 0.98; margin: 0; }
-.interlock-hero h1 em { color: var(--interlock-aqua); font-style: normal; }
-.interlock-hero-copy { color: rgba(255, 255, 255, 0.88); font-size: 1.03rem; line-height: 1.65; margin: 1.6rem 0 0; max-width: 34rem; }
+.st-key-hero_shell h1 { color: #ffffff; font-size: clamp(3.6rem, 4vw, 4rem); font-weight: 800; letter-spacing: -0.055em; line-height: 1; margin: 0; }
+.st-key-hero_shell h1 em { color: #8fe2d9; font-style: normal; }
+.interlock-hero-copy { color: rgba(255, 255, 255, 0.88); font-size: 1.03rem; line-height: 1.55; margin: 1.45rem 0 0; max-width: 480px; }
 
-.st-key-hero_actions { margin: -8.6rem 0 2.1rem; padding: 0 clamp(1.5rem, 6vw, 6rem); position: relative; z-index: 3; }
-.st-key-hero_actions [data-testid="stButton"] button { min-height: 3.25rem; padding-left: 1.4rem; padding-right: 1.4rem; }
+.st-key-hero_actions { margin: 1.5rem 0 0; padding: 0; position: relative; z-index: 2; }
+.st-key-hero_actions [data-testid="stButton"] button { min-height: 52px; padding-left: 26px; padding-right: 26px; }
 .st-key-hero_actions [data-testid="stButton"]:last-child button { background: transparent !important; border: 0 !important; border-bottom: 1px solid rgba(255, 255, 255, 0.82) !important; border-radius: 0 !important; color: #ffffff !important; }
 .st-key-hero_actions [data-testid="stButton"]:last-child button:hover { border-bottom-color: var(--interlock-aqua) !important; color: var(--interlock-aqua) !important; }
 
@@ -89,20 +93,20 @@ html, body, [class*="css"] { font-family: "Montserrat", "Aptos", "Segoe UI", Ari
 .interlock-line-icon svg { fill: none; height: 2.8rem; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; width: 2.8rem; }
 .st-key-capability_strip { background: #ffffff; border-bottom: 1px solid var(--interlock-line); margin: 0 -0.5rem; padding: 0.9rem clamp(0.5rem, 2vw, 1.4rem); }
 .st-key-capability_strip [data-testid="column"] + [data-testid="column"] .interlock-capability { border-left: 1px solid var(--interlock-line); padding-left: 1.4rem; }
-.interlock-capability { min-height: 8.5rem; padding: 0.65rem 1.25rem 0.65rem 0; }
+.interlock-capability { min-height: 6.9rem; padding: 0.55rem 1.25rem 0.55rem 0; }
 .interlock-capability-title { color: var(--interlock-navy); font-size: 0.98rem; font-weight: 800; margin-bottom: 0.45rem; }
 .interlock-capability-copy { color: var(--interlock-muted); font-size: 0.84rem; line-height: 1.55; }
 
-.st-key-truth_band { background: var(--interlock-blue); margin: 0 -0.5rem; overflow: hidden; padding: 1.45rem clamp(0.5rem, 4vw, 2.5rem); position: relative; }
+.st-key-truth_band { background: var(--interlock-blue); margin: 0 -0.5rem; min-height: 100px; overflow: hidden; padding: 1rem clamp(0.5rem, 4vw, 2.5rem); position: relative; }
 .st-key-truth_band::after { background: repeating-radial-gradient(ellipse at center, transparent 0 1.05rem, rgba(0, 168, 157, 0.14) 1.1rem 1.18rem, transparent 1.23rem 1.9rem); content: ""; height: 15rem; pointer-events: none; position: absolute; right: -2rem; top: -6rem; transform: rotate(-11deg); width: 30rem; }
 .st-key-truth_band [data-testid="column"] + [data-testid="column"] .interlock-truth-item { border-left: 1px solid rgba(22, 122, 116, 0.28); }
-.interlock-truth-item { display: flex; flex-direction: column; gap: 0.35rem; min-height: 4.5rem; padding: 0.25rem 1rem; position: relative; z-index: 1; }
+.interlock-truth-item { display: flex; flex-direction: column; gap: 0.35rem; min-height: 4.8rem; padding: 0.25rem 1rem; position: relative; z-index: 1; }
 .interlock-truth-item strong { color: var(--interlock-teal); font-size: 1.48rem; letter-spacing: -0.03em; line-height: 1.05; }
 .interlock-truth-item span { color: var(--interlock-ink); font-size: 0.82rem; }
 .interlock-step-icon { align-items: center; border: 1px solid var(--interlock-turquoise); border-radius: 50%; color: var(--interlock-teal); display: flex; height: 2.8rem; justify-content: center; margin-bottom: 0.45rem; width: 2.8rem; }
 .interlock-step-icon svg { fill: none; height: 1.55rem; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; width: 1.55rem; }
 .interlock-step-number { color: var(--interlock-teal); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; }
-.st-key-approach_section { padding: 1.5rem 0 0.25rem; }
+.st-key-approach_section { min-height: 205px; padding: 1.2rem 0 0.15rem; }
 .st-key-approach_section .interlock-approach-step { min-height: 8rem; padding-right: 1.2rem; position: relative; }
 .st-key-approach_section .interlock-approach-step::after { color: var(--interlock-teal); content: "›"; font-size: 2.1rem; font-weight: 300; position: absolute; right: -0.15rem; top: 0.35rem; }
 .st-key-approach_section .interlock-approach-step:last-child::after { display: none; }
@@ -111,7 +115,7 @@ html, body, [class*="css"] { font-family: "Montserrat", "Aptos", "Segoe UI", Ari
 
 .interlock-footer { align-items: center; background: var(--interlock-navy); color: rgba(255, 255, 255, 0.76); display: flex; justify-content: space-between; margin: 3rem -0.5rem -2rem; min-height: 78px; padding: 0.85rem 1.5rem; }
 .interlock-footer-brand { align-items: center; color: white; display: flex; font-size: 0.86rem; }
-.interlock-footer-logo { display: block; height: auto; max-width: 13rem; width: 100%; }
+.interlock-footer img.interlock-footer-logo { display: block !important; height: auto !important; max-height: 55px !important; max-width: 200px !important; object-fit: contain; width: 200px !important; }
 .interlock-footer-motto { color: var(--interlock-aqua); font-size: 0.75rem; letter-spacing: 0.12em; }
 .interlock-footer-copyright { font-size: 0.7rem; }
 
@@ -138,11 +142,10 @@ div[data-testid="stButton"] button[kind="primary"]:hover, div[data-testid="stFor
 .interlock-pill.constrained { background: #f8e4e1; color: #8d3035; }
 
 @media (max-width: 900px) {
-  .interlock-ca-brand, .interlock-profile { min-width: auto; }
+  .interlock-ca-brand, .interlock-profile { flex-basis: auto; min-width: auto; }
   [data-testid="stPills"] { height: auto; margin: 0 0 1rem; }
   [data-testid="stPills"] > div { gap: 0.8rem; height: auto; justify-content: flex-start; overflow-x: auto; }
-  .interlock-hero { min-height: 27rem; }
-  .st-key-hero_actions { margin-top: -7rem; }
+  .st-key-hero_shell { min-height: 460px; padding: 34px 40px 32px; }
   .st-key-capability_strip [data-testid="stHorizontalBlock"], .st-key-truth_band [data-testid="stHorizontalBlock"] { flex-wrap: wrap; }
   .st-key-capability_strip [data-testid="column"], .st-key-truth_band [data-testid="column"] { flex: 0 0 50%; max-width: 50%; }
   .st-key-capability_strip [data-testid="column"] + [data-testid="column"] .interlock-capability { border-left: 0; }
@@ -150,13 +153,13 @@ div[data-testid="stButton"] button[kind="primary"]:hover, div[data-testid="stFor
 }
 @media (max-width: 640px) {
   .interlock-site-header { min-height: 66px; }
-  .interlock-ca-logo { max-width: 10.8rem; }
+  .interlock-site-header img.interlock-ca-logo { max-height: 42px !important; max-width: 170px !important; width: 170px !important; }
   .interlock-profile span:not(.interlock-profile-icon):not(.interlock-chevron) { display: none; }
   [data-testid="stPills"] > div { gap: 0.55rem; }
   [data-testid="stPills"] button { font-size: 0.72rem; min-height: 2.35rem; padding-bottom: 0.4rem; }
-  .interlock-hero { min-height: 25rem; padding: 2.4rem 1.35rem 8rem; }
-  .interlock-hero h1 { font-size: clamp(2.7rem, 12vw, 4rem); }
-  .st-key-hero_actions { margin: -5.6rem 0 1.8rem; padding: 0 1.35rem; }
+  .st-key-hero_shell { min-height: 0; padding: 32px 22px 36px; }
+  .st-key-hero_shell h1 { font-size: clamp(2.7rem, 12vw, 4rem); }
+  .st-key-hero_actions { margin-top: 1.35rem; }
   .st-key-hero_actions [data-testid="stButton"] { min-width: 100%; }
   .interlock-footer { align-items: flex-start; flex-direction: column; gap: 0.55rem; margin-bottom: -1rem; }
   .st-key-capability_strip [data-testid="column"], .st-key-truth_band [data-testid="column"] { flex: 0 0 100%; max-width: 100%; }

@@ -129,18 +129,6 @@ def project_payload_from_form(
     }
 
 
-def backend_available(base_url: str | None) -> bool:
-    if not base_url:
-        return False
-    try:
-        response = requests.get(f"{base_url.rstrip('/')}/health", timeout=5)
-        response.raise_for_status()
-        payload = response.json()
-        return isinstance(payload, dict) and payload.get("status") == "ok"
-    except (requests.RequestException, ValueError):
-        return False
-
-
 def request_navigation(page: str) -> None:
     """Queue navigation for the next rerun before the navigation widget renders."""
 
@@ -502,11 +490,6 @@ selected_navigation = st.pills(
 )
 if not selected_navigation:
     selected_navigation = st.session_state["active_navigation"]
-
-if backend_available(api_base_url):
-    st.caption("Backend connected · Evidence-led workflow ready")
-elif api_base_url:
-    st.caption("Backend unavailable · Connect the backend to run an assessment")
 
 active_page = NAVIGATION_ROUTES.get(selected_navigation, "Home")
 if active_page != st.session_state["active_page"]:

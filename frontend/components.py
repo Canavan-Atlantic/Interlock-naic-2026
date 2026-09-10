@@ -21,6 +21,11 @@ SOURCE_LABELS = {
 HERO_ASSET_PATH = Path(__file__).with_name("assets") / "interlock_hero.png"
 LOGO_ASSET_PATH = Path(__file__).with_name("assets") / "canavan_atlantic_logo.png"
 WHITE_LOGO_ASSET_PATH = Path(__file__).with_name("assets") / "canavan_atlantic_logo_white.png"
+HERO_GRADIENT = (
+    "linear-gradient(90deg, rgba(2, 49, 63, 0.97) 0%, "
+    "rgba(2, 55, 67, 0.88) 28%, rgba(2, 55, 67, 0.55) 43%, "
+    "rgba(2, 55, 67, 0.18) 58%, rgba(0, 0, 0, 0.02) 72%)"
+)
 
 LINE_ICONS = {
     "leaf": '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M38 8C22 9 11 17 11 30c0 5 4 9 9 9 13 0 21-11 18-31Z"/><path d="M10 40c5-10 12-16 24-23"/></svg>',
@@ -129,7 +134,20 @@ def hero_asset_style() -> str:
     data_uri = asset_data_uri(HERO_ASSET_PATH, "image/png")
     if not data_uri:
         return ""
-    return f' style="--interlock-hero-image: url({data_uri})"'
+    return f' style="--interlock-hero-image: url(\'{data_uri}\')"'
+
+
+def hero_background_css() -> str:
+    """Return a direct image rule so the approved PNG cannot fall back silently."""
+
+    data_uri = asset_data_uri(HERO_ASSET_PATH, "image/png")
+    if not data_uri:
+        return ""
+    return (
+        "<style>"
+        f".st-key-hero_shell {{ background-image: {HERO_GRADIENT}, url(\"{data_uri}\") !important; }}"
+        "</style>"
+    )
 
 
 def render_brand_header() -> None:
@@ -157,36 +175,36 @@ def render_brand_header() -> None:
 def render_home() -> tuple[bool, bool]:
     """Render the public-facing landing page and return CTA selections."""
 
-    st.markdown(
-        f"""
-        <section class="interlock-hero" aria-label="INTERLOCK introduction"{hero_asset_style()}>
-          <div class="interlock-hero-content">
-            <p class="interlock-hero-kicker">INTERLOCK</p>
-            <p class="interlock-eyebrow">DATA CENTRE DEVELOPMENT INTELLIGENCE</p>
-            <h1>Better sites.<br><em>Stronger decisions.</em></h1>
-            <p class="interlock-hero-copy">Bring environmental, planning and infrastructure evidence together to assess data centre sites with confidence.</p>
-          </div>
-        </section>
+    st.markdown(hero_background_css(), unsafe_allow_html=True)
+    with st.container(key="hero_shell"):
+        st.markdown(
+            f"""
+        <div class="interlock-hero-content" aria-label="INTERLOCK introduction" data-interlock-hero-image="{'local' if HERO_ASSET_PATH.is_file() else 'fallback'}">
+          <p class="interlock-hero-kicker">INTERLOCK</p>
+          <p class="interlock-eyebrow">DATA CENTRE DEVELOPMENT INTELLIGENCE</p>
+          <h1>Better sites.<br><em>Stronger decisions.</em></h1>
+          <p class="interlock-hero-copy">Bring environmental, planning and infrastructure evidence together to assess data centre sites with confidence.</p>
+        </div>
         """,
-        unsafe_allow_html=True,
-    )
-    with st.container(
-        horizontal=True,
-        horizontal_alignment="left",
-        wrap=True,
-        key="hero_actions",
-    ):
-        start = st.button(
-            "Start a new site assessment",
-            type="primary",
-            icon=":material/arrow_forward:",
-            key="home_start_assessment",
+            unsafe_allow_html=True,
         )
-        explore = st.button(
-            "Explore data layers",
-            icon=":material/arrow_forward:",
-            key="home_explore_methodology",
-        )
+        with st.container(
+            horizontal=True,
+            horizontal_alignment="left",
+            wrap=True,
+            key="hero_actions",
+        ):
+            start = st.button(
+                "Start a new site assessment",
+                type="primary",
+                icon=":material/arrow_forward:",
+                key="home_start_assessment",
+            )
+            explore = st.button(
+                "Explore data layers",
+                icon=":material/arrow_forward:",
+                key="home_explore_methodology",
+            )
 
     capabilities = [
         (
