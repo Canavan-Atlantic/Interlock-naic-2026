@@ -171,9 +171,10 @@ unsupported `ADVANCE`/`HOLD`/`RECONFIGURE`/`STOP` decisions.
 
 The frontend uses a Canavan Atlantic-style white header, web navigation, dark
 teal landscape hero, capability and approach sections, truthful capability
-statements, and a compact footer. No approved landscape asset is currently
-committed; place a rights-cleared image at
-`frontend/assets/interlock_hero.jpg` to activate the local hero image.
+statements, and a compact footer. It uses the approved local hero asset at
+`frontend/assets/interlock_hero.png` and the extracted Canavan Atlantic logos in
+`frontend/assets/`. The supplied UI screenshot remains design reference only
+and is never rendered as application content or a background.
 
 Run the frontend directly with:
 

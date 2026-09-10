@@ -18,7 +18,9 @@ SOURCE_LABELS = {
     "AI_EXTRACTION": "Project Evidence",
 }
 
-HERO_ASSET_PATH = Path(__file__).with_name("assets") / "interlock_hero.jpg"
+HERO_ASSET_PATH = Path(__file__).with_name("assets") / "interlock_hero.png"
+LOGO_ASSET_PATH = Path(__file__).with_name("assets") / "canavan_atlantic_logo.png"
+WHITE_LOGO_ASSET_PATH = Path(__file__).with_name("assets") / "canavan_atlantic_logo_white.png"
 
 LINE_ICONS = {
     "leaf": '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M38 8C22 9 11 17 11 30c0 5 4 9 9 9 13 0 21-11 18-31Z"/><path d="M10 40c5-10 12-16 24-23"/></svg>',
@@ -103,26 +105,45 @@ def status_label(workflow_status: str) -> tuple[str, str]:
     }.get(workflow_status, ("Assessment status unavailable", "review"))
 
 
+def asset_data_uri(path: Path, mime_type: str) -> str | None:
+    """Return a data URI for a local, project-owned image asset."""
+
+    if not path.is_file():
+        return None
+    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+    return f"data:{mime_type};base64,{encoded}"
+
+
+def image_markup(path: Path, *, alt: str, class_name: str) -> str:
+    """Render a local image asset without making remote network requests."""
+
+    data_uri = asset_data_uri(path, "image/png")
+    if not data_uri:
+        return ""
+    return f'<img class="{class_name}" src="{data_uri}" alt="{alt}" />'
+
+
 def hero_asset_style() -> str:
     """Return a local data URI style only when the approved asset is present."""
 
-    if not HERO_ASSET_PATH.is_file():
+    data_uri = asset_data_uri(HERO_ASSET_PATH, "image/png")
+    if not data_uri:
         return ""
-    encoded = base64.b64encode(HERO_ASSET_PATH.read_bytes()).decode("ascii")
-    return f' style="--interlock-hero-image: url(data:image/jpeg;base64,{encoded})"'
+    return f' style="--interlock-hero-image: url({data_uri})"'
 
 
 def render_brand_header() -> None:
     """Render the Canavan Atlantic identity and user-facing header chrome."""
 
+    logo = image_markup(LOGO_ASSET_PATH, alt="CANAVAN ATLANTIC", class_name="interlock-ca-logo")
+    if not logo:
+        logo = '<span class="interlock-ca-fallback">CANAVAN <small>ATLANTIC</small></span>'
     st.markdown(
-        """
+        f"""
         <header class="interlock-site-header" aria-label="Canavan Atlantic header">
           <div class="interlock-ca-brand" aria-label="Canavan Atlantic">
-            <span class="interlock-ca-mark" aria-hidden="true"><i></i><i></i></span>
-            <span class="interlock-ca-wordmark"><strong>CANAVAN</strong><small>ATLANTIC</small></span>
+            {logo}
           </div>
-          <div class="interlock-header-context">Data centre development intelligence</div>
           <div class="interlock-profile" aria-label="Welcome, User">
             <span class="interlock-profile-icon" aria-hidden="true"></span>
             <span>Welcome, User</span><span class="interlock-chevron">⌄</span>
@@ -149,7 +170,12 @@ def render_home() -> tuple[bool, bool]:
         """,
         unsafe_allow_html=True,
     )
-    with st.container(horizontal=True, horizontal_alignment="left"):
+    with st.container(
+        horizontal=True,
+        horizontal_alignment="left",
+        wrap=True,
+        key="hero_actions",
+    ):
         start = st.button(
             "Start a new site assessment",
             type="primary",
@@ -162,12 +188,6 @@ def render_home() -> tuple[bool, bool]:
             key="home_explore_methodology",
         )
 
-    st.markdown('<p class="interlock-section-kicker">What INTERLOCK brings together</p>', unsafe_allow_html=True)
-    st.markdown('<h2 class="interlock-section-title">Evidence-led infrastructure decisions.</h2>', unsafe_allow_html=True)
-    st.markdown(
-        '<p class="interlock-section-copy">A controlled workflow for understanding what the current evidence supports, what could delay a project, and what still needs accountable human attention.</p>',
-        unsafe_allow_html=True,
-    )
     capabilities = [
         (
             "Environmental Intelligence",
@@ -190,56 +210,65 @@ def render_home() -> tuple[bool, bool]:
             "shield",
         ),
     ]
-    columns = st.columns(4)
-    for column, (title, copy, icon) in zip(columns, capabilities):
-        with column:
-            st.markdown(
-                f'<div class="interlock-capability"><div class="interlock-line-icon">{LINE_ICONS[icon]}</div>'
-                f'<div class="interlock-capability-title">{title}</div>'
-                f'<div class="interlock-capability-copy">{copy}</div></div>',
-                unsafe_allow_html=True,
-            )
+    with st.container(key="capability_strip"):
+        columns = st.columns(4)
+        for column, (title, copy, icon) in zip(columns, capabilities):
+            with column:
+                st.markdown(
+                    f'<div class="interlock-capability"><div class="interlock-line-icon">{LINE_ICONS[icon]}</div>'
+                    f'<div class="interlock-capability-title">{title}</div>'
+                    f'<div class="interlock-capability-copy">{copy}</div></div>',
+                    unsafe_allow_html=True,
+                )
 
-    st.markdown(
-        '<section class="interlock-truth-strip"><p class="interlock-truth-kicker">INTERLOCK at a glance</p>'
-        '<p class="interlock-truth-title">A controlled evidence chain for earlier clarity.</p></section>',
-        unsafe_allow_html=True,
-    )
     truths = [
         ("MULTI-SOURCE", "Evidence integration"),
         ("TRACEABLE", "Evidence chain"),
         ("CONTROLLED", "Agent workflow"),
         ("HUMAN REVIEW", "Built in"),
     ]
-    columns = st.columns(4)
-    for column, (title, copy) in zip(columns, truths):
-        with column:
-            st.markdown(
-                f'<div class="interlock-truth-item"><strong>{title}</strong><span>{copy}</span></div>',
-                unsafe_allow_html=True,
-            )
+    with st.container(key="truth_band"):
+        columns = st.columns(4)
+        for column, (title, copy) in zip(columns, truths):
+            with column:
+                st.markdown(
+                    f'<div class="interlock-truth-item"><strong>{title}</strong><span>{copy}</span></div>',
+                    unsafe_allow_html=True,
+                )
 
-    st.markdown('<p class="interlock-section-kicker">Our approach</p>', unsafe_allow_html=True)
-    st.markdown('<h2 class="interlock-section-title">From data to decisions.<br>Built for a better tomorrow.</h2>', unsafe_allow_html=True)
     stages = [
         ("01", "Gather", "Integrate public, policy and project data.", "folder"),
         ("02", "Analyse", "Evidence analysis across key domains.", "search"),
         ("03", "Assess", "Identify constraints, risks and opportunities.", "document"),
         ("04", "Enable", "Support accountable, resilient development.", "leaf"),
     ]
-    columns = st.columns(4)
-    for column, (number, title, copy, icon) in zip(columns, stages):
-        with column:
+    with st.container(key="approach_section"):
+        approach_copy, approach_steps = st.columns([0.95, 2.05], gap="large")
+        with approach_copy:
+            st.markdown('<p class="interlock-section-kicker">Our approach</p>', unsafe_allow_html=True)
             st.markdown(
-                f'<div class="interlock-approach-step"><div class="interlock-step-icon">{LINE_ICONS[icon]}</div>'
-                f'<div class="interlock-step-number">{number}</div>'
-                f'<div class="interlock-stage-title">{title}</div>'
-                f'<div class="interlock-stage-copy">{copy}</div></div>',
+                '<h2 class="interlock-section-title">From data to decisions.<br>Built for a better tomorrow.</h2>',
                 unsafe_allow_html=True,
             )
+        with approach_steps:
+            columns = st.columns(4)
+            for column, (number, title, copy, icon) in zip(columns, stages):
+                with column:
+                    st.markdown(
+                        f'<div class="interlock-approach-step"><div class="interlock-step-icon">{LINE_ICONS[icon]}</div>'
+                        f'<div class="interlock-step-number">{number}</div>'
+                        f'<div class="interlock-stage-title">{title}</div>'
+                        f'<div class="interlock-stage-copy">{copy}</div></div>',
+                        unsafe_allow_html=True,
+                    )
 
+    footer_logo = image_markup(
+        WHITE_LOGO_ASSET_PATH,
+        alt="CANAVAN ATLANTIC",
+        class_name="interlock-footer-logo",
+    ) or '<span class="interlock-ca-fallback">CANAVAN <small>ATLANTIC</small></span>'
     st.markdown(
-        '<footer class="interlock-footer"><div class="interlock-footer-brand"><span class="interlock-footer-mark">CA</span><strong>Canavan Atlantic</strong></div>'
+        f'<footer class="interlock-footer"><div class="interlock-footer-brand">{footer_logo}</div>'
         '<div class="interlock-footer-motto">People. Places. Possibilities.</div>'
         '<div class="interlock-footer-copyright">© 2026 Canavan Atlantic. All rights reserved.</div></footer>',
         unsafe_allow_html=True,
@@ -275,7 +304,10 @@ def render_decision_pack(payload: dict[str, Any]) -> None:
     reviews = as_list(payload.get("human_reviews"))
 
     st.markdown('<p class="interlock-section-kicker">Project / assessment result</p>', unsafe_allow_html=True)
-    st.markdown('<h1 class="interlock-section-title">INTERLOCK Development Readiness Decision Pack</h1>', unsafe_allow_html=True)
+    st.markdown(
+        '<h1 class="interlock-section-title interlock-pack-title">INTERLOCK Development Readiness Decision Pack</h1>',
+        unsafe_allow_html=True,
+    )
     status_message = (
         "Automated analysis completed. Professional review is required for identified high-consequence items."
         if workflow_status == "REQUIRES_HUMAN_REVIEW"

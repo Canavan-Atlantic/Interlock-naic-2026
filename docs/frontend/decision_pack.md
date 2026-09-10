@@ -12,9 +12,9 @@ Home -> New Assessment -> Run INTERLOCK -> Decision Pack
 
 - **Home** introduces INTERLOCK and Canavan Atlantic with a white brand header,
   web-style navigation, a dark teal landscape hero, capability strip, truthful
-  capability statements, approach steps, and compact footer. No approved
-  landscape image was present; the CSS fallback is replaced automatically when
-  `frontend/assets/interlock_hero.jpg` is supplied.
+  capability statements, approach steps, and compact footer. The approved
+  local hero image at `frontend/assets/interlock_hero.png` is used when
+  available, with the existing CSS fallback retained for safe local startup.
 - **New Assessment** groups the existing project fields into Project,
   Location, Power & energy, and Project information. Blank numeric values remain
   `None` and are never converted to zero.

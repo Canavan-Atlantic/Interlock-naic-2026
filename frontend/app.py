@@ -492,10 +492,6 @@ elif st.session_state["active_page"] != st.session_state.get("_rendered_page"):
 
 render_brand_header()
 api_base_url = os.getenv("INTERLOCK_API_BASE_URL")
-if backend_available(api_base_url):
-    st.caption("Backend connected · Evidence-led workflow ready")
-elif api_base_url:
-    st.caption("Backend unavailable · Connect the backend to run an assessment")
 
 selected_navigation = st.pills(
     "Primary navigation",
@@ -506,6 +502,12 @@ selected_navigation = st.pills(
 )
 if not selected_navigation:
     selected_navigation = st.session_state["active_navigation"]
+
+if backend_available(api_base_url):
+    st.caption("Backend connected · Evidence-led workflow ready")
+elif api_base_url:
+    st.caption("Backend unavailable · Connect the backend to run an assessment")
+
 active_page = NAVIGATION_ROUTES.get(selected_navigation, "Home")
 if active_page != st.session_state["active_page"]:
     request_navigation(active_page)

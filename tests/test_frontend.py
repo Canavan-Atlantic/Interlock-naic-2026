@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -10,7 +11,14 @@ import pytest
 pytest.importorskip("streamlit")
 from streamlit.testing.v1 import AppTest
 
-from frontend.components import source_label, status_label
+from frontend.components import (
+    HERO_ASSET_PATH,
+    LOGO_ASSET_PATH,
+    WHITE_LOGO_ASSET_PATH,
+    hero_asset_style,
+    source_label,
+    status_label,
+)
 from frontend.styles import BRAND_CSS
 
 
@@ -27,10 +35,27 @@ def test_frontend_home_renders_brand_and_primary_journey_without_backend() -> No
     assert any(button.label == "Start a new site assessment" for button in app.button)
     assert any(button.label == "Explore data layers" for button in app.button)
     assert {"Home", "New Assessment", "Projects", "Data Layers", "Insights", "About"}.issubset(app.pills[0].options)
-    rendered_text = " ".join(item.value for item in app.markdown)
+    rendered_text = " ".join(
+        re.sub(r"data:image/[^;]+;base64,[A-Za-z0-9+/=]+", "", item.value)
+        for item in app.markdown
+    )
     assert "6+" not in rendered_text
     assert "100+" not in rendered_text
     assert "FASTER" not in rendered_text
+
+
+def test_frontend_uses_supplied_hero_and_extracted_brand_assets() -> None:
+    assert HERO_ASSET_PATH.is_file()
+    assert LOGO_ASSET_PATH.is_file()
+    assert WHITE_LOGO_ASSET_PATH.is_file()
+    assert "data:image/png;base64," in hero_asset_style()
+
+    app = AppTest.from_file(APP_PATH, default_timeout=10).run()
+
+    assert not app.exception
+    assert any("interlock-ca-logo" in item.value for item in app.markdown)
+    assert any("interlock-footer-logo" in item.value for item in app.markdown)
+    assert any("interlock-hero-image" in item.value for item in app.markdown)
 
 
 def test_frontend_new_assessment_keeps_validation_and_run_actions() -> None:
