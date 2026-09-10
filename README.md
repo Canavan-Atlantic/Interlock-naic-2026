@@ -169,6 +169,12 @@ human review as an accountable workflow state, distinguishes project evidence
 from authoritative policy, and does not add scores, fabricated metrics, or
 unsupported `ADVANCE`/`HOLD`/`RECONFIGURE`/`STOP` decisions.
 
+The frontend uses a Canavan Atlantic-style white header, web navigation, dark
+teal landscape hero, capability and approach sections, truthful capability
+statements, and a compact footer. No approved landscape asset is currently
+committed; place a rights-cleared image at
+`frontend/assets/interlock_hero.jpg` to activate the local hero image.
+
 Run the frontend directly with:
 
 ```powershell

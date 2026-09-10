@@ -10,27 +10,30 @@ Home -> New Assessment -> Run INTERLOCK -> Decision Pack
 
 ## Page structure
 
-- **Home** introduces INTERLOCK and Canavan Atlantic, with a rights-safe CSS
-  landscape/topographic hero treatment and two real navigation CTAs.
+- **Home** introduces INTERLOCK and Canavan Atlantic with a white brand header,
+  web-style navigation, a dark teal landscape hero, capability strip, truthful
+  capability statements, approach steps, and compact footer. No approved
+  landscape image was present; the CSS fallback is replaced automatically when
+  `frontend/assets/interlock_hero.jpg` is supplied.
 - **New Assessment** groups the existing project fields into Project,
   Location, Power & energy, and Project information. Blank numeric values remain
   `None` and are never converted to zero.
 - **Decision Pack** maps `InterlockResult` to an executive summary, key
   findings, material unknown themes, dependencies, contradictions, human
   review, next action plan, evidence sources, and technical details.
-- **Evidence** presents source classes and customer-facing citations, with
+- **Evidence** presents customer-facing source counts and citations first, with
   Module 4B, Module 5B, and individual Module 6–8 endpoint tools in a
-  Developer / debug expander.
+  collapsed Developer / Debug Inspection expander.
 - **Methodology** explains the evidence, uncertainty, provenance, and review
   boundaries without making a project decision.
 
 ## Visual language
 
-The local stylesheet uses deep navy (`#062C3D`), brand teal (`#167A74`),
+The local stylesheet uses deep navy (`#063747`), brand teal (`#167A74`),
 turquoise (`#00A89D`), white, and restrained pale blue/teal surfaces. It uses
-system sans-serif fallbacks with Montserrat preferred when already available;
-no font binaries or remote images are committed. Rights-cleared hero artwork
-can be added under `frontend/assets/` later.
+Montserrat when available with system sans-serif fallbacks. Active navigation
+uses a turquoise underline rather than Streamlit pill borders. No remote image
+or font binary is committed.
 
 ## InterlockResult mapping
 
@@ -55,8 +58,8 @@ a failure or a negative conclusion.
 Human reviews are grouped for presentation by specialist role and domain while
 retaining every review ID and evidence ID in the expanded content. Source
 labels translate internal provenance into customer-safe labels: Developer
-provided, Public / GIS evidence, Project evidence, Authoritative policy, and
-Supporting evidence. Customer-facing citations are shown first; full record
+Provided, Public / GIS Evidence, Project Evidence, Authoritative Policy, and
+Supporting Policy. Customer-facing citations are shown first; full record
 IDs and source classes remain in supporting evidence and Technical details.
 
 ## Failure and loading states

@@ -15,13 +15,30 @@ from components import (
     as_list,
     render_decision_pack,
     render_evidence_view,
+    render_brand_header,
     render_home,
     render_methodology,
 )
 from styles import inject_styles
 
 
-NAVIGATION_PAGES = ("Home", "New Assessment", "Decision Pack", "Evidence", "Methodology")
+PAGE_NAMES = ("Home", "New Assessment", "Decision Pack", "Evidence", "Methodology")
+NAVIGATION_ITEMS = ("Home", "New Assessment", "Projects", "Data Layers", "Insights", "About")
+NAVIGATION_ROUTES = {
+    "Home": "Home",
+    "New Assessment": "New Assessment",
+    "Projects": "Decision Pack",
+    "Data Layers": "Evidence",
+    "Insights": "Methodology",
+    "About": "Methodology",
+}
+PAGE_TO_NAVIGATION = {
+    "Home": "Home",
+    "New Assessment": "New Assessment",
+    "Decision Pack": "Projects",
+    "Evidence": "Data Layers",
+    "Methodology": "Insights",
+}
 
 
 st.set_page_config(page_title="INTERLOCK · Canavan Atlantic", page_icon=":material/link:", layout="wide")
@@ -127,7 +144,7 @@ def backend_available(base_url: str | None) -> bool:
 def request_navigation(page: str) -> None:
     """Queue navigation for the next rerun before the navigation widget renders."""
 
-    if page not in NAVIGATION_PAGES:
+    if page not in PAGE_NAMES:
         return
     st.session_state["pending_navigation"] = page
     st.rerun()
@@ -260,7 +277,7 @@ def render_assessment_page(api_base_url: str | None) -> None:
         with st.container(horizontal=True, horizontal_alignment="right"):
             validate_only = st.form_submit_button("Validate Project Input")
             run_clicked = st.form_submit_button(
-                "Run INTERLOCK assessment",
+                "Run INTERLOCK Assessment",
                 type="primary",
                 icon=":material/arrow_forward:",
             )
@@ -436,7 +453,7 @@ def render_individual_agent_debug(context_payload: dict[str, object] | None, api
 
 def render_evidence_page(api_base_url: str | None) -> None:
     render_evidence_view(st.session_state.get("interlock_payload"))
-    with st.expander("Developer / debug tools"):
+    with st.expander("Developer / Debug Tools", icon=":material/build:"):
         st.markdown("#### Module 4B public-data check")
         render_public_data_debug(st.session_state.get("submitted_project_payload"), api_base_url)
         st.markdown("#### Module 5B policy retrieval")
@@ -448,6 +465,8 @@ def render_evidence_page(api_base_url: str | None) -> None:
 
 
 st.session_state.setdefault("active_page", "Home")
+st.session_state.setdefault("active_navigation", PAGE_TO_NAVIGATION.get(st.session_state["active_page"], "Home"))
+st.session_state.setdefault("_rendered_page", st.session_state["active_page"])
 st.session_state.setdefault("pending_navigation", None)
 for key in (
     "validation_payload",
@@ -462,24 +481,35 @@ for key in (
     st.session_state.setdefault(key, None)
 
 pending_navigation = st.session_state.pop("pending_navigation", None)
-if pending_navigation in NAVIGATION_PAGES:
+if pending_navigation in PAGE_NAMES:
     st.session_state["active_page"] = pending_navigation
+    st.session_state["active_navigation"] = PAGE_TO_NAVIGATION.get(pending_navigation, "Home")
+elif st.session_state["active_page"] != st.session_state.get("_rendered_page"):
+    # Keeps AppTest/programmatic state changes and restored sessions aligned
+    # before the keyed navigation widget is instantiated.
+    st.session_state["active_navigation"] = PAGE_TO_NAVIGATION.get(st.session_state["active_page"], "Home")
 
 
-st.title("INTERLOCK")
-st.caption("Canavan Atlantic · Data Centre Development Intelligence")
+render_brand_header()
 api_base_url = os.getenv("INTERLOCK_API_BASE_URL")
 if backend_available(api_base_url):
     st.caption("Backend connected · Evidence-led workflow ready")
 elif api_base_url:
     st.caption("Backend unavailable · Connect the backend to run an assessment")
-else:
-    st.caption("Explore the methodology or prepare an assessment · backend connection not configured")
 
-pages = list(NAVIGATION_PAGES)
-active_page = st.pills("Primary navigation", pages, key="active_page", label_visibility="collapsed")
-if not active_page:
-    active_page = st.session_state["active_page"]
+selected_navigation = st.pills(
+    "Primary navigation",
+    list(NAVIGATION_ITEMS),
+    key="active_navigation",
+    label_visibility="collapsed",
+    selection_mode="single",
+)
+if not selected_navigation:
+    selected_navigation = st.session_state["active_navigation"]
+active_page = NAVIGATION_ROUTES.get(selected_navigation, "Home")
+if active_page != st.session_state["active_page"]:
+    request_navigation(active_page)
+st.session_state["_rendered_page"] = active_page
 
 if active_page == "Home":
     start_clicked, explore_clicked = render_home()
