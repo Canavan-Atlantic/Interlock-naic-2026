@@ -12,9 +12,11 @@ from typing import Any
 import streamlit as st
 
 try:
+    from .map_view import render_map_first_view
     from .report import render_assessment_report_pdf, safe_report_filename
     from .result_summary import assessment_domain_state_summary, summarize_interlock_result
 except ImportError:  # Streamlit executes frontend/app.py as a top-level script.
+    from map_view import render_map_first_view
     from report import render_assessment_report_pdf, safe_report_filename
     from result_summary import assessment_domain_state_summary, summarize_interlock_result
 
@@ -496,6 +498,7 @@ def render_decision_pack(payload: dict[str, Any]) -> None:
                 }
             )
     render_decision_summary(payload)
+    render_map_first_view(payload)
     render_report_download(payload)
     stage_errors = as_dict(payload.get("stage_errors"))
     if stage_errors:
