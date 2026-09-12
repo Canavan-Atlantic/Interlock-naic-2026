@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from concurrent.futures import ThreadPoolExecutor
 from time import perf_counter
 from typing import Any, Callable
 
@@ -189,11 +190,16 @@ def evaluate_site(
         ("zoning", lambda: evaluate_zoning(context)),
         ("water", lambda: evaluate_water(context)),
     )
-    for domain, evaluator in domain_calls:
-        result, elapsed = _run_domain(context, domain, evaluator)
-        evaluations[domain] = result
-        timings[domain] = elapsed
-        records.extend(result.records)
+    # These evaluators read independent, cached processed layers.  Execute
+    # them concurrently while collecting futures in the declared order so
+    # the evidence ledger remains byte-for-byte deterministic for a run.
+    with ThreadPoolExecutor(max_workers=len(domain_calls), thread_name_prefix="interlock-gis") as executor:
+        futures = [executor.submit(_run_domain, context, domain, evaluator) for domain, evaluator in domain_calls]
+        for (domain, _), future in zip(domain_calls, futures):
+            result, elapsed = future.result()
+            evaluations[domain] = result
+            timings[domain] = elapsed
+            records.extend(result.records)
 
     timings["total"] = round((perf_counter() - overall_started) * 1000, 3)
     limitations = [

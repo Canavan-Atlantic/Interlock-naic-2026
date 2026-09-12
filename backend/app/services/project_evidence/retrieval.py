@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from functools import lru_cache
 from pathlib import Path
 import re
 from typing import Iterable
@@ -11,6 +12,15 @@ from .models import ProjectEvidenceChunk, ProjectEvidenceFact
 
 
 TOKEN_RE = re.compile(r"[a-z0-9]+")
+
+
+@lru_cache(maxsize=8)
+def _read_jsonl_cached(path_text: str, mtime_ns: int, size: int) -> tuple[dict, ...]:
+    """Read an unchanged project-evidence artifact once per process."""
+
+    _ = mtime_ns, size
+    path = Path(path_text)
+    return tuple(json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip())
 
 
 class ProjectEvidenceRetriever:
@@ -29,7 +39,8 @@ class ProjectEvidenceRetriever:
         path = self.processed_dir / filename
         if not path.is_file():
             raise FileNotFoundError("Project evidence artifacts are not built; run the project evidence build first")
-        return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+        stat = path.stat()
+        return list(_read_jsonl_cached(str(path), stat.st_mtime_ns, stat.st_size))
 
     def _check_registry(self, project_id: str) -> bool:
         path = self.processed_dir / "document_registry.json"

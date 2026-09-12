@@ -968,6 +968,7 @@ class DeterministicEvidenceAgent:
         self.site_evidence_runner = site_evidence_runner
         self.retrieval_runner = retrieval_runner
         self.retrieval_templates = tuple(retrieval_templates)
+        self._last_gis_timings: dict[str, float] = {}
 
     def _developer_records(
         self,
@@ -996,6 +997,7 @@ class DeterministicEvidenceAgent:
             return [], [f"Module 4B site evidence could not be evaluated: {type(exc).__name__}"], [
                 "GIS evidence unavailable because the Module 4B service failed"
             ]
+        self._last_gis_timings = dict(response.timings_ms)
         records: list[EvidenceRecord] = []
         for entry in response.evidence_ledger.entries:
             if entry.evidence_id.startswith("project-input-"):
@@ -1196,6 +1198,14 @@ class DeterministicEvidenceAgent:
                 "project_document_retrieval": project_document_elapsed_ms,
                 "assembly_deduplication": assembly_elapsed_ms,
                 "total": round((perf_counter() - started) * 1000, 3),
+            },
+            "substage_timings_ms": {
+                "developer_input": developer_elapsed_ms,
+                "module_4b_gis": gis_elapsed_ms,
+                "module_4b_gis_layers": dict(self._last_gis_timings),
+                "module_5_policy_retrieval": policy_elapsed_ms,
+                "project_document_retrieval": project_document_elapsed_ms,
+                "assembly_deduplication": assembly_elapsed_ms,
             },
             "gis_records": sum(record.created_by == EvidenceCreatedBy.DETERMINISTIC_GIS for record in records),
             "policy_records": sum(record.created_by == EvidenceCreatedBy.RAG_RETRIEVAL for record in records),

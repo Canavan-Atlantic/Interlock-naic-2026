@@ -12,6 +12,7 @@ from abc import ABC, abstractmethod
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 import argparse
+from functools import lru_cache
 import hashlib
 import json
 import logging
@@ -879,11 +880,36 @@ class LoadedRetrievalIndex:
         return _search_loaded_index(self, request)
 
 
+@lru_cache(maxsize=4)
+def _load_retrieval_index_cached(
+    root: str,
+    manifest_mtime_ns: int,
+    manifest_size: int,
+    corpus_hash: str,
+) -> LoadedRetrievalIndex:
+    """Reuse an unchanged validated index without hiding rebuilds.
+
+    The file signature and corpus hash are part of the cache key so a local
+    Module 5A/5B rebuild automatically gets a fresh index object.
+    """
+
+    resolved_root = Path(root)
+    _ = manifest_mtime_ns, manifest_size, corpus_hash
+    return LoadedRetrievalIndex(resolved_root, *_load_index(resolved_root))
+
+
 def load_retrieval_index(project_root: Path) -> LoadedRetrievalIndex:
-    """Load and validate Module 5B artifacts once for a caller's run."""
+    """Load and validate Module 5B artifacts, reusing unchanged static data."""
 
     root = Path(project_root).resolve()
-    return LoadedRetrievalIndex(root, *_load_index(root))
+    manifest_path = root / INDEX_DIRNAME / "manifest.json"
+    stat = manifest_path.stat()
+    return _load_retrieval_index_cached(
+        str(root),
+        stat.st_mtime_ns,
+        stat.st_size,
+        _corpus_hash(root),
+    )
 
 
 def _infer_local_authority(query: str, request: RetrievalRequest) -> str | None:
