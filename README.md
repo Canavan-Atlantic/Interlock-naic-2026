@@ -294,6 +294,13 @@ database name, user, and password; override `POSTGRES_DB`, `POSTGRES_USER`,
 and `POSTGRES_PASSWORD` through a local uncommitted `.env` file for other
 environments. Do not commit credentials or API keys.
 
+Pytest never uses that development database. The test bootstrap in
+`tests/conftest.py` derives a separate `interlock_test` PostgreSQL database
+from `DATABASE_URL` (creating it when needed), or uses a temporary SQLite file
+when no PostgreSQL URL is configured. It sets `DATABASE_URL` before backend
+imports, creates the schema, and clears test rows between tests. The named
+`interlock_postgres_data` volume and live portfolio history are not removed.
+
 Useful portfolio commands:
 
 ```powershell

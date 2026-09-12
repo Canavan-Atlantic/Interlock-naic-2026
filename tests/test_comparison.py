@@ -13,7 +13,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from streamlit.testing.v1 import AppTest
 
 from backend.app import main
-from backend.app.db import configure_database, init_db, session_scope
+from backend.app.db import init_db, session_scope
 from backend.app.db.models import AssessmentRun, Project
 from frontend.report import build_comparison_report_view_model, render_comparison_report_pdf
 
@@ -23,7 +23,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 @pytest.fixture
 def comparison_database() -> None:
-    configure_database("sqlite+pysqlite:///:memory:")
+    """Use the pytest-wide isolated database for each comparison test."""
+
     init_db()
 
 
