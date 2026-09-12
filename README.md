@@ -304,6 +304,11 @@ $env:INTERLOCK_API_BASE_URL = "http://localhost:8000"
 py -m streamlit run frontend/app.py
 ```
 
+On the New Assessment page, **Load Demo Project** populates the verified
+Blanchardstown NAIC demonstration inputs without starting a run. The inputs
+remain editable and are submitted through the same validation and
+`/interlock/run` path as a normal assessment.
+
 ## Directory structure
 
 ```text

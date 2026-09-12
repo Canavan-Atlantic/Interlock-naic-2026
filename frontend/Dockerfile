@@ -7,6 +7,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY frontend/app.py ./app.py
 COPY frontend/components.py ./components.py
+COPY frontend/demo.py ./demo.py
 COPY frontend/styles.py ./styles.py
 COPY frontend/assets ./assets
 

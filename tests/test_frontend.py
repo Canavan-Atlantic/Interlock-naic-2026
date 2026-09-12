@@ -11,6 +11,8 @@ import pytest
 pytest.importorskip("streamlit")
 from streamlit.testing.v1 import AppTest
 
+from backend.app.schemas.agents.common import ProjectContext, Workflow
+from backend.app.schemas.project import ProjectInput, find_missing_or_unknown
 from frontend.components import (
     HERO_ASSET_PATH,
     LOGO_ASSET_PATH,
@@ -19,6 +21,13 @@ from frontend.components import (
     hero_asset_style,
     source_label,
     status_label,
+)
+from frontend.demo import (
+    DEMO_PROJECT_ID,
+    DEMO_PROJECT_METADATA,
+    DEMO_PROJECT_PRESET,
+    DEMO_PROJECT_PRESET_NAME,
+    summarize_interlock_result,
 )
 from frontend.styles import BRAND_CSS
 
@@ -71,6 +80,136 @@ def test_frontend_new_assessment_keeps_validation_and_run_actions() -> None:
     assert any(button.label == "Run INTERLOCK Assessment" for button in app.button)
     assert any("Blank numeric fields remain unknown" in item.value for item in app.caption)
     assert all(item.value is None for item in app.number_input)
+
+
+def test_demo_preset_validates_as_project_context_and_preserves_unknowns() -> None:
+    project_input = ProjectInput.model_validate(DEMO_PROJECT_PRESET)
+    context = ProjectContext.from_project_input(
+        project_input,
+        project_id=DEMO_PROJECT_ID,
+        assessment_workflow=Workflow.SITE_FEASIBILITY,
+    )
+
+    assert project_input.project_name == "NAIC Test Data Centre"
+    assert context.project_id == DEMO_PROJECT_ID
+    assert context.location.latitude == 53.3879
+    assert context.location.longitude == -6.375
+    assert context.planned_power_mw == 50
+    assert context.requested_mic_mva is None
+    assert context.power_strategy == "Unknown"
+    assert context.site_boundary is None
+    assert "requested_mic_mva" in find_missing_or_unknown(project_input)
+    assert "site_area_hectares" in find_missing_or_unknown(project_input)
+
+
+def test_load_demo_project_populates_editable_inputs_without_running_assessment() -> None:
+    app = AppTest.from_file(APP_PATH, default_timeout=10).run()
+    app.session_state["active_page"] = "New Assessment"
+    app.run()
+
+    load_button = next(button for button in app.button if button.label == "Load Demo Project")
+    load_button.click().run()
+
+    assert not app.exception
+    assert any(DEMO_PROJECT_PRESET_NAME in item.value for item in app.info)
+    assert next(item for item in app.text_input if item.label == "Project name (optional)").value == "NAIC Test Data Centre"
+    assert next(item for item in app.text_input if item.label == "Address (optional)").value == "Blanchardstown, Dublin 15"
+    assert next(item for item in app.number_input if item.label == "Latitude (optional)").value == 53.3879
+    assert next(item for item in app.number_input if item.label == "Requested MIC (MVA, optional)").value is None
+    assert app.session_state["interlock_payload"] is None
+
+
+def test_demo_run_uses_normal_validation_and_interlock_path_and_stores_real_summary(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[str, dict[str, object]]] = []
+    result = json.loads((FIXTURES / "interlock_result_example.json").read_text(encoding="utf-8"))
+    result.update(
+        {
+            "run_id": "frontend-demo-run",
+            "workflow_status": "REQUIRES_HUMAN_REVIEW",
+            "requires_human_review": True,
+            "stage_status": {"evidence": "COMPLETE", "assessment": "COMPLETE", "explanation": "COMPLETE"},
+            "stage_counts": {"evidence": 1, "assessment": 1, "explanation": 1},
+            "timings_ms": {"evidence": 3.0, "assessment": 2.0, "explanation": 1.0, "total": 6.0},
+            "human_reviews": [],
+        }
+    )
+    result["explanation_result"] = json.loads(
+        (FIXTURES / "explanation_result_example.json").read_text(encoding="utf-8")
+    )
+
+    class FakeResponse:
+        def __init__(self, url: str, payload: dict[str, object]) -> None:
+            self.url = url
+            self.payload = payload
+
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict[str, object]:
+            return self.payload
+
+    def fake_post(url: str, **kwargs: object) -> FakeResponse:
+        calls.append((url, kwargs.get("json", {})))
+        if url.endswith("/project-input/validate"):
+            return FakeResponse(url, {"status": "valid", "project": {}, "missing_or_unknown": []})
+        return FakeResponse(url, result)
+
+    monkeypatch.setattr("requests.post", fake_post)
+    monkeypatch.setenv("INTERLOCK_API_BASE_URL", "http://test-backend")
+
+    app = AppTest.from_file(APP_PATH, default_timeout=10).run()
+    app.session_state["active_page"] = "New Assessment"
+    app.run()
+    next(button for button in app.button if button.label == "Load Demo Project").click().run()
+    next(button for button in app.button if button.label == "Run INTERLOCK Assessment").click().run()
+
+    assert not app.exception
+    assert [url.rsplit("/", 1)[-1] for url, _ in calls] == ["validate", "run"]
+    context_payload = calls[1][1]
+    assert context_payload["project_id"] == DEMO_PROJECT_ID
+    assert context_payload["developer_inputs"]["preset_metadata"] == DEMO_PROJECT_METADATA
+    assert context_payload["developer_inputs"]["project_evidence_mode"] == "Normal project"
+    assert app.session_state["demo_run_summary"]["run_id"] == "frontend-demo-run"
+    assert app.session_state["demo_run_summary"]["workflow_status"] == "REQUIRES_HUMAN_REVIEW"
+    assert any("Demo run summary" in item.value for item in app.markdown)
+
+
+def test_demo_summary_uses_only_actual_interlock_result_fields() -> None:
+    payload = json.loads((FIXTURES / "interlock_result_example.json").read_text(encoding="utf-8"))
+    payload["evidence_bundle"]["records"] = [
+        {"created_by": "DETERMINISTIC_GIS"},
+        {"created_by": "DEVELOPER_INPUT"},
+    ]
+    payload["assessment_result"]["findings"] = [
+        {"status": "CONDITIONAL"},
+        {"status": "UNKNOWN"},
+    ]
+    payload["explanation_result"] = {
+        "material_unknown_themes": [{"theme_id": "unknown-1"}],
+        "contradictions": ["review this"],
+        "customer_facing_citations": [{"citation_id": "citation-1"}],
+    }
+    payload["human_reviews"] = [{"review_id": "review-1"}]
+    payload["stage_counts"] = {"evidence": 2, "assessment": 2, "explanation": 1}
+    payload["timings_ms"] = {"total": 12.5}
+
+    summary = summarize_interlock_result(payload)
+
+    assert summary["evidence_record_count"] == 2
+    assert summary["finding_count"] == 2
+    assert summary["conditional_or_constrained_finding_count"] == 1
+    assert summary["unknown_theme_count"] == 1
+    assert summary["contradiction_count"] == 1
+    assert summary["human_review_count"] == 1
+    assert summary["customer_facing_citation_count"] == 1
+    assert summary["source_counts"] == {"DETERMINISTIC_GIS": 1, "DEVELOPER_INPUT": 1}
+    assert summary["stage_counts"] == {"evidence": 2, "assessment": 2, "explanation": 1}
+    assert summary["timings_ms"] == {"total": 12.5}
+    assert "score" not in summary
+    assert "decision" not in summary
+    assert "recommendation" not in summary
 
 
 def test_successful_assessment_queues_safe_navigation_and_persists_result(monkeypatch: pytest.MonkeyPatch) -> None:

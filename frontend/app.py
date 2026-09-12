@@ -18,6 +18,15 @@ from components import (
     render_brand_header,
     render_home,
     render_methodology,
+    render_demo_run_summary,
+)
+from demo import (
+    DEMO_PROJECT_EVIDENCE_MODE,
+    DEMO_PROJECT_ID,
+    DEMO_PROJECT_METADATA,
+    DEMO_PROJECT_PRESET,
+    DEMO_PROJECT_PRESET_NAME,
+    summarize_interlock_result,
 )
 from styles import inject_styles
 
@@ -54,6 +63,8 @@ def build_evidence_agent_context(
     project: dict[str, object],
     *,
     project_evidence_mode: str = "Normal project",
+    project_id_override: str | None = None,
+    preset_metadata: dict[str, object] | None = None,
 ) -> dict[str, object]:
     """Build the real ProjectContext payload without inventing missing values."""
 
@@ -61,8 +72,14 @@ def build_evidence_agent_context(
     project_id = "streamlit-" + hashlib.sha256(stable_payload).hexdigest()[:12]
     has_coordinates = project.get("latitude") is not None and project.get("longitude") is not None
     herbata_mode = project_evidence_mode.startswith("Herbata")
+    developer_inputs: dict[str, object] = {
+        "source": "validated_streamlit_project_input",
+        "project_evidence_mode": project_evidence_mode,
+    }
+    if preset_metadata:
+        developer_inputs["preset_metadata"] = dict(preset_metadata)
     return {
-        "project_id": "benchmark-herbata-naas" if herbata_mode else project_id,
+        "project_id": "benchmark-herbata-naas" if herbata_mode else project_id_override or project_id,
         "project_name": "Herbata Data Centre benchmark" if herbata_mode else project.get("project_name"),
         "project_type": project.get("development_type"),
         "assessment_workflow": "SITE_FEASIBILITY" if has_coordinates else "SITE_DISCOVERY",
@@ -86,10 +103,7 @@ def build_evidence_agent_context(
         "energy_strategy": project.get("energy_strategy"),
         "phasing": project.get("project_phasing_notes"),
         "project_stage": project.get("project_stage"),
-        "developer_inputs": {
-            "source": "validated_streamlit_project_input",
-            "project_evidence_mode": project_evidence_mode,
-        },
+        "developer_inputs": developer_inputs,
         "uploaded_document_refs": [],
         "source_project_input": {
             key: value for key, value in project.items() if key != "local_authority"
@@ -138,7 +152,14 @@ def request_navigation(page: str) -> None:
     st.rerun()
 
 
-def run_interlock(project_payload: dict[str, object], project_evidence_mode: str, api_base_url: str) -> None:
+def run_interlock(
+    project_payload: dict[str, object],
+    project_evidence_mode: str,
+    api_base_url: str,
+    *,
+    project_id_override: str | None = None,
+    preset_metadata: dict[str, object] | None = None,
+) -> None:
     """Validate once, then call the orchestrator once with safe customer errors."""
 
     validation_payload = {key: value for key, value in project_payload.items() if key != "local_authority"}
@@ -157,6 +178,8 @@ def run_interlock(project_payload: dict[str, object], project_evidence_mode: str
     context_payload = build_evidence_agent_context(
         project_payload,
         project_evidence_mode=project_evidence_mode,
+        project_id_override=project_id_override,
+        preset_metadata=preset_metadata,
     )
     with st.status("Running INTERLOCK", expanded=True) as progress:
         st.write("Gathering project evidence")
@@ -174,9 +197,15 @@ def run_interlock(project_payload: dict[str, object], project_evidence_mode: str
             )
             response.raise_for_status()
             payload = response.json()
+            workflow_status = str(payload.get("workflow_status") or "UNKNOWN")
             st.session_state["submitted_project_payload"] = project_payload
             st.session_state["interlock_payload"] = payload
-            workflow_status = str(payload.get("workflow_status") or "UNKNOWN")
+            if preset_metadata:
+                st.session_state["demo_run_summary"] = (
+                    summarize_interlock_result(payload)
+                    if workflow_status in {"COMPLETE", "REQUIRES_HUMAN_REVIEW"}
+                    else None
+                )
             if workflow_status in {"FAILED", "PARTIAL"}:
                 progress.update(label="INTERLOCK could not complete the assessment", state="error")
             else:
@@ -190,16 +219,27 @@ def run_interlock(project_payload: dict[str, object], project_evidence_mode: str
 
 
 def render_assessment_page(api_base_url: str | None) -> None:
+    _ensure_assessment_form_state()
     st.markdown('<p class="interlock-section-kicker">New assessment</p>', unsafe_allow_html=True)
     st.markdown('<h1 class="interlock-section-title">Start with what you know.</h1>', unsafe_allow_html=True)
     st.markdown(
         '<p class="interlock-section-copy">You can begin with incomplete information. INTERLOCK preserves missing information as unknown rather than guessing.</p>',
         unsafe_allow_html=True,
     )
+    if st.button(
+        "Reload Demo Project" if st.session_state.get("demo_preset_loaded") else "Load Demo Project",
+        key="load_demo_project",
+        icon=":material/science:",
+        help="Populate the verified Blanchardstown NAIC demo inputs. Review or edit them before running. No assessment is started.",
+    ):
+        _load_demo_project()
+        st.rerun()
+    if st.session_state.get("demo_preset_loaded"):
+        st.info(f"{DEMO_PROJECT_PRESET_NAME} loaded. Review and edit the prepared inputs before running.")
     with st.form("project_input_form", border=True):
         st.markdown("#### Project")
-        project_name = st.text_input("Project name (optional)")
-        development_type = st.text_input("Project type", value="Data Centre")
+        project_name = st.text_input("Project name (optional)", key="project_name")
+        development_type = st.text_input("Project type", key="development_type")
         project_stage = st.selectbox(
             "Project stage",
             options=[
@@ -212,27 +252,27 @@ def render_assessment_page(api_base_url: str | None) -> None:
                 "Construction",
                 "Unknown",
             ],
-            index=7,
+            key="project_stage",
         )
 
         st.markdown("#### Location")
-        site_address = st.text_input("Address (optional)")
-        local_authority = st.text_input("Local authority (optional)")
+        site_address = st.text_input("Address (optional)", key="site_address")
+        local_authority = st.text_input("Local authority (optional)", key="local_authority")
         location_columns = st.columns(2)
         latitude = location_columns[0].number_input(
-            "Latitude (optional)", min_value=-90.0, max_value=90.0, value=None, step=0.0001, format="%.4f"
+            "Latitude (optional)", min_value=-90.0, max_value=90.0, step=0.0001, format="%.4f", key="latitude"
         )
         longitude = location_columns[1].number_input(
-            "Longitude (optional)", min_value=-180.0, max_value=180.0, value=None, step=0.0001, format="%.4f"
+            "Longitude (optional)", min_value=-180.0, max_value=180.0, step=0.0001, format="%.4f", key="longitude"
         )
 
         st.markdown("#### Power & energy")
         power_columns = st.columns(2)
         planned_power_demand_mw = power_columns[0].number_input(
-            "Planned power (MW, optional)", min_value=0.0, value=None, step=1.0, format="%.2f"
+            "Planned power (MW, optional)", min_value=0.0, step=1.0, format="%.2f", key="planned_power_demand_mw"
         )
         requested_mic_mva = power_columns[1].number_input(
-            "Requested MIC (MVA, optional)", min_value=0.0, value=None, step=1.0, format="%.2f"
+            "Requested MIC (MVA, optional)", min_value=0.0, step=1.0, format="%.2f", key="requested_mic_mva"
         )
         power_strategy = st.selectbox(
             "Power strategy",
@@ -243,15 +283,15 @@ def render_assessment_page(api_base_url: str | None) -> None:
                 "Hybrid / Alternative Strategy",
                 "Unknown",
             ],
-            index=4,
+            key="power_strategy",
         )
-        energy_strategy = st.text_input("Energy strategy (optional)")
+        energy_strategy = st.text_input("Energy strategy (optional)", key="energy_strategy")
 
         st.markdown("#### Project information")
         site_area_hectares = st.number_input(
-            "Site area (hectares, optional)", min_value=0.0, value=None, step=0.1, format="%.2f"
+            "Site area (hectares, optional)", min_value=0.0, step=0.1, format="%.2f", key="site_area_hectares"
         )
-        project_phasing_notes = st.text_area("Phasing and notes (optional)")
+        project_phasing_notes = st.text_area("Phasing and notes (optional)", key="project_phasing_notes")
         project_evidence_mode = st.selectbox(
             "Project evidence mode",
             options=[
@@ -259,6 +299,7 @@ def render_assessment_page(api_base_url: str | None) -> None:
                 "Herbata benchmark — Early Evidence",
                 "Herbata benchmark — Validation",
             ],
+            key="project_evidence_mode",
             help="Early Evidence excludes benchmark-only records. Validation explicitly enables them for demonstration.",
         )
         st.caption("Blank numeric fields remain unknown; they are never converted to zero.")
@@ -303,9 +344,53 @@ def render_assessment_page(api_base_url: str | None) -> None:
         except (requests.RequestException, ValueError, TypeError):
             st.error("Project input could not be validated. Check the required fields and try again.")
     if run_clicked:
-        run_interlock(project_payload, project_evidence_mode, api_base_url)
+        demo_loaded = bool(st.session_state.get("demo_preset_loaded"))
+        run_interlock(
+            project_payload,
+            project_evidence_mode,
+            api_base_url,
+            project_id_override=DEMO_PROJECT_ID if demo_loaded else None,
+            preset_metadata=DEMO_PROJECT_METADATA if demo_loaded else None,
+        )
         if st.session_state.get("interlock_payload"):
             request_navigation("Decision Pack")
+
+
+def _ensure_assessment_form_state() -> None:
+    defaults: dict[str, object] = {
+        "project_name": "",
+        "development_type": "Data Centre",
+        "project_stage": "Unknown",
+        "site_address": "",
+        "local_authority": "",
+        "latitude": None,
+        "longitude": None,
+        "site_area_hectares": None,
+        "planned_power_demand_mw": None,
+        "requested_mic_mva": None,
+        "power_strategy": "Unknown",
+        "energy_strategy": "",
+        "project_phasing_notes": "",
+        "project_evidence_mode": "Normal project",
+    }
+    for key, value in defaults.items():
+        st.session_state.setdefault(key, value)
+
+
+def _load_demo_project() -> None:
+    text_fields = {
+        "project_name",
+        "development_type",
+        "site_address",
+        "local_authority",
+        "energy_strategy",
+        "project_phasing_notes",
+    }
+    for key, value in DEMO_PROJECT_PRESET.items():
+        st.session_state[key] = "" if key in text_fields and value is None else value
+    st.session_state["project_evidence_mode"] = DEMO_PROJECT_EVIDENCE_MODE
+    st.session_state["demo_preset_loaded"] = True
+    st.session_state["demo_run_summary"] = None
 
 
 def render_public_data_debug(project_payload: dict[str, object] | None, api_base_url: str | None) -> None:
@@ -465,6 +550,8 @@ for key in (
     "assessment_payload",
     "explanation_payload",
     "rag_search_payload",
+    "demo_preset_loaded",
+    "demo_run_summary",
 ):
     st.session_state.setdefault(key, None)
 
@@ -508,6 +595,7 @@ elif active_page == "Decision Pack":
     payload = st.session_state.get("interlock_payload")
     if payload:
         render_decision_pack(payload)
+        render_demo_run_summary(st.session_state.get("demo_run_summary"))
     else:
         st.markdown('<p class="interlock-section-kicker">Project / assessment result</p>', unsafe_allow_html=True)
         st.markdown('<h1 class="interlock-section-title">Your decision pack will appear here.</h1>', unsafe_allow_html=True)

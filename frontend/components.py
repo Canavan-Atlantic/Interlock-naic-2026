@@ -459,6 +459,41 @@ def render_decision_pack(payload: dict[str, Any]) -> None:
     render_technical_details(payload, evidence, assessment)
 
 
+def render_demo_run_summary(summary: dict[str, Any] | None) -> None:
+    """Render the actual result summary for a successfully run demo preset."""
+
+    if not summary:
+        return
+    st.markdown("#### Demo run summary")
+    st.caption("Derived from the completed InterlockResult returned for this demo run.")
+    metric_items = (
+        ("Evidence records", summary.get("evidence_record_count", 0)),
+        ("Findings", summary.get("finding_count", 0)),
+        ("Unknown themes", summary.get("unknown_theme_count", 0)),
+        ("Human reviews", summary.get("human_review_count", 0)),
+    )
+    columns = st.columns(4)
+    for column, (title, value) in zip(columns, metric_items):
+        with column:
+            st.metric(title, value)
+    st.write(
+        {
+            "workflow_status": summary.get("workflow_status"),
+            "conditional_or_constrained_findings": summary.get("conditional_or_constrained_finding_count", 0),
+            "material_unknowns": summary.get("material_unknown_count", 0),
+            "dependencies": summary.get("dependency_count", 0),
+            "contradictions": summary.get("contradiction_count", 0),
+            "customer_facing_citations": summary.get("customer_facing_citation_count", 0),
+            "source_counts": {
+                source_label({"created_by": source}): count
+                for source, count in as_dict(summary.get("source_counts")).items()
+            },
+            "stage_counts": summary.get("stage_counts", {}),
+            "timings_ms": summary.get("timings_ms", {}),
+        }
+    )
+
+
 def render_human_reviews(reviews: list[Any]) -> None:
     st.markdown("#### Human review")
     if not reviews:
@@ -639,6 +674,7 @@ __all__ = [
     "render_assessment_intro",
     "render_brand_header",
     "render_decision_pack",
+    "render_demo_run_summary",
     "render_evidence_view",
     "render_home",
     "render_methodology",
