@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
+from sqlalchemy.exc import SQLAlchemyError
 
 from .agents.assessment import DeterministicAssessmentAgent
 from .agents.evidence import DeterministicEvidenceAgent, EvidenceAgentOptions
@@ -25,6 +26,24 @@ from .schemas.project import (
     find_missing_or_unknown,
 )
 from .schemas.site_evidence import SiteEvidenceResponse
+from .schemas.portfolio import (
+    AssessmentRunResponse,
+    AssessmentRunSummary,
+    ProjectCreate,
+    ProjectDetail,
+    ProjectSummary,
+)
+from .db import init_db, session_scope
+from .db.repository import (
+    create_or_get_project,
+    list_projects,
+    persist_successful_interlock_result,
+    project_by_reference,
+    project_detail,
+    project_runs,
+    run_by_id,
+    run_response,
+)
 from .services.evidence import project_input_to_evidence_ledger
 from .services.site_evidence import SiteEvidenceOptions, evaluate_site
 from .services.rag.models import DocumentStatus, RAGDocument, RetrievalRequest, SourceClass
@@ -33,6 +52,16 @@ from .services.rag.retrieval import IndexNotBuiltError, StaleIndexError, search_
 
 app = FastAPI(title="INTERLOCK API", version="0.1.0")
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+
+@app.on_event("startup")
+def initialize_database() -> None:
+    """Prepare the portfolio schema before the API accepts requests."""
+
+    try:
+        init_db()
+    except SQLAlchemyError as exc:
+        raise RuntimeError("Application database initialization failed") from exc
 
 
 @app.get("/health")
@@ -130,11 +159,12 @@ def interlock_run(
     include_project_documents: bool = Query(default=True),
     include_benchmark_documents: bool = Query(default=False),
     run_id: str | None = Query(default=None, min_length=1),
+    project_id: str | None = Query(default=None, min_length=1),
 ) -> InterlockResult:
     """Run the fixed Evidence -> Assessment -> Explanation workflow."""
 
     orchestrator = DeterministicInterlockOrchestrator(PROJECT_ROOT)
-    return orchestrator.run(
+    result = orchestrator.run(
         project_context,
         OrchestratorOptions(
             include_project_documents=include_project_documents,
@@ -142,6 +172,99 @@ def interlock_run(
             run_id=run_id,
         ),
     )
+    if str(getattr(result.workflow_status, "value", result.workflow_status)) in {
+        "COMPLETE",
+        "REQUIRES_HUMAN_REVIEW",
+    }:
+        try:
+            with session_scope() as session:
+                persist_successful_interlock_result(
+                    session,
+                    project_context,
+                    result,
+                    stored_project_id=project_id,
+                )
+                session.commit()
+        except LookupError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except (SQLAlchemyError, TypeError, ValueError) as exc:
+            raise HTTPException(
+                status_code=503,
+                detail="Assessment completed but could not be persisted; no historical run was saved.",
+            ) from exc
+    return result
+
+
+@app.post("/projects", response_model=ProjectDetail, status_code=201)
+def create_project(project_context: ProjectCreate) -> ProjectDetail:
+    """Create or refresh a durable portfolio project without running an assessment."""
+
+    try:
+        with session_scope() as session:
+            project = create_or_get_project(session, project_context)
+            session.commit()
+            return project_detail(session, project)
+    except (SQLAlchemyError, TypeError, ValueError) as exc:
+        raise HTTPException(status_code=503, detail="Project portfolio database is unavailable.") from exc
+
+
+@app.get("/projects", response_model=list[ProjectSummary])
+def get_projects() -> list[ProjectSummary]:
+    """List projects with latest assessment metadata only."""
+
+    try:
+        with session_scope() as session:
+            return list_projects(session)
+    except SQLAlchemyError as exc:
+        raise HTTPException(status_code=503, detail="Project portfolio database is unavailable.") from exc
+
+
+@app.get("/projects/{project_id}/runs", response_model=list[AssessmentRunSummary])
+def get_project_runs(project_id: str) -> list[AssessmentRunSummary]:
+    """List immutable assessment-run summaries in reverse chronological order."""
+
+    try:
+        with session_scope() as session:
+            project = project_by_reference(session, project_id)
+            if project is None:
+                raise HTTPException(status_code=404, detail="Project not found")
+            return project_runs(session, project.id)
+    except HTTPException:
+        raise
+    except SQLAlchemyError as exc:
+        raise HTTPException(status_code=503, detail="Project portfolio database is unavailable.") from exc
+
+
+@app.get("/projects/{project_id}", response_model=ProjectDetail)
+def get_project(project_id: str) -> ProjectDetail:
+    """Return one project and its current submitted context."""
+
+    try:
+        with session_scope() as session:
+            project = project_by_reference(session, project_id)
+            if project is None:
+                raise HTTPException(status_code=404, detail="Project not found")
+            return project_detail(session, project)
+    except HTTPException:
+        raise
+    except SQLAlchemyError as exc:
+        raise HTTPException(status_code=503, detail="Project portfolio database is unavailable.") from exc
+
+
+@app.get("/runs/{run_id}", response_model=AssessmentRunResponse)
+def get_run(run_id: str) -> AssessmentRunResponse:
+    """Return one stored InterlockResult snapshot for historical reopening/reporting."""
+
+    try:
+        with session_scope() as session:
+            run = run_by_id(session, run_id)
+            if run is None:
+                raise HTTPException(status_code=404, detail="Assessment run not found")
+            return run_response(run)
+    except HTTPException:
+        raise
+    except SQLAlchemyError as exc:
+        raise HTTPException(status_code=503, detail="Project portfolio database is unavailable.") from exc
 
 
 def _rag_registry_path() -> Path:

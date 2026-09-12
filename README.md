@@ -2,7 +2,7 @@
 
 INTERLOCK is an early-stage decision-support platform for data-centre development. Its long-term purpose is to help a developer understand whether a development proposition is credible enough to progress, what could stop or delay it, what remains unknown, and what needs to happen next.
 
-## Current scope: Modules 1–12
+## Current scope: Modules 1–13
 
 Module 1 proves that a Streamlit frontend can communicate with a FastAPI backend and that both services can run with Docker Compose. Module 2 adds the structured developer project-input workflow. Module 3 converts that input into an in-memory evidence ledger. Module 4A adds deterministic raw-data inventory, validation, cleaning, provenance, and spatial standardisation. Module 4B adds deterministic site-level evidence queries over those processed outputs while retaining the Module 3 ledger and explicit limitations. Module 5A creates a deterministic, provenance-aware policy knowledge-base foundation. Module 5B adds authority-aware hybrid retrieval over that processed corpus without answer generation or project decisions.
 
@@ -200,6 +200,36 @@ py -m streamlit run frontend/app.py
 The existing Module 4B and Module 5B developer tools remain available under
 the Evidence page's Developer / debug tools expander.
 
+## Module 13 — Project portfolio and assessment history
+
+Module 13 adds a durable portfolio layer without changing the deterministic
+Modules 1–9 workflow or the Decision Pack contract. Docker Compose runs
+PostgreSQL as the `db` service and stores its data in the named
+`interlock_postgres_data` volume. The backend receives `DATABASE_URL` and uses
+SQLAlchemy with a versioned initial migration. The existing local `./data`
+bind mount remains separate and read-only at `/data`; raw, processed, policy,
+RAG, GIS, and project-evidence files are not copied into the database volume
+or either Docker image.
+
+The database stores a stable UUID for each project and an append-only
+`assessment_runs` snapshot containing the submitted `ProjectContext` and full
+JSON `InterlockResult`. A project may have multiple runs, including different
+power assumptions. Only complete and `REQUIRES_HUMAN_REVIEW` results are
+persisted; failed or partial runs are not recorded as successful history.
+
+Portfolio API endpoints are:
+
+- `POST /projects` — create or refresh a project record without running an assessment;
+- `GET /projects` — list projects and latest-run metadata;
+- `GET /projects/{project_id}` — return project context and latest-run metadata;
+- `GET /projects/{project_id}/runs` — list immutable runs newest first;
+- `GET /runs/{run_id}` — return one stored context/result snapshot.
+
+The existing `POST /interlock/run` persists a successful result transactionally
+after orchestration completes. The Streamlit Projects view reads this history,
+opens stored assessments and reports without rerunning the backend, and can
+start a new run for the same project or a separate project.
+
 ## Prerequisites
 
 - Docker Desktop with Docker Compose support;
@@ -257,6 +287,34 @@ The deterministic site-evidence endpoint is available at `POST http://localhost:
 The frontend uses `INTERLOCK_API_BASE_URL=http://backend:8000` inside Docker so it can reach the backend service by its Compose service name.
 
 During Docker Compose runs, the repository's local `./data` directory is mounted read-only into the backend container at `/data`. This keeps the raw and processed datasets out of the Docker image while allowing Module 4B to read `/data/processed/data_registry.json`.
+
+The backend's project portfolio is persisted separately in PostgreSQL. The
+Compose file uses clearly non-secret local-development defaults for the
+database name, user, and password; override `POSTGRES_DB`, `POSTGRES_USER`,
+and `POSTGRES_PASSWORD` through a local uncommitted `.env` file for other
+environments. Do not commit credentials or API keys.
+
+Useful portfolio commands:
+
+```powershell
+# Start or rebuild all services, including the persistent database.
+docker compose up --build
+
+# Restart the running services without deleting the database volume.
+docker compose restart
+
+# Reset the local database only (WARNING: removes all stored portfolio history).
+docker compose down -v
+```
+
+Manual persistence acceptance flow:
+
+1. Start Compose, open Streamlit, and run the demo or a project at 50 MW.
+2. Open Projects, open that project, choose Run new assessment, change only planned power to 100 MW, and run it.
+3. Confirm the project detail page shows two history cards with the two submitted power values.
+4. Open the older run and download its report; this must not call `POST /interlock/run`.
+5. Create or assess a second project and confirm it has an independent history.
+6. Run `docker compose restart`, reopen Projects, and confirm both projects and all runs remain.
 
 Stop the services with:
 

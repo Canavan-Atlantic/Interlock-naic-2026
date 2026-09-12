@@ -31,12 +31,12 @@ from demo import (
 from styles import inject_styles
 
 
-PAGE_NAMES = ("Home", "New Assessment", "Decision Pack", "Evidence", "Methodology")
+PAGE_NAMES = ("Home", "New Assessment", "Projects", "Decision Pack", "Evidence", "Methodology")
 NAVIGATION_ITEMS = ("Home", "New Assessment", "Projects", "Data Layers", "Insights", "About")
 NAVIGATION_ROUTES = {
     "Home": "Home",
     "New Assessment": "New Assessment",
-    "Projects": "Decision Pack",
+    "Projects": "Projects",
     "Data Layers": "Evidence",
     "Insights": "Methodology",
     "About": "Methodology",
@@ -44,6 +44,7 @@ NAVIGATION_ROUTES = {
 PAGE_TO_NAVIGATION = {
     "Home": "Home",
     "New Assessment": "New Assessment",
+    "Projects": "Projects",
     "Decision Pack": "Projects",
     "Evidence": "Data Layers",
     "Methodology": "Insights",
@@ -186,12 +187,17 @@ def run_interlock(
         st.write("Checking authoritative sources and dependencies")
         st.write("Preparing a traceable explanation")
         try:
+            run_params = {
+                "include_project_documents": "true",
+                "include_benchmark_documents": str(project_evidence_mode.endswith("Validation")).lower(),
+            }
+            # Demo runs retain their established external project reference;
+            # only a portfolio project UUID is sent as the persistence target.
+            if project_id_override and not preset_metadata:
+                run_params["project_id"] = project_id_override
             response = requests.post(
                 f"{api_base_url.rstrip('/')}/interlock/run",
-                params={
-                    "include_project_documents": "true",
-                    "include_benchmark_documents": str(project_evidence_mode.endswith("Validation")).lower(),
-                },
+                params=run_params,
                 json=context_payload,
                 timeout=300,
             )
@@ -200,6 +206,9 @@ def run_interlock(
             workflow_status = str(payload.get("workflow_status") or "UNKNOWN")
             st.session_state["submitted_project_payload"] = project_payload
             st.session_state["interlock_payload"] = payload
+            if not st.session_state.get("assessment_project_id"):
+                result_context = as_dict(payload.get("project_context"))
+                st.session_state["active_project_id"] = result_context.get("project_id")
             if preset_metadata:
                 st.session_state["demo_run_summary"] = (
                     summarize_interlock_result(payload)
@@ -226,6 +235,8 @@ def render_assessment_page(api_base_url: str | None) -> None:
         '<p class="interlock-section-copy">You can begin with incomplete information. INTERLOCK preserves missing information as unknown rather than guessing.</p>',
         unsafe_allow_html=True,
     )
+    if st.session_state.get("assessment_project_id"):
+        st.info("This assessment will be saved as a new immutable run for the selected project.")
     if st.button(
         "Reload Demo Project" if st.session_state.get("demo_preset_loaded") else "Load Demo Project",
         key="load_demo_project",
@@ -345,15 +356,243 @@ def render_assessment_page(api_base_url: str | None) -> None:
             st.error("Project input could not be validated. Check the required fields and try again.")
     if run_clicked:
         demo_loaded = bool(st.session_state.get("demo_preset_loaded"))
+        assessment_project_id = None if demo_loaded else st.session_state.get("assessment_project_id")
         run_interlock(
             project_payload,
             project_evidence_mode,
             api_base_url,
-            project_id_override=DEMO_PROJECT_ID if demo_loaded else None,
+            project_id_override=DEMO_PROJECT_ID if demo_loaded else assessment_project_id,
             preset_metadata=DEMO_PROJECT_METADATA if demo_loaded else None,
         )
         if st.session_state.get("interlock_payload"):
             request_navigation("Decision Pack")
+
+
+def _portfolio_get(api_base_url: str | None, path: str) -> dict[str, Any] | list[Any] | None:
+    """Read portfolio data with a customer-safe error message."""
+
+    if not api_base_url:
+        st.error("The project portfolio is not configured. Set INTERLOCK_API_BASE_URL to continue.")
+        return None
+    try:
+        response = requests.get(f"{api_base_url.rstrip('/')}{path}", timeout=20)
+        response.raise_for_status()
+        payload = response.json()
+        if isinstance(payload, (dict, list)):
+            return payload
+    except (requests.RequestException, ValueError, TypeError):
+        st.error("The project portfolio is temporarily unavailable.")
+    return None
+
+
+def _format_portfolio_value(value: object) -> str:
+    if value is None or value == "":
+        return "Unknown / not provided"
+    return str(value)
+
+
+def _open_stored_run(api_base_url: str | None, run_id: str) -> None:
+    stored = _portfolio_get(api_base_url, f"/runs/{run_id}")
+    if not isinstance(stored, dict):
+        return
+    result = as_dict(stored.get("interlock_result"))
+    if not result:
+        st.error("The stored assessment result is unavailable.")
+        return
+    st.session_state["interlock_payload"] = result
+    submitted = as_dict(stored.get("submitted_project_context"))
+    st.session_state["submitted_project_payload"] = as_dict(submitted.get("source_project_input")) or None
+    st.session_state["active_run_id"] = stored.get("id")
+    st.session_state["demo_run_summary"] = None
+    st.session_state["project_portfolio_view"] = False
+    request_navigation("Decision Pack")
+
+
+def _populate_assessment_form_from_context(context: dict[str, Any]) -> None:
+    """Copy stored submitted inputs into form state before its widgets render."""
+
+    source = as_dict(context.get("source_project_input"))
+    location = as_dict(context.get("location"))
+    values: dict[str, object] = {
+        "project_name": context.get("project_name", source.get("project_name")),
+        "development_type": context.get("project_type", source.get("development_type")) or "Data Centre",
+        "project_stage": context.get("project_stage", source.get("project_stage")) or "Unknown",
+        "site_address": location.get("address", source.get("site_address")),
+        "local_authority": location.get("local_authority", source.get("local_authority")),
+        "latitude": location.get("latitude", source.get("latitude")),
+        "longitude": location.get("longitude", source.get("longitude")),
+        "site_area_hectares": as_dict(context.get("site_boundary")).get(
+            "area_hectares", source.get("site_area_hectares")
+        ),
+        "planned_power_demand_mw": context.get("planned_power_mw", source.get("planned_power_demand_mw")),
+        "requested_mic_mva": context.get("requested_mic_mva", source.get("requested_mic_mva")),
+        "power_strategy": context.get("power_strategy", source.get("power_strategy")) or "Unknown",
+        "energy_strategy": context.get("energy_strategy", source.get("energy_strategy")),
+        "project_phasing_notes": context.get("phasing", source.get("project_phasing_notes")),
+        "project_evidence_mode": "Normal project",
+    }
+    text_fields = {
+        "project_name",
+        "site_address",
+        "local_authority",
+        "energy_strategy",
+        "project_phasing_notes",
+    }
+    for key, value in values.items():
+        if key in text_fields and value is None:
+            value = ""
+        st.session_state[key] = value
+
+
+def _reset_assessment_form() -> None:
+    defaults = {
+        "project_name": "",
+        "development_type": "Data Centre",
+        "project_stage": "Unknown",
+        "site_address": "",
+        "local_authority": "",
+        "latitude": None,
+        "longitude": None,
+        "site_area_hectares": None,
+        "planned_power_demand_mw": None,
+        "requested_mic_mva": None,
+        "power_strategy": "Unknown",
+        "energy_strategy": "",
+        "project_phasing_notes": "",
+        "project_evidence_mode": "Normal project",
+    }
+    for key, value in defaults.items():
+        st.session_state[key] = value
+
+
+def render_projects_page(api_base_url: str | None) -> None:
+    """Render the durable portfolio or one project's assessment history."""
+
+    project_id = st.session_state.get("active_project_id")
+    if project_id and st.session_state.get("project_portfolio_view"):
+        render_project_detail_page(api_base_url, str(project_id))
+        return
+
+    st.markdown('<p class="interlock-section-kicker">Projects</p>', unsafe_allow_html=True)
+    st.markdown('<h1 class="interlock-section-title">Project portfolio</h1>', unsafe_allow_html=True)
+    st.markdown(
+        '<p class="interlock-section-copy">Keep projects separate, return to completed assessments, and compare the evidence history of one site over time.</p>',
+        unsafe_allow_html=True,
+    )
+    controls = st.container(horizontal=True, horizontal_alignment="right")
+    with controls:
+        if st.button("New project", key="portfolio_new_project", type="primary", icon=":material/add:"):
+            st.session_state["active_project_id"] = None
+            st.session_state["assessment_project_id"] = None
+            st.session_state["project_portfolio_view"] = False
+            st.session_state["interlock_payload"] = None
+            st.session_state["submitted_project_payload"] = None
+            st.session_state["demo_run_summary"] = None
+            _reset_assessment_form()
+            request_navigation("New Assessment")
+        if st.button("Refresh", key="portfolio_refresh", icon=":material/refresh:"):
+            st.rerun()
+
+    projects_payload = _portfolio_get(api_base_url, "/projects")
+    if not isinstance(projects_payload, list):
+        return
+    if not projects_payload:
+        st.info("No projects have been assessed yet. Start a new project to create the first portfolio record.")
+        return
+
+    for project in projects_payload:
+        item = as_dict(project)
+        latest = as_dict(item.get("latest_assessment"))
+        with st.container(border=True):
+            st.markdown(f"### {_format_portfolio_value(item.get('project_name'))}")
+            st.caption(
+                f"{_format_portfolio_value(item.get('project_type'))} · "
+                f"{_format_portfolio_value(item.get('address'))}"
+            )
+            columns = st.columns(4)
+            columns[0].metric("Latest status", _format_portfolio_value(latest.get("workflow_status")))
+            columns[1].metric("Planned power (MW)", _format_portfolio_value(latest.get("planned_power_mw")))
+            columns[2].metric("Unknown themes", latest.get("unknown_theme_count", 0))
+            columns[3].metric("Professional reviews", latest.get("human_review_count", 0))
+            st.caption(
+                f"Assessments: {item.get('run_count', 0)} · "
+                f"Last assessed: {_format_portfolio_value(latest.get('created_at'))}"
+            )
+            if st.button(
+                "Open project",
+                key=f"portfolio_open_{item.get('id')}",
+                icon=":material/arrow_forward:",
+            ):
+                st.session_state["active_project_id"] = item.get("id")
+                st.session_state["project_portfolio_view"] = True
+                request_navigation("Projects")
+
+
+def render_project_detail_page(api_base_url: str | None, project_id: str) -> None:
+    detail_payload = _portfolio_get(api_base_url, f"/projects/{project_id}")
+    if not isinstance(detail_payload, dict):
+        return
+    runs_payload = _portfolio_get(api_base_url, f"/projects/{project_id}/runs")
+    if not isinstance(runs_payload, list):
+        return
+
+    if st.button("Back to portfolio", key="project_back_to_portfolio", icon=":material/arrow_back:"):
+        st.session_state["active_project_id"] = None
+        st.session_state["project_portfolio_view"] = True
+        request_navigation("Projects")
+
+    st.markdown('<p class="interlock-section-kicker">Project detail</p>', unsafe_allow_html=True)
+    st.markdown(
+        f"<h1 class=\"interlock-section-title\">{_format_portfolio_value(detail_payload.get('project_name'))}</h1>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f"<p class=\"interlock-section-copy\">{_format_portfolio_value(detail_payload.get('address'))} · "
+        f"{_format_portfolio_value(detail_payload.get('project_type'))}</p>",
+        unsafe_allow_html=True,
+    )
+    latest = as_dict(detail_payload.get("latest_assessment"))
+    if latest:
+        st.markdown("#### Latest assessment")
+        columns = st.columns(5)
+        columns[0].metric("Status", _format_portfolio_value(latest.get("workflow_status")))
+        columns[1].metric("Planned power (MW)", _format_portfolio_value(latest.get("planned_power_mw")))
+        columns[2].metric("Findings", latest.get("findings_count", 0))
+        columns[3].metric("Unknown themes", latest.get("unknown_theme_count", 0))
+        columns[4].metric("Professional reviews", latest.get("human_review_count", 0))
+        action_columns = st.columns(2)
+        with action_columns[0]:
+            if st.button("Open latest assessment", key="project_open_latest", type="primary"):
+                _open_stored_run(api_base_url, str(latest.get("id")))
+        with action_columns[1]:
+            if st.button("Run new assessment", key="project_run_new", icon=":material/refresh:"):
+                _populate_assessment_form_from_context(as_dict(detail_payload.get("project_context")))
+                st.session_state["assessment_project_id"] = project_id
+                st.session_state["project_portfolio_view"] = False
+                request_navigation("New Assessment")
+    else:
+        st.info("This project has no completed assessment run yet.")
+
+    st.markdown("#### Assessment history")
+    if not runs_payload:
+        st.caption("No successful assessment runs are stored for this project.")
+        return
+    for run in runs_payload:
+        item = as_dict(run)
+        with st.container(border=True):
+            st.markdown(
+                f"**{_format_portfolio_value(item.get('created_at'))}** · "
+                f"{_format_portfolio_value(item.get('workflow_status'))}"
+            )
+            st.caption(
+                f"Run: {_format_portfolio_value(item.get('interlock_run_id'))} · "
+                f"Power: {_format_portfolio_value(item.get('planned_power_mw'))} MW · "
+                f"Findings: {item.get('findings_count', 0)} · "
+                f"Unknown themes: {item.get('unknown_theme_count', 0)} · "
+                f"Reviews: {item.get('human_review_count', 0)}"
+            )
+            if st.button("Open assessment", key=f"project_open_run_{item.get('id')}"):
+                _open_stored_run(api_base_url, str(item.get("id")))
 
 
 def _ensure_assessment_form_state() -> None:
@@ -552,8 +791,13 @@ for key in (
     "rag_search_payload",
     "demo_preset_loaded",
     "demo_run_summary",
+    "active_project_id",
+    "active_run_id",
+    "assessment_project_id",
 ):
     st.session_state.setdefault(key, None)
+if st.session_state.get("project_portfolio_view") is None:
+    st.session_state["project_portfolio_view"] = False
 
 pending_navigation = st.session_state.pop("pending_navigation", None)
 if pending_navigation in PAGE_NAMES:
@@ -578,7 +822,16 @@ selected_navigation = st.pills(
 if not selected_navigation:
     selected_navigation = st.session_state["active_navigation"]
 
-active_page = NAVIGATION_ROUTES.get(selected_navigation, "Home")
+if selected_navigation == "Projects":
+    # Preserve the established post-assessment Decision Pack landing state,
+    # while allowing the explicit portfolio view to open independently.
+    active_page = (
+        "Projects"
+        if st.session_state.get("project_portfolio_view") or not st.session_state.get("interlock_payload")
+        else "Decision Pack"
+    )
+else:
+    active_page = NAVIGATION_ROUTES.get(selected_navigation, "Home")
 if active_page != st.session_state["active_page"]:
     request_navigation(active_page)
 st.session_state["_rendered_page"] = active_page
@@ -591,9 +844,14 @@ if active_page == "Home":
         request_navigation("Methodology")
 elif active_page == "New Assessment":
     render_assessment_page(api_base_url)
+elif active_page == "Projects":
+    render_projects_page(api_base_url)
 elif active_page == "Decision Pack":
     payload = st.session_state.get("interlock_payload")
     if payload:
+        if st.button("View project portfolio", key="decision_view_portfolio", icon=":material/folder_open:"):
+            st.session_state["project_portfolio_view"] = True
+            request_navigation("Projects")
         render_decision_pack(payload)
         render_demo_run_summary(st.session_state.get("demo_run_summary"))
     else:
