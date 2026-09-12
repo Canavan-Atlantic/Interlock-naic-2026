@@ -152,14 +152,13 @@ def render_decision_summary(payload: dict[str, Any]) -> None:
         "Combined groups show the most cautionary state actually returned for their source domains."
     )
     metrics = (
-        ("Findings", summary.get("finding_count", 0)),
-        ("Conditional / constrained", summary.get("conditional_or_constrained_finding_count", 0)),
-        ("Unknown themes", summary.get("unknown_theme_count", 0)),
-        ("Dependencies", summary.get("dependency_count", 0)),
-        ("Contradictions", summary.get("contradiction_count", 0)),
+        ("Key findings", summary.get("finding_count", 0)),
+        ("Constraints", summary.get("conditional_or_constrained_finding_count", 0)),
+        ("Information required", summary.get("unknown_theme_count", 0)),
         ("Professional reviews", summary.get("human_review_count", 0)),
+        ("Evidence records", summary.get("evidence_record_count", 0)),
     )
-    columns = st.columns(6)
+    columns = st.columns(5)
     for column, (title, value) in zip(columns, metrics):
         with column:
             st.metric(title, value)
@@ -435,28 +434,19 @@ def render_assessment_intro() -> None:
 
 
 def render_decision_pack(payload: dict[str, Any]) -> None:
-    """Render the backend InterlockResult as the customer-facing decision pack."""
+    """Render the concise customer-facing layer of the stored InterlockResult."""
 
     context = as_dict(payload.get("project_context"))
     location = as_dict(context.get("location"))
     explanation = as_dict(payload.get("explanation_result"))
-    assessment = as_dict(payload.get("assessment_result"))
-    evidence = as_dict(payload.get("evidence_bundle"))
     workflow_status = str(payload.get("workflow_status") or "UNKNOWN")
     status_text, status_style = status_label(workflow_status)
     project_name = context.get("project_name") or context.get("project_id") or "Unnamed project"
     place = location.get("address") or location.get("local_authority") or location.get("country") or "Location not provided"
-    findings = as_list(explanation.get("key_findings"))
-    unknown_themes = as_list(explanation.get("material_unknown_themes"))
-    assessment_dependencies = as_list(assessment.get("dependencies"))
-    dependencies = assessment_dependencies or as_list(explanation.get("dependencies"))
-    reviews = as_list(payload.get("human_reviews"))
+    stage = as_dict(payload.get("stage_intelligence"))
 
     st.markdown('<p class="interlock-section-kicker">Project / assessment result</p>', unsafe_allow_html=True)
-    st.markdown(
-        '<h1 class="interlock-section-title interlock-pack-title">INTERLOCK Development Readiness Decision Pack</h1>',
-        unsafe_allow_html=True,
-    )
+    st.markdown('<h1 class="interlock-section-title interlock-pack-title">INTERLOCK Development Readiness Decision Pack</h1>', unsafe_allow_html=True)
     status_message = (
         "Automated analysis completed. Professional review is required for identified high-consequence items."
         if workflow_status == "REQUIRES_HUMAN_REVIEW"
@@ -464,164 +454,122 @@ def render_decision_pack(payload: dict[str, Any]) -> None:
         if workflow_status in {"FAILED", "PARTIAL"}
         else "The current structured evidence and assessment are shown below."
     )
-    st.markdown(
-        f'<div class="interlock-status-card {status_style}"><div class="interlock-status-label">{status_text}</div><div>{status_message}</div></div>',
-        unsafe_allow_html=True,
-    )
-    planning = as_dict(payload.get("investigation_plan"))
-    if planning:
-        planning_mode = str(planning.get("planning_mode") or "UNKNOWN")
-        if planning_mode == "BOUNDED_LLM" and planning.get("llm_used"):
-            planning_label = "Bounded intelligent orchestration"
-        else:
-            planning_label = "Deterministic evidence-planning fallback"
-        st.caption(
-            f"{planning_label} · {len(as_list(planning.get('selected_domains')))} domains · "
-            f"{len(as_list(planning.get('tool_requests')))} approved evidence tools"
-        )
-        with st.expander("Investigation provenance", expanded=False):
-            st.write(
-                {
-                    "planning_mode": planning_mode,
-                    "model": planning.get("model") or "Not used",
-                    "selected_domains": as_list(planning.get("selected_domains")),
-                    "approved_tools": [
-                        item.get("tool")
-                        for item in (as_dict(value) for value in as_list(planning.get("tool_requests")))
-                        if item.get("tool")
-                    ],
-                    "rejected_request_count": len(as_list(planning.get("rejected_requests"))),
-                    "fallback_reason": planning.get("fallback_reason") or "Not applicable",
-                    "planner_duration_ms": planning.get("planner_duration_ms", 0),
-                    "validation_duration_ms": planning.get("validation_duration_ms", 0),
-                    "token_usage": as_dict(planning.get("token_usage")),
-                }
-            )
-    render_decision_summary(payload)
-    render_map_first_view(payload)
-    render_report_download(payload)
-    stage_errors = as_dict(payload.get("stage_errors"))
-    if stage_errors:
-        failed_stage = payload.get("failure_stage") or next(iter(stage_errors), "workflow")
-        st.error(f"INTERLOCK could not complete the {label(failed_stage)} stage. No unsupported project decision was created.")
-    st.space("small")
+    st.markdown(f'<div class="interlock-status-card {status_style}"><div class="interlock-status-label">{status_text}</div><div>{status_message}</div></div>', unsafe_allow_html=True)
     with st.container(border=True):
         project_columns = st.columns(3)
         project_columns[0].markdown(f"**Project**  \n{project_name}")
         project_columns[1].markdown(f"**Location**  \n{place}")
-        project_columns[2].markdown(f"**Run**  \n{payload.get('run_id') or 'Not provided'}")
+        project_columns[2].markdown(f"**Stage**  \n{stage.get('stage') or context.get('project_stage') or 'Not provided'}")
         if payload.get("generated_at"):
-            st.caption(f"Assessment timestamp: {payload['generated_at']}")
+            st.caption(f"Assessment timestamp: {payload['generated_at']} · Run {payload.get('run_id') or 'Not provided'}")
+    if stage:
+        with st.container(border=True):
+            st.markdown(f"**{stage.get('customer_question') or 'Assessment question not provided'}**")
+            st.caption(stage.get("purpose") or "Stage purpose not provided.")
+    stage_errors = as_dict(payload.get("stage_errors"))
+    if stage_errors:
+        failed_stage = payload.get("failure_stage") or next(iter(stage_errors), "workflow")
+        st.error(f"INTERLOCK could not complete the {label(failed_stage)} stage. No unsupported project decision was created.")
 
-    render_finding_briefs(payload)
+    render_map_first_view(payload)
+    render_decision_summary(payload)
+    _render_primary_findings(payload)
+    _render_required_to_progress(payload)
+    _render_primary_actions(payload)
+    if payload.get("requires_human_review"):
+        st.info("Human review required is a workflow state, not an application failure or a final project decision.")
+    render_report_download(payload)
 
-    summary_cards = (
-        ("Findings", len(findings), "Structured findings returned"),
-        ("Unknown themes", len(unknown_themes), "Evidence gaps to resolve"),
-        ("Dependencies", len(dependencies), "Items linked to delivery"),
-        ("Human reviews", len(reviews), "Accountable specialist checks"),
-    )
-    summary_columns = st.columns(4)
-    for column, (title, value, caption) in zip(summary_columns, summary_cards):
-        with column:
-            st.markdown(
-                f'<div class="interlock-summary-card"><span>{title}</span><strong>{value}</strong>'
-                f'<small>{caption}</small></div>',
-                unsafe_allow_html=True,
-            )
+    if st.checkbox("Show evidence, provenance and technical detail", key="decision_pack_detail"):
+        evidence = as_dict(payload.get("evidence_bundle"))
+        assessment = as_dict(payload.get("assessment_result"))
+        planning = as_dict(payload.get("investigation_plan"))
+        if planning:
+            planning_mode = str(planning.get("planning_mode") or "UNKNOWN")
+            st.markdown("#### Investigation provenance")
+            st.write({
+                "planning_mode": planning_mode,
+                "model": planning.get("model") or "Not used",
+                "selected_domains": as_list(planning.get("selected_domains")),
+                "approved_evidence_requests": len(as_list(planning.get("tool_requests"))),
+                "approved_tool_types": sorted({str(as_dict(value).get("tool")) for value in as_list(planning.get("tool_requests")) if as_dict(value).get("tool")}),
+                "rejected_request_count": len(as_list(planning.get("rejected_requests"))),
+            })
+        render_human_reviews(as_list(payload.get("human_reviews")))
+        render_sources(explanation, evidence)
+        render_technical_details(payload, evidence, assessment)
 
-    stage_status = as_dict(payload.get("stage_status"))
-    if stage_status:
-        st.markdown("#### Workflow trace")
-        stage_columns = st.columns(3)
-        for column, stage in zip(stage_columns, ("evidence", "assessment", "explanation")):
-            with column:
-                value = str(stage_status.get(stage, "NOT_STARTED"))
-                icon = ":material/check_circle:" if value == "COMPLETE" else ":material/error:"
-                st.markdown(f"{icon} **{label(stage)}**  \n{label(value)}")
 
-    st.markdown("#### Executive summary")
-    with st.container(border=True):
-        st.write(explanation.get("executive_summary") or "No executive explanation was returned by the backend.")
-        if payload.get("requires_human_review"):
-            st.caption("Human review is a workflow state, not an application failure or a final project decision.")
-
+def _render_primary_findings(payload: dict[str, Any], limit: int = 5) -> None:
+    assessment = as_dict(payload.get("assessment_result"))
+    explanation = as_dict(payload.get("explanation_result"))
+    findings = [as_dict(item) for item in as_list(assessment.get("findings"))]
+    narratives: dict[str, str] = {}
+    for value in as_list(explanation.get("key_findings")):
+        text = str(value)
+        if "[finding:" in text:
+            narratives[text.split("[finding:", 1)[1].split("]", 1)[0].strip()] = text.split(" [finding:", 1)[0]
     st.markdown("#### Key findings")
-    if findings:
-        for finding in findings:
-            text = str(finding)
-            css_class = status_class(text)
-            with st.container(border=True):
-                st.markdown(f'<span class="interlock-pill {css_class}">{css_class}</span>', unsafe_allow_html=True)
-                st.write(text.split(" [finding:", 1)[0])
-                if " [finding:" in text:
-                    with st.expander("View finding traceability"):
-                        st.caption(text)
-    else:
-        st.caption("No structured key findings were returned.")
+    if not findings:
+        st.caption("No structured findings were returned.")
+        return
+    for finding in findings[:limit]:
+        finding_id = str(finding.get("finding_id") or "")
+        headline = narratives.get(finding_id) or finding.get("decision_impact") or finding.get("constraint") or "Structured finding returned; review the linked evidence."
+        headline = str(headline).split(" [finding:", 1)[0]
+        if len(headline) > 240:
+            headline = headline[:237].rstrip() + "…"
+        with st.container(border=True):
+            st.markdown(f"**{label(finding.get('domain'))}** · <span class=\"interlock-pill {status_class(finding.get('status', 'UNKNOWN'))}\">{str(finding.get('status') or 'UNKNOWN').replace('_', ' ')}</span>", unsafe_allow_html=True)
+            st.write(headline)
+            if finding.get("evidence_ids"):
+                with st.expander("View evidence", expanded=False):
+                    st.caption("Evidence IDs: " + ", ".join(str(item) for item in as_list(finding.get("evidence_ids"))))
+    if len(findings) > limit:
+        st.caption(f"Showing {limit} of {len(findings)} findings. Full traceability is available in the evidence drill-down and report appendix.")
 
-    constraints = as_list(explanation.get("constraints"))
-    if constraints:
-        st.markdown("#### Constraints")
-        for constraint in constraints:
-            with st.container(border=True):
-                st.markdown('<span class="interlock-pill constrained">constraint</span>', unsafe_allow_html=True)
-                st.write(str(constraint))
-    else:
-        st.caption("No explicit hard constraints are recorded in the current assessment.")
 
-    st.markdown("#### Material unknowns")
-    if unknown_themes:
-        for theme in unknown_themes:
+def _render_required_to_progress(payload: dict[str, Any], limit: int = 5) -> None:
+    stage = as_dict(payload.get("stage_intelligence"))
+    requirements = [as_dict(item) for item in as_list(stage.get("required_to_progress")) if as_dict(item).get("status") == "REQUIRED_TO_PROGRESS"]
+    explanation = as_dict(payload.get("explanation_result"))
+    if not requirements:
+        for theme in as_list(explanation.get("material_unknown_themes")):
             item = as_dict(theme)
-            with st.container(border=True):
-                st.markdown(f"**{item.get('title') or 'Material unknown'}**")
-                st.write(item.get("summary") or "The current evidence does not resolve this theme.")
-                actions = as_list(item.get("resolution_actions"))
-                if actions:
-                    st.markdown("**What may resolve it**")
-                    for action in actions:
-                        st.markdown(f"- {action}")
-                refs = [*as_list(item.get("finding_ids")), *as_list(item.get("evidence_ids"))]
-                if refs:
-                    with st.expander("View supporting references"):
-                        st.write(refs)
-    else:
-        st.caption("No consolidated material unknown themes were returned.")
+            actions = as_list(item.get("resolution_actions"))
+            requirements.append({
+                "label": item.get("title") or "Additional information",
+                "why_required": item.get("summary") or "The current evidence does not resolve this theme.",
+                "next_step": actions[0] if actions else "Confirm the related evidence.",
+                "owner": None,
+            })
+    st.markdown(f"#### {stage.get('missing_evidence_wording') or 'Required to Progress'}")
+    if not requirements:
+        st.success("No additional stage-specific information is currently recorded as required.")
+        return
+    for item in requirements[:limit]:
+        with st.container(border=True):
+            st.markdown(f"**{item.get('label') or 'Additional information'}**")
+            st.write(item.get("why_required") or "The current evidence does not resolve this item.")
+            st.caption(f"Next: {item.get('next_step') or 'Confirm the related evidence.'}" + (f" · Owner: {item['owner']}" if item.get("owner") else ""))
+    if len(requirements) > limit:
+        st.caption(f"Showing {limit} of {len(requirements)} required items. Full closure detail is available in the report appendix.")
 
-    st.markdown("#### Dependencies")
-    if dependencies:
-        if assessment_dependencies:
-            for dependency in assessment_dependencies:
-                item = as_dict(dependency)
-                with st.container(border=True):
-                    st.markdown(f"**{item.get('dependency_id') or 'Dependency'}** · {label(item.get('status'))}")
-                    st.write(item.get("impact_description") or item.get("description") or "Dependency impact not described.")
-                    if item.get("evidence_ids"):
-                        st.caption("Evidence: " + ", ".join(str(ref) for ref in item["evidence_ids"]))
-                    if item.get("human_review_required"):
-                        st.caption("Specialist review is required for this dependency.")
-        else:
-            for dependency in dependencies:
-                with st.container(border=True):
-                    st.write(str(dependency))
-    else:
-        st.caption("No unresolved dependencies are recorded in the current assessment.")
 
-    st.markdown("#### Contradictions")
-    contradictions = as_list(explanation.get("contradictions"))
-    if contradictions:
-        for contradiction in contradictions:
-            with st.container(border=True):
-                st.markdown('<span class="interlock-pill conditional">review carefully</span>', unsafe_allow_html=True)
-                st.write(str(contradiction))
-    else:
-        st.caption("No material evidence contradictions identified in the current assessment.")
-
-    render_human_reviews(reviews)
-    render_action_plan(as_list(explanation.get("next_action_plan")))
-    render_sources(explanation, evidence)
-    render_technical_details(payload, evidence, assessment)
+def _render_primary_actions(payload: dict[str, Any], limit: int = 5) -> None:
+    explanation = as_dict(payload.get("explanation_result"))
+    actions = [as_dict(item) for item in as_list(explanation.get("next_action_plan"))]
+    st.markdown("#### Next actions")
+    if not actions:
+        st.caption("No consolidated next actions were returned.")
+        return
+    for action in actions[:limit]:
+        with st.container(border=True):
+            st.markdown(f"**{action.get('title') or 'Next action'}**")
+            roles = ", ".join(label(item, ROLE_LABELS) for item in as_list(action.get("specialist_roles")))
+            st.caption((f"Owner: {roles} · " if roles else "") + str(action.get("rationale") or "Resolve the related evidence gap."))
+    if len(actions) > limit:
+        st.caption(f"Showing {limit} of {len(actions)} actions. Related evidence remains available in the drill-down.")
 
 
 def render_demo_run_summary(summary: dict[str, Any] | None) -> None:
