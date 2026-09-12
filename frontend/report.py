@@ -135,6 +135,7 @@ def build_assessment_report_view_model(payload: dict[str, Any]) -> dict[str, Any
         for item in [*_as_list(evidence.get("warnings")), *_as_list(explanation.get("warnings"))]
         if item is not None
     ]
+    planning = _as_dict(payload.get("investigation_plan"))
     return {
         "report_version": REPORT_VERSION,
         "project": {
@@ -175,6 +176,17 @@ def build_assessment_report_view_model(payload: dict[str, Any]) -> dict[str, Any
         "source_records": records,
         "constraints": [_text(item) for item in _as_list(assessment.get("constraints")) or _as_list(explanation.get("constraints"))],
         "warnings": warnings,
+        "planning": {
+            "mode": _text(planning.get("planning_mode"), "Not provided"),
+            "llm_used": bool(planning.get("llm_used")),
+            "model": _text(planning.get("model"), "Not used"),
+            "selected_domains": [_text(item) for item in _as_list(planning.get("selected_domains"))],
+            "approved_tool_count": len(_as_list(planning.get("tool_requests"))),
+            "rejected_request_count": len(_as_list(planning.get("rejected_requests"))),
+            "fallback_reason": _text(planning.get("fallback_reason"), "Not applicable"),
+            "planner_duration_ms": planning.get("planner_duration_ms", 0),
+            "validation_duration_ms": planning.get("validation_duration_ms", 0),
+        },
         "summary": summary,
         "provenance": {
             "schema_version": _text(payload.get("schema_version"), "Not provided"),
@@ -658,6 +670,15 @@ def _draw_report_sections(writer: _PdfWriter, model: dict[str, Any]) -> None:
     writer.paragraph("This PDF is generated from the successful stored InterlockResult in the browser session. It presents deterministic evidence, structured assessment findings, explanation fields, unknowns, dependencies, contradictions, actions and human-review requests as returned by the workflow.")
     writer.bullet("UNKNOWN is preserved as an evidence state and is not converted into a negative conclusion.")
     writer.bullet("The report does not call an agent, retrieve new policy, alter citations, calculate a score, or produce a final project decision.")
+    planning = model["planning"]
+    if planning["llm_used"]:
+        writer.bullet("Bounded intelligent orchestration selected evidence questions using the configured model; only approved evidence tools ran, and deterministic rules evaluated their results. No model decision or reasoning transcript is included.")
+    else:
+        writer.bullet("Deterministic evidence-planning fallback selected the existing broad evidence workflow because bounded model planning was not used or was unavailable.")
+    writer.label_value("Planning mode", planning["mode"])
+    writer.label_value("Approved evidence tools", planning["approved_tool_count"])
+    writer.label_value("Planner duration (ms)", planning["planner_duration_ms"])
+    writer.label_value("Plan validation duration (ms)", planning["validation_duration_ms"])
     writer.bullet("Domain groupings are presentation groupings only; combined groups retain the most cautionary state among their actual source domains.")
     if model["constraints"]:
         writer.paragraph("Recorded constraints", color=TEAL, size=8.5, gap=3)

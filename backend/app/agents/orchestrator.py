@@ -24,6 +24,7 @@ from ..schemas.agents import (
 from .assessment import DeterministicAssessmentAgent
 from .evidence import DeterministicEvidenceAgent, EvidenceAgentOptions
 from .explanation import DeterministicExplanationAgent
+from .planner import BoundedInvestigationPlanner, InvestigationPlanner, PlannerSettings
 
 
 @dataclass(frozen=True)
@@ -132,16 +133,19 @@ class DeterministicInterlockOrchestrator:
         evidence_agent: EvidenceAgent | None = None,
         assessment_agent: object | None = None,
         explanation_agent: object | None = None,
+        planner: InvestigationPlanner | None = None,
     ) -> None:
         self.evidence_agent = evidence_agent or DeterministicEvidenceAgent(project_root)
         self.assessment_agent = assessment_agent or DeterministicAssessmentAgent()
         self.explanation_agent = explanation_agent or DeterministicExplanationAgent()
+        self.planner = planner or BoundedInvestigationPlanner()
 
     @staticmethod
     def _call_evidence_agent(
         agent: object,
         context: ProjectContext,
         options: OrchestratorOptions,
+        investigation_plan: object,
     ) -> EvidenceBundle:
         """Support both the original one-argument protocol and concrete options."""
 
@@ -149,6 +153,7 @@ class DeterministicInterlockOrchestrator:
         evidence_options = EvidenceAgentOptions(
             include_project_documents=options.include_project_documents,
             include_benchmark_documents=options.include_benchmark_documents,
+            investigation_plan=investigation_plan,
         )
         try:
             inspect.signature(runner).bind(context, evidence_options)
@@ -169,6 +174,7 @@ class DeterministicInterlockOrchestrator:
         stage_errors: dict[str, str],
         stage_counts: dict[str, int],
         timings_ms: dict[str, float],
+        investigation_plan: object | None = None,
         failure_stage: str | None = None,
         failure_message: str | None = None,
     ) -> InterlockResult:
@@ -178,6 +184,7 @@ class DeterministicInterlockOrchestrator:
             evidence_bundle=evidence_bundle,
             assessment_result=assessment_result,
             explanation_result=explanation_result,
+            investigation_plan=investigation_plan,
             workflow_status=workflow_status,
             human_reviews=reviews,
             requires_human_review=_requires_human_review(reviews),
@@ -205,10 +212,33 @@ class DeterministicInterlockOrchestrator:
         stage_counts: dict[str, int] = {}
         timings_ms: dict[str, float] = {}
 
+        # Planning is a bounded scope step.  It is deliberately outside the
+        # Evidence/Assessment/Explanation stage status contract so existing
+        # consumers retain the same three deterministic stages.  The plan
+        # carries planner and validation timings as provenance.
+        try:
+            investigation_plan = self.planner.plan(
+                project_context,
+                include_project_documents=options.include_project_documents,
+            )
+        except Exception:
+            # A custom planner cannot make the deterministic pipeline fail.
+            investigation_plan = BoundedInvestigationPlanner(
+                settings=PlannerSettings(mode="deterministic_fallback")
+            ).plan(
+                project_context,
+                include_project_documents=options.include_project_documents,
+            )
+
         stage_status[_STAGE_EVIDENCE] = WorkflowStatus.IN_PROGRESS.value
         stage_started = perf_counter()
         try:
-            evidence_bundle = self._call_evidence_agent(self.evidence_agent, project_context, options)
+            evidence_bundle = self._call_evidence_agent(
+                self.evidence_agent,
+                project_context,
+                options,
+                investigation_plan,
+            )
         except Exception as error:
             elapsed = round((perf_counter() - stage_started) * 1000, 3)
             timings_ms[_STAGE_EVIDENCE] = elapsed
@@ -229,6 +259,7 @@ class DeterministicInterlockOrchestrator:
                 stage_errors=stage_errors,
                 stage_counts=stage_counts,
                 timings_ms=timings_ms,
+                investigation_plan=investigation_plan,
                 failure_stage=_STAGE_EVIDENCE,
                 failure_message=failure,
             )
@@ -264,6 +295,7 @@ class DeterministicInterlockOrchestrator:
                 stage_errors=stage_errors,
                 stage_counts=stage_counts,
                 timings_ms=timings_ms,
+                investigation_plan=investigation_plan,
                 failure_stage=_STAGE_ASSESSMENT,
                 failure_message=failure,
             )
@@ -299,6 +331,7 @@ class DeterministicInterlockOrchestrator:
                 stage_errors=stage_errors,
                 stage_counts=stage_counts,
                 timings_ms=timings_ms,
+                investigation_plan=investigation_plan,
                 failure_stage=_STAGE_EXPLANATION,
                 failure_message=failure,
             )
@@ -324,6 +357,7 @@ class DeterministicInterlockOrchestrator:
             stage_errors=stage_errors,
             stage_counts=stage_counts,
             timings_ms=timings_ms,
+            investigation_plan=investigation_plan,
         )
 
 

@@ -348,6 +348,31 @@ the stored `InterlockResult` is added to PostgreSQL. The primary workflow is
 same-project run comparison; cross-project/site-option comparison remains a
 future extension.
 
+## Module 15 — Bounded intelligent orchestration
+
+Module 15 adds an optional bounded investigation planner to the existing
+`ProjectContext → Evidence → Assessment → Explanation` workflow. When
+`INTERLOCK_ORCHESTRATOR_MODE=bounded_llm` and a local `OPENAI_API_KEY` are
+available, the configured model may select evidence questions and approved
+domains/tools. It cannot browse arbitrary URLs, run code, override policy
+rules, create scores or recommendations, or make a project decision. The
+allowlisted deterministic capabilities remain responsible for evidence
+acquisition, including Module 4B GIS and Module 5B authority/jurisdiction/
+status filtering; project documents remain untrusted project evidence.
+
+Missing keys, provider failures, malformed plans, unsafe requests, or an
+explicit `deterministic`/`deterministic_fallback` mode produce a truthful
+`DETERMINISTIC_FALLBACK` plan and continue the existing workflow. Planning
+provenance records selected domains/tools, rejected request categories,
+fallback status, safe timings, and optional provider token counts without
+storing prompts, document text, API keys, or chain-of-thought. The Decision
+Pack and report expose only a compact methodology indicator.
+
+The planner receives a sanitized canonical project context and capability
+descriptions, not raw retrieved documents. No new database table or dataset
+copy is introduced; successful portfolio snapshots retain the optional plan
+inside the existing `InterlockResult` JSON.
+
 Stop the services with:
 
 ```powershell

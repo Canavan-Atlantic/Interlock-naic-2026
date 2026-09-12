@@ -466,6 +466,34 @@ def render_decision_pack(payload: dict[str, Any]) -> None:
         f'<div class="interlock-status-card {status_style}"><div class="interlock-status-label">{status_text}</div><div>{status_message}</div></div>',
         unsafe_allow_html=True,
     )
+    planning = as_dict(payload.get("investigation_plan"))
+    if planning:
+        planning_mode = str(planning.get("planning_mode") or "UNKNOWN")
+        if planning_mode == "BOUNDED_LLM" and planning.get("llm_used"):
+            planning_label = "Bounded intelligent orchestration"
+        else:
+            planning_label = "Deterministic evidence-planning fallback"
+        st.caption(
+            f"{planning_label} · {len(as_list(planning.get('selected_domains')))} domains · "
+            f"{len(as_list(planning.get('tool_requests')))} approved evidence tools"
+        )
+        with st.expander("Investigation provenance", expanded=False):
+            st.write(
+                {
+                    "planning_mode": planning_mode,
+                    "model": planning.get("model") or "Not used",
+                    "selected_domains": as_list(planning.get("selected_domains")),
+                    "approved_tools": [
+                        item.get("tool")
+                        for item in (as_dict(value) for value in as_list(planning.get("tool_requests")))
+                        if item.get("tool")
+                    ],
+                    "rejected_request_count": len(as_list(planning.get("rejected_requests"))),
+                    "fallback_reason": planning.get("fallback_reason") or "Not applicable",
+                    "planner_duration_ms": planning.get("planner_duration_ms", 0),
+                    "validation_duration_ms": planning.get("validation_duration_ms", 0),
+                }
+            )
     render_decision_summary(payload)
     render_report_download(payload)
     stage_errors = as_dict(payload.get("stage_errors"))

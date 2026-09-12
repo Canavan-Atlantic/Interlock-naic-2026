@@ -24,6 +24,10 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-interlock}:${POSTGRES_PASSWORD:-interlock_local_dev}@db:5432/${POSTGRES_DB:-interlock}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      INTERLOCK_ORCHESTRATOR_MODE: ${INTERLOCK_ORCHESTRATOR_MODE:-bounded_llm}
+      INTERLOCK_ORCHESTRATOR_MODEL: ${INTERLOCK_ORCHESTRATOR_MODEL:-gpt-5.5}
+      INTERLOCK_ORCHESTRATOR_TIMEOUT_SECONDS: ${INTERLOCK_ORCHESTRATOR_TIMEOUT_SECONDS:-30}
     volumes:
       - ./data:/data:ro
 
