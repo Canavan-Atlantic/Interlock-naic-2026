@@ -29,12 +29,134 @@ from frontend.demo import (
     DEMO_PROJECT_PRESET_NAME,
     summarize_interlock_result,
 )
+from frontend.report import build_assessment_report_view_model, render_assessment_report_pdf, safe_report_filename
+from frontend.result_summary import assessment_domain_state_summary
 from frontend.styles import BRAND_CSS
 
 
 ROOT = Path(__file__).resolve().parents[1]
 APP_PATH = ROOT / "frontend" / "app.py"
 FIXTURES = ROOT / "tests" / "fixtures" / "agents"
+
+
+def _module_12_report_payload() -> dict[str, object]:
+    """Small result-shaped payload containing every report branch we need to verify."""
+
+    return {
+        "project_context": {
+            "project_id": "report-project-001",
+            "project_name": "Report Test Data Centre",
+            "project_type": "Data Centre",
+            "assessment_workflow": "SITE_FEASIBILITY",
+            "project_lifecycle_status": "PRE_PLANNING",
+            "project_stage": "Early Feasibility",
+            "location": {"address": "Blanchardstown, Dublin 15", "jurisdiction": "IRELAND"},
+            "planned_power_mw": 50,
+            "requested_mic_mva": None,
+            "power_strategy": "Unknown",
+            "energy_strategy": None,
+            "phasing": None,
+        },
+        "evidence_bundle": {
+            "records": [
+                {
+                    "evidence_id": "ev-grid-001",
+                    "created_by": "RAG_RETRIEVAL",
+                    "source_document_id": "eirgrid-plan-001",
+                    "source_path": "data/rag/grid/eirgrid-plan.pdf",
+                    "domain": "GRID",
+                }
+            ],
+            "warnings": [],
+        },
+        "assessment_result": {
+            "findings": [
+                {
+                    "finding_id": "finding-grid",
+                    "domain": "GRID",
+                    "status": "CONDITIONAL",
+                    "decision_impact": "Connection evidence needs confirmation.",
+                    "evidence_ids": ["ev-grid-001"],
+                    "material_unknowns": ["Current connection position"],
+                    "human_review_required": True,
+                },
+                {
+                    "finding_id": "finding-water",
+                    "domain": "WATER",
+                    "status": "UNKNOWN",
+                    "evidence_ids": [],
+                },
+                {
+                    "finding_id": "finding-biodiversity",
+                    "domain": "BIODIVERSITY",
+                    "status": "CONSTRAINED",
+                    "constraint": "Ecology baseline remains incomplete.",
+                    "evidence_ids": [],
+                },
+            ],
+            "constraints": ["Ecology baseline remains incomplete."],
+            "dependencies": [{"dependency_id": "dep-grid", "status": "OPEN", "description": "Confirm connection evidence.", "evidence_ids": ["ev-grid-001"]}],
+            "material_unknowns": ["Requested MIC is not provided."],
+            "human_reviews": [],
+        },
+        "explanation_result": {
+            "executive_summary": "Evidence is available for review, with material gaps remaining.",
+            "known_facts": ["The project context identifies a Blanchardstown site."],
+            "why_it_matters": ["Connection and ecology evidence affect the next feasibility step."],
+            "key_findings": ["CONDITIONAL — GRID: confirm connection evidence. [finding: finding-grid]"],
+            "material_unknown_themes": [
+                {
+                    "theme_id": "unknown-grid",
+                    "title": "Grid connection readiness",
+                    "summary": "Current grid status remains unknown.",
+                    "resolution_actions": ["Confirm current connection evidence."],
+                    "finding_ids": ["finding-grid"],
+                    "evidence_ids": ["ev-grid-001"],
+                }
+            ],
+            "dependencies": [],
+            "contradictions": ["A potential source discrepancy needs review."],
+            "next_action_plan": [
+                {
+                    "action_id": "action-grid",
+                    "title": "Confirm grid readiness",
+                    "rationale": "Resolve the grid evidence gap.",
+                    "finding_ids": ["finding-grid"],
+                    "evidence_ids": ["ev-grid-001"],
+                    "specialist_roles": ["GRID_ENGINEER"],
+                }
+            ],
+            "customer_facing_citations": [
+                {
+                    "document_id": "eirgrid-plan-001",
+                    "source_path": "data/rag/grid/eirgrid-plan.pdf",
+                    "page_start": 12,
+                    "page_end": 13,
+                    "locator": "p. 12–13",
+                    "section_heading": "Network planning",
+                }
+            ],
+            "warnings": ["Evidence requires professional validation before reliance."],
+        },
+        "workflow_status": "REQUIRES_HUMAN_REVIEW",
+        "requires_human_review": True,
+        "human_reviews": [
+            {
+                "review_id": "review-grid-001",
+                "domain": "GRID",
+                "reason": "Confirm current connection status.",
+                "severity": "MATERIAL",
+                "recommended_role": "GRID_ENGINEER",
+                "evidence_ids": ["ev-grid-001"],
+            }
+        ],
+        "run_id": "module-12-report-run",
+        "generated_at": "2026-09-12T10:30:00Z",
+        "schema_version": "1.0",
+        "stage_status": {"evidence": "COMPLETE", "assessment": "COMPLETE", "explanation": "COMPLETE"},
+        "stage_counts": {"evidence": 1, "assessment": 3, "explanation": 1},
+        "timings_ms": {"evidence": 10.0, "assessment": 2.0, "explanation": 1.0, "total": 13.0},
+    }
 
 
 def test_frontend_home_renders_brand_and_primary_journey_without_backend() -> None:
@@ -210,6 +332,113 @@ def test_demo_summary_uses_only_actual_interlock_result_fields() -> None:
     assert "score" not in summary
     assert "decision" not in summary
     assert "recommendation" not in summary
+
+
+def test_module_12_domain_visual_maps_only_actual_assessment_domains() -> None:
+    payload = _module_12_report_payload()
+
+    domains = assessment_domain_state_summary(payload)
+    states = {item["label"]: item["state"] for item in domains}
+
+    assert states["Grid & Energy"] == "CONDITIONAL"
+    assert states["Water / Wastewater"] == "UNKNOWN"
+    assert states["Biodiversity / Environment"] == "CONSTRAINED"
+    assert "Flood" not in states
+    assert "Heritage" not in states
+    assert all("score" not in item for item in states)
+
+    all_states = assessment_domain_state_summary(
+        {
+            "assessment_result": {
+                "findings": [
+                    {"finding_id": "clear", "domain": "PLANNING", "status": "CLEAR"},
+                    {"finding_id": "informational", "domain": "GRID", "status": "INFORMATIONAL"},
+                    {"finding_id": "conditional", "domain": "INFRASTRUCTURE", "status": "CONDITIONAL"},
+                    {"finding_id": "constrained", "domain": "BIODIVERSITY", "status": "CONSTRAINED"},
+                    {"finding_id": "unknown", "domain": "WATER", "status": "UNKNOWN"},
+                ]
+            }
+        }
+    )
+    assert {item["state"] for item in all_states} == {
+        "CLEAR",
+        "INFORMATIONAL",
+        "CONDITIONAL",
+        "CONSTRAINED",
+        "UNKNOWN",
+    }
+
+
+def test_module_12_decision_pack_renders_real_visual_states_without_outcomes() -> None:
+    app = AppTest.from_file(APP_PATH, default_timeout=10).run()
+    app.session_state["active_page"] = "Decision Pack"
+    app.session_state["interlock_payload"] = _module_12_report_payload()
+    app.run()
+
+    assert not app.exception
+    rendered_text = " ".join(
+        [item.value for item in app.markdown] + [item.value for item in app.caption]
+    ).casefold()
+    assert "decision summary" in rendered_text
+    assert "grid & energy" in rendered_text
+    assert "conditional" in rendered_text
+    assert "water / wastewater" in rendered_text
+    assert "unknown" in rendered_text
+    assert "score" not in rendered_text
+    assert not re.search(r"\b(?:ADVANCE|HOLD|RECONFIGURE|STOP)\b", rendered_text.upper())
+
+
+def test_module_12_report_contains_actual_result_fields_and_unknowns() -> None:
+    payload = _module_12_report_payload()
+
+    view_model = build_assessment_report_view_model(payload)
+    assert view_model["project"]["requested_mic_mva"] == "Not provided"
+    assert view_model["project"]["power_strategy"] == "Unknown"
+    assert view_model["findings"][0]["finding_id"] == "finding-grid"
+    assert view_model["unknowns"][0]["title"] == "Grid connection readiness"
+    assert view_model["reviews"][0]["review_id"] == "review-grid-001"
+    assert view_model["citations"][0]["document_id"] == "eirgrid-plan-001"
+
+    pdf_bytes = render_assessment_report_pdf(payload)
+    assert pdf_bytes.startswith(b"%PDF")
+    import fitz
+
+    document = fitz.open(stream=pdf_bytes, filetype="pdf")
+    report_text = "\n".join(page.get_text() for page in document)
+    document.close()
+
+    assert "Report Test Data Centre" in report_text
+    assert "module-12-report-run" in report_text
+    assert "REQUIRES_HUMAN_REVIEW" in report_text
+    assert "finding-grid" in report_text
+    assert "CONDITIONAL" in report_text
+    assert "Grid connection readiness" in report_text
+    assert "GRID_ENGINEER" in report_text
+    assert "eirgrid-plan-001" in report_text
+    assert "p. 12" in report_text
+    assert "Not provided" in report_text
+    assert "readiness score" not in report_text.casefold()
+    assert "ADVANCE" not in report_text
+    assert "HOLD" not in report_text
+    assert safe_report_filename(payload) == "INTERLOCK_Report_Test_Data_Centre_2026-09-12.pdf"
+
+
+def test_module_12_report_download_uses_stored_result_without_backend_rerun(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[str] = []
+
+    def fail_post(*_: object, **__: object) -> None:
+        calls.append("post")
+        raise AssertionError("stored report rendering must not call the backend")
+
+    monkeypatch.setattr("requests.post", fail_post)
+    app = AppTest.from_file(APP_PATH, default_timeout=10).run()
+    app.session_state["active_page"] = "Decision Pack"
+    app.session_state["interlock_payload"] = _module_12_report_payload()
+    app.run()
+
+    assert not app.exception
+    assert any(item.label == "Download Assessment Report" for item in app.download_button)
+    assert calls == []
 
 
 def test_successful_assessment_queues_safe_navigation_and_persists_result(monkeypatch: pytest.MonkeyPatch) -> None:

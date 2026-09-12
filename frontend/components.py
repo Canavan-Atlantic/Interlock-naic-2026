@@ -3,11 +3,20 @@
 from __future__ import annotations
 
 import base64
+import html
+import time
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
 import streamlit as st
+
+try:
+    from .report import render_assessment_report_pdf, safe_report_filename
+    from .result_summary import assessment_domain_state_summary, summarize_interlock_result
+except ImportError:  # Streamlit executes frontend/app.py as a top-level script.
+    from report import render_assessment_report_pdf, safe_report_filename
+    from result_summary import assessment_domain_state_summary, summarize_interlock_result
 
 
 SOURCE_LABELS = {
@@ -108,6 +117,126 @@ def status_label(workflow_status: str) -> tuple[str, str]:
         "FAILED": ("Assessment could not be completed", "failure"),
         "PARTIAL": ("Assessment partially completed", "failure"),
     }.get(workflow_status, ("Assessment status unavailable", "review"))
+
+
+def render_decision_summary(payload: dict[str, Any]) -> None:
+    """Render the compact result summary before the detailed assessment sections."""
+
+    summary = summarize_interlock_result(payload)
+    workflow_status = str(summary.get("workflow_status") or "UNKNOWN")
+    status_text, _ = status_label(workflow_status)
+    domains = assessment_domain_state_summary(payload)
+    nodes = "".join(
+        f'<div class="interlock-domain-node status-{html.escape(str(item["state"]).casefold())}">'
+        f'<span class="interlock-domain-ring" aria-hidden="true"></span>'
+        f'<strong>{html.escape(str(item["label"]))}</strong>'
+        f'<small>{html.escape(str(item["state"]).replace("_", " "))}</small></div>'
+        for item in domains
+    )
+    if not nodes:
+        nodes = '<p class="interlock-domain-empty">No structured domain findings were returned by the assessment stage.</p>'
+    st.markdown("#### Decision summary")
+    st.markdown(
+        f'<div class="interlock-domain-visual"><div class="interlock-domain-centre">'
+        f'<span>WORKFLOW RESULT</span><strong>{html.escape(status_text.upper())}</strong>'
+        f'<small>No unsupported project outcome is inferred.</small></div>'
+        f'<div class="interlock-domain-nodes">{nodes}</div></div>',
+        unsafe_allow_html=True,
+    )
+    if domains:
+        st.caption("Domain states: " + " · ".join(f"{item['label']} — {item['state']}" for item in domains))
+    st.caption(
+        "UNKNOWN means INTERLOCK does not have sufficient verified evidence to reach a reliable conclusion. "
+        "Combined groups show the most cautionary state actually returned for their source domains."
+    )
+    metrics = (
+        ("Findings", summary.get("finding_count", 0)),
+        ("Conditional / constrained", summary.get("conditional_or_constrained_finding_count", 0)),
+        ("Unknown themes", summary.get("unknown_theme_count", 0)),
+        ("Dependencies", summary.get("dependency_count", 0)),
+        ("Contradictions", summary.get("contradiction_count", 0)),
+        ("Professional reviews", summary.get("human_review_count", 0)),
+    )
+    columns = st.columns(6)
+    for column, (title, value) in zip(columns, metrics):
+        with column:
+            st.metric(title, value)
+
+
+def render_finding_briefs(payload: dict[str, Any]) -> None:
+    """Render structured finding context without adding conclusions."""
+
+    assessment = as_dict(payload.get("assessment_result"))
+    explanation = as_dict(payload.get("explanation_result"))
+    findings = [as_dict(item) for item in as_list(assessment.get("findings"))]
+    key_findings = as_list(explanation.get("key_findings"))
+    reviews = [as_dict(item) for item in as_list(payload.get("human_reviews"))]
+    actions = [as_dict(item) for item in as_list(explanation.get("next_action_plan"))]
+    if not findings:
+        return
+    narrative_by_id: dict[str, str] = {}
+    for value in key_findings:
+        text = str(value)
+        marker = "[finding:"
+        if marker in text:
+            finding_id = text.split(marker, 1)[1].split("]", 1)[0].strip()
+            narrative_by_id[finding_id] = text.split(" [finding:", 1)[0]
+    st.markdown("#### Findings at a glance")
+    for finding in findings:
+        finding_id = str(finding.get("finding_id") or "Finding")
+        domain = label(finding.get("domain"), DOMAIN_LABELS)
+        status = str(finding.get("status") or "UNKNOWN")
+        evidence_ids = [str(item) for item in as_list(finding.get("evidence_ids"))]
+        finding_reviews = [
+            review for review in reviews
+            if str(review.get("domain") or "") == str(finding.get("domain") or "")
+            or bool(set(evidence_ids).intersection(as_list(review.get("evidence_ids"))))
+        ]
+        finding_actions = [
+            action for action in actions
+            if finding_id in {str(item) for item in as_list(action.get("finding_ids"))}
+        ]
+        with st.container(border=True):
+            st.markdown(f"**{domain}** · <span class=\"interlock-pill {status_class(status)}\">{html.escape(status.replace('_', ' '))}</span>", unsafe_allow_html=True)
+            if narrative_by_id.get(finding_id):
+                st.write(narrative_by_id[finding_id])
+            if finding.get("decision_impact"):
+                st.caption(f"Why it matters: {finding['decision_impact']}")
+            if finding.get("constraint"):
+                st.caption(f"Constraint recorded: {finding['constraint']}")
+            unknowns = as_list(finding.get("material_unknowns"))
+            if unknowns:
+                st.caption("What remains unknown: " + "; ".join(str(item) for item in unknowns))
+            if evidence_ids:
+                st.caption("Supporting evidence: " + ", ".join(evidence_ids))
+            if finding_actions:
+                st.caption("Next action: " + "; ".join(str(item.get("title") or "Not established") for item in finding_actions))
+            if finding_reviews:
+                roles = [label(item.get("recommended_role"), ROLE_LABELS) for item in finding_reviews]
+                st.caption("Professional review required: " + ", ".join(dict.fromkeys(roles)))
+
+
+def render_report_download(payload: dict[str, Any]) -> None:
+    """Offer a PDF rendering of the stored result without calling the backend."""
+
+    workflow_status = str(payload.get("workflow_status") or "UNKNOWN")
+    if workflow_status not in {"COMPLETE", "REQUIRES_HUMAN_REVIEW"}:
+        return
+    try:
+        started = time.perf_counter()
+        pdf_bytes = render_assessment_report_pdf(payload)
+        elapsed_ms = (time.perf_counter() - started) * 1000
+        st.download_button(
+            "Download Assessment Report",
+            data=pdf_bytes,
+            file_name=safe_report_filename(payload),
+            mime="application/pdf",
+            key="download_assessment_report",
+            icon=":material/download:",
+        )
+        st.caption(f"Generated from the stored InterlockResult in {elapsed_ms:.1f} ms. Running a new assessment is not required.")
+    except Exception:
+        st.error("The assessment report could not be generated from this result.")
 
 
 def asset_data_uri(path: Path, mime_type: str) -> str | None:
@@ -337,6 +466,8 @@ def render_decision_pack(payload: dict[str, Any]) -> None:
         f'<div class="interlock-status-card {status_style}"><div class="interlock-status-label">{status_text}</div><div>{status_message}</div></div>',
         unsafe_allow_html=True,
     )
+    render_decision_summary(payload)
+    render_report_download(payload)
     stage_errors = as_dict(payload.get("stage_errors"))
     if stage_errors:
         failed_stage = payload.get("failure_stage") or next(iter(stage_errors), "workflow")
@@ -349,6 +480,8 @@ def render_decision_pack(payload: dict[str, Any]) -> None:
         project_columns[2].markdown(f"**Run**  \n{payload.get('run_id') or 'Not provided'}")
         if payload.get("generated_at"):
             st.caption(f"Assessment timestamp: {payload['generated_at']}")
+
+    render_finding_briefs(payload)
 
     summary_cards = (
         ("Findings", len(findings), "Structured findings returned"),
@@ -674,10 +807,13 @@ __all__ = [
     "render_assessment_intro",
     "render_brand_header",
     "render_decision_pack",
+    "render_decision_summary",
     "render_demo_run_summary",
     "render_evidence_view",
+    "render_finding_briefs",
     "render_home",
     "render_methodology",
+    "render_report_download",
     "render_sources",
     "source_label",
     "status_label",

@@ -2,7 +2,7 @@
 
 INTERLOCK is an early-stage decision-support platform for data-centre development. Its long-term purpose is to help a developer understand whether a development proposition is credible enough to progress, what could stop or delay it, what remains unknown, and what needs to happen next.
 
-## Current scope: Modules 1–10
+## Current scope: Modules 1–12
 
 Module 1 proves that a Streamlit frontend can communicate with a FastAPI backend and that both services can run with Docker Compose. Module 2 adds the structured developer project-input workflow. Module 3 converts that input into an in-memory evidence ledger. Module 4A adds deterministic raw-data inventory, validation, cleaning, provenance, and spatial standardisation. Module 4B adds deterministic site-level evidence queries over those processed outputs while retaining the Module 3 ledger and explicit limitations. Module 5A creates a deterministic, provenance-aware policy knowledge-base foundation. Module 5B adds authority-aware hybrid retrieval over that processed corpus without answer generation or project decisions.
 
@@ -175,6 +175,20 @@ statements, and a compact footer. It uses the approved local hero asset at
 `frontend/assets/interlock_hero.png` and the extracted Canavan Atlantic logos in
 `frontend/assets/`. The supplied UI screenshot remains design reference only
 and is never rendered as application content or a background.
+
+Completed assessments can also be downloaded as a deterministic PDF report
+from the stored `InterlockResult`; generating the report does not rerun the
+backend assessment.
+
+## Module 12 — Visual Decision Pack and assessment report
+
+The Decision Pack now opens with a compact, result-driven domain-state visual
+and truthful summary metrics for findings, unknown themes, dependencies,
+contradictions, and professional reviews. A completed result can be downloaded
+as a branded PDF containing the stored inputs, domain states, findings,
+unknowns, traceability, citations, methodology, limitations, and provenance.
+`UNKNOWN` remains explicit and non-alarmist, and no score or final project
+decision is created by the frontend.
 
 Run the frontend directly with:
 
