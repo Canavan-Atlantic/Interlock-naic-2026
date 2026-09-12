@@ -1,6 +1,7 @@
 """FastAPI entry point for the INTERLOCK backend."""
 
 import json
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
@@ -33,6 +34,7 @@ from .schemas.portfolio import (
     ProjectDetail,
     ProjectSummary,
 )
+from .schemas.comparison import AssessmentComparison
 from .db import init_db, session_scope
 from .db.repository import (
     create_or_get_project,
@@ -40,21 +42,21 @@ from .db.repository import (
     persist_successful_interlock_result,
     project_by_reference,
     project_detail,
+    project_run_by_reference,
     project_runs,
     run_by_id,
     run_response,
 )
+from .services.comparison import ComparisonDataError, build_assessment_comparison
 from .services.evidence import project_input_to_evidence_ledger
 from .services.site_evidence import SiteEvidenceOptions, evaluate_site
 from .services.rag.models import DocumentStatus, RAGDocument, RetrievalRequest, SourceClass
 from .services.rag.retrieval import IndexNotBuiltError, StaleIndexError, search_index
 
 
-app = FastAPI(title="INTERLOCK API", version="0.1.0")
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
-@app.on_event("startup")
 def initialize_database() -> None:
     """Prepare the portfolio schema before the API accepts requests."""
 
@@ -62,6 +64,17 @@ def initialize_database() -> None:
         init_db()
     except SQLAlchemyError as exc:
         raise RuntimeError("Application database initialization failed") from exc
+
+
+@asynccontextmanager
+async def app_lifespan(_: FastAPI):
+    """Initialize the portfolio schema using FastAPI's supported lifecycle API."""
+
+    initialize_database()
+    yield
+
+
+app = FastAPI(title="INTERLOCK API", version="0.1.0", lifespan=app_lifespan)
 
 
 @app.get("/health")
@@ -215,6 +228,44 @@ def get_projects() -> list[ProjectSummary]:
     try:
         with session_scope() as session:
             return list_projects(session)
+    except SQLAlchemyError as exc:
+        raise HTTPException(status_code=503, detail="Project portfolio database is unavailable.") from exc
+
+
+@app.get("/projects/{project_id}/compare", response_model=AssessmentComparison)
+def compare_project_runs(
+    project_id: str,
+    baseline_run_id: str = Query(..., min_length=1),
+    comparison_run_id: str = Query(..., min_length=1),
+) -> AssessmentComparison:
+    """Compare two stored runs without invoking the assessment workflow."""
+
+    if baseline_run_id == comparison_run_id:
+        raise HTTPException(status_code=400, detail="Choose two different assessment runs to compare")
+    try:
+        with session_scope() as session:
+            project = project_by_reference(session, project_id)
+            if project is None:
+                raise HTTPException(status_code=404, detail="Project not found")
+            baseline = project_run_by_reference(session, project.id, baseline_run_id)
+            comparison = project_run_by_reference(session, project.id, comparison_run_id)
+            if baseline is None or comparison is None:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Both assessment runs must exist and belong to the selected project",
+                )
+            baseline_payload = run_response(baseline).model_dump(mode="json")
+            comparison_payload = run_response(comparison).model_dump(mode="json")
+            return build_assessment_comparison(
+                baseline_payload,
+                comparison_payload,
+                project_id=project.id,
+                project_name=project.project_name,
+            )
+    except HTTPException:
+        raise
+    except ComparisonDataError as exc:
+        raise HTTPException(status_code=422, detail="Stored assessment data could not be compared safely") from exc
     except SQLAlchemyError as exc:
         raise HTTPException(status_code=503, detail="Project portfolio database is unavailable.") from exc
 

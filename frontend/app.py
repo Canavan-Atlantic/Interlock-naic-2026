@@ -5,7 +5,9 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import time
 from typing import Any
+from urllib.parse import quote, urlencode
 
 import requests
 import streamlit as st
@@ -29,9 +31,10 @@ from demo import (
     summarize_interlock_result,
 )
 from styles import inject_styles
+from report import render_comparison_report_pdf, safe_comparison_report_filename
 
 
-PAGE_NAMES = ("Home", "New Assessment", "Projects", "Decision Pack", "Evidence", "Methodology")
+PAGE_NAMES = ("Home", "New Assessment", "Projects", "Decision Pack", "Assessment Comparison", "Evidence", "Methodology")
 NAVIGATION_ITEMS = ("Home", "New Assessment", "Projects", "Data Layers", "Insights", "About")
 NAVIGATION_ROUTES = {
     "Home": "Home",
@@ -46,6 +49,7 @@ PAGE_TO_NAVIGATION = {
     "New Assessment": "New Assessment",
     "Projects": "Projects",
     "Decision Pack": "Projects",
+    "Assessment Comparison": "Projects",
     "Evidence": "Data Layers",
     "Methodology": "Insights",
 }
@@ -405,6 +409,8 @@ def _open_stored_run(api_base_url: str | None, run_id: str) -> None:
     st.session_state["active_run_id"] = stored.get("id")
     st.session_state["demo_run_summary"] = None
     st.session_state["project_portfolio_view"] = False
+    st.session_state["comparison_view"] = False
+    st.session_state["comparison_payload"] = None
     request_navigation("Decision Pack")
 
 
@@ -488,6 +494,8 @@ def render_projects_page(api_base_url: str | None) -> None:
             st.session_state["interlock_payload"] = None
             st.session_state["submitted_project_payload"] = None
             st.session_state["demo_run_summary"] = None
+            st.session_state["comparison_view"] = False
+            st.session_state["comparison_payload"] = None
             _reset_assessment_form()
             request_navigation("New Assessment")
         if st.button("Refresh", key="portfolio_refresh", icon=":material/refresh:"):
@@ -525,6 +533,8 @@ def render_projects_page(api_base_url: str | None) -> None:
             ):
                 st.session_state["active_project_id"] = item.get("id")
                 st.session_state["project_portfolio_view"] = True
+                st.session_state["comparison_view"] = False
+                st.session_state["comparison_payload"] = None
                 request_navigation("Projects")
 
 
@@ -539,6 +549,8 @@ def render_project_detail_page(api_base_url: str | None, project_id: str) -> Non
     if st.button("Back to portfolio", key="project_back_to_portfolio", icon=":material/arrow_back:"):
         st.session_state["active_project_id"] = None
         st.session_state["project_portfolio_view"] = True
+        st.session_state["comparison_view"] = False
+        st.session_state["comparison_payload"] = None
         request_navigation("Projects")
 
     st.markdown('<p class="interlock-section-kicker">Project detail</p>', unsafe_allow_html=True)
@@ -569,6 +581,8 @@ def render_project_detail_page(api_base_url: str | None, project_id: str) -> Non
                 _populate_assessment_form_from_context(as_dict(detail_payload.get("project_context")))
                 st.session_state["assessment_project_id"] = project_id
                 st.session_state["project_portfolio_view"] = False
+                st.session_state["comparison_view"] = False
+                st.session_state["comparison_payload"] = None
                 request_navigation("New Assessment")
     else:
         st.info("This project has no completed assessment run yet.")
@@ -593,6 +607,207 @@ def render_project_detail_page(api_base_url: str | None, project_id: str) -> Non
             )
             if st.button("Open assessment", key=f"project_open_run_{item.get('id')}"):
                 _open_stored_run(api_base_url, str(item.get("id")))
+
+    if len(runs_payload) >= 2:
+        st.markdown("#### Compare assessments")
+        st.caption("Select two stored runs to see what changed. The comparison uses historical data and does not rerun INTERLOCK.")
+        run_ids = [str(as_dict(item).get("id")) for item in runs_payload if as_dict(item).get("id")]
+        run_labels = {
+            str(as_dict(item).get("id")): (
+                f"{_format_portfolio_value(as_dict(item).get('created_at'))} · "
+                f"{_format_portfolio_value(as_dict(item).get('planned_power_mw'))} MW · "
+                f"{_format_portfolio_value(as_dict(item).get('interlock_run_id'))}"
+            )
+            for item in runs_payload
+            if as_dict(item).get("id")
+        }
+        baseline_key = f"comparison_baseline_{project_id}"
+        comparison_key = f"comparison_run_{project_id}"
+        if st.session_state.get(baseline_key) not in run_ids:
+            st.session_state[baseline_key] = run_ids[1]
+        if st.session_state.get(comparison_key) not in run_ids:
+            st.session_state[comparison_key] = run_ids[0]
+        selection_columns = st.columns(2)
+        with selection_columns[0]:
+            baseline_run_id = st.selectbox(
+                "Baseline assessment",
+                run_ids,
+                key=baseline_key,
+                format_func=lambda value: run_labels.get(value, value),
+            )
+        with selection_columns[1]:
+            comparison_run_id = st.selectbox(
+                "Compared assessment",
+                run_ids,
+                key=comparison_key,
+                format_func=lambda value: run_labels.get(value, value),
+            )
+        if st.button("Compare Assessments", key="compare_project_assessments", type="primary", icon=":material/compare_arrows:"):
+            if baseline_run_id == comparison_run_id:
+                st.error("Choose two different assessment runs to compare.")
+            else:
+                query = urlencode({"baseline_run_id": baseline_run_id, "comparison_run_id": comparison_run_id})
+                comparison_payload = _portfolio_get(
+                    api_base_url,
+                    f"/projects/{quote(project_id, safe='')}/compare?{query}",
+                )
+                if isinstance(comparison_payload, dict):
+                    st.session_state["comparison_payload"] = comparison_payload
+                    st.session_state["comparison_project_id"] = project_id
+                    st.session_state["comparison_view"] = True
+                    request_navigation("Assessment Comparison")
+
+
+def _comparison_item_text(item: dict[str, Any]) -> str:
+    """Render a concise, non-fabricated summary of a changed record."""
+
+    value = as_dict(item.get("comparison") or item.get("baseline"))
+    preferred = (
+        "domain", "status", "title", "summary", "description", "reason", "recommended_role",
+        "severity", "source_document_id", "source_path", "locator", "evidence_id", "dependency_id", "action_id",
+    )
+    parts: list[str] = []
+    for key in preferred:
+        if key in value and value.get(key) not in (None, "", []):
+            current = value.get(key)
+            if isinstance(current, list):
+                current = ", ".join(str(entry) for entry in current)
+            parts.append(f"{key.replace('_', ' ').title()}: {current}")
+    return " · ".join(parts) or "Record present in this assessment."
+
+
+def _render_comparison_section(title: str, section: dict[str, Any], *, removed_title: str = "Removed / resolved") -> None:
+    st.markdown(f"#### {title}")
+    groups = (
+        ("New", "added", "New items", "success"),
+        (removed_title, "removed", removed_title, "info"),
+        ("Changed", "changed", "Changed items", "warning"),
+    )
+    rendered_change = False
+    for label_text, key, caption_text, message_type in groups:
+        values = [as_dict(item) for item in as_list(section.get(key))]
+        if not values:
+            continue
+        rendered_change = True
+        st.markdown(f"**{label_text} ({len(values)})**")
+        for item in values:
+            with st.container(border=True):
+                st.markdown(f"**{_format_portfolio_value(item.get('label'))}**")
+                baseline = as_dict(item.get("baseline"))
+                comparison = as_dict(item.get("comparison"))
+                if baseline and comparison:
+                    st.caption(f"Baseline: {_comparison_item_text({'baseline': baseline})}")
+                    st.caption(f"Compared: {_comparison_item_text({'comparison': comparison})}")
+                else:
+                    st.caption(_comparison_item_text(item))
+    if not rendered_change:
+        st.caption("No added, removed or changed records were identified.")
+    st.caption(f"Unchanged: {section.get('unchanged_count', 0)}")
+
+
+def render_comparison_page() -> None:
+    """Render the customer-first comparison of two stored run snapshots."""
+
+    payload = as_dict(st.session_state.get("comparison_payload"))
+    if not payload:
+        st.info("Select two stored assessment runs from a project to compare them.")
+        return
+    if st.button("Back to project history", key="comparison_back_to_project", icon=":material/arrow_back:"):
+        st.session_state["comparison_view"] = False
+        st.session_state["project_portfolio_view"] = True
+        request_navigation("Projects")
+
+    st.markdown('<p class="interlock-section-kicker">Assessment comparison</p>', unsafe_allow_html=True)
+    st.markdown('<h1 class="interlock-section-title">What changed?</h1>', unsafe_allow_html=True)
+    st.markdown(
+        '<p class="interlock-section-copy">A neutral comparison of two stored INTERLOCK assessments. Differences are shown from the recorded data; no new assessment has been run.</p>',
+        unsafe_allow_html=True,
+    )
+    run_columns = st.columns(3)
+    with run_columns[0]:
+        st.markdown("**Baseline run**")
+        st.caption(_format_portfolio_value(payload.get("baseline_run_id")))
+        st.caption(f"{_format_portfolio_value(payload.get('baseline_timestamp'))} · {_format_portfolio_value(payload.get('baseline_workflow_status'))}")
+        st.metric("Planned power (MW)", _format_portfolio_value(payload.get("baseline_planned_power_mw")))
+    with run_columns[1]:
+        st.markdown("**Compared run**")
+        st.caption(_format_portfolio_value(payload.get("comparison_run_id")))
+        st.caption(f"{_format_portfolio_value(payload.get('comparison_timestamp'))} · {_format_portfolio_value(payload.get('comparison_workflow_status'))}")
+        st.metric("Planned power (MW)", _format_portfolio_value(payload.get("comparison_planned_power_mw")))
+    with run_columns[2]:
+        st.markdown("**Project**")
+        st.markdown(f"### {_format_portfolio_value(payload.get('project_name'))}")
+        st.caption("Stored comparison · no rerun")
+
+    summary = as_dict(payload.get("summary"))
+    metric_values = (
+        ("Input changes", summary.get("input_changes", 0)),
+        ("Domain changes", summary.get("domain_changes", 0)),
+        ("New findings", summary.get("new_findings", 0)),
+        ("Resolved unknowns", summary.get("resolved_unknowns", 0)),
+        ("New reviews", summary.get("new_reviews", 0)),
+        ("New actions", summary.get("new_actions", 0)),
+    )
+    metric_columns = st.columns(6)
+    for column, (label_text, value) in zip(metric_columns, metric_values):
+        with column:
+            st.metric(label_text, value)
+
+    st.markdown("### Inputs")
+    input_changes = as_dict(payload.get("input_changes"))
+    changed_inputs = [as_dict(item) for item in as_list(input_changes.get("changed"))]
+    if changed_inputs:
+        for item in changed_inputs:
+            with st.container(border=True):
+                st.markdown(f"**{_format_portfolio_value(item.get('label'))}**")
+                st.write(
+                    f"{_format_portfolio_value(item.get('previous_display'))}  →  "
+                    f"{_format_portfolio_value(item.get('comparison_display'))}"
+                )
+    else:
+        st.caption("No stored project input fields changed.")
+    with st.expander("Show unchanged inputs"):
+        unchanged_inputs = [as_dict(item) for item in as_list(input_changes.get("unchanged"))]
+        if unchanged_inputs:
+            for item in unchanged_inputs:
+                st.caption(f"{item.get('label')}: {item.get('previous_display')}")
+        else:
+            st.caption("No unchanged input fields were recorded.")
+
+    st.markdown("### Domains")
+    domain_changes = [as_dict(item) for item in as_list(payload.get("domain_changes"))]
+    for item in domain_changes:
+        with st.container(border=True):
+            state_columns = st.columns(4)
+            state_columns[0].markdown(f"**{_format_portfolio_value(item.get('label'))}**")
+            state_columns[1].metric("Baseline", _format_portfolio_value(item.get("baseline_state")))
+            state_columns[2].markdown("### →")
+            state_columns[3].metric("Compared", _format_portfolio_value(item.get("comparison_state")))
+            st.caption(_format_portfolio_value(item.get("change_kind")))
+
+    _render_comparison_section("Findings", as_dict(payload.get("finding_changes")))
+    _render_comparison_section("Unknowns", as_dict(payload.get("unknown_changes")), removed_title="Resolved / removed")
+    _render_comparison_section("Dependencies", as_dict(payload.get("dependency_changes")))
+    _render_comparison_section("Human reviews", as_dict(payload.get("human_review_changes")), removed_title="No longer required")
+    _render_comparison_section("Next actions", as_dict(payload.get("next_action_changes")))
+    _render_comparison_section("Evidence", as_dict(payload.get("evidence_changes")))
+    _render_comparison_section("Citations", as_dict(payload.get("citation_changes")))
+
+    try:
+        started = time.perf_counter()
+        pdf_bytes = render_comparison_report_pdf(payload)
+        elapsed_ms = (time.perf_counter() - started) * 1000
+        st.download_button(
+            "Download Comparison Report",
+            data=pdf_bytes,
+            file_name=safe_comparison_report_filename(payload),
+            mime="application/pdf",
+            key="download_comparison_report",
+            icon=":material/download:",
+        )
+        st.caption(f"Generated from the stored comparison in {elapsed_ms:.1f} ms. Running a new assessment is not required.")
+    except Exception:
+        st.error("The comparison report could not be generated from these stored runs.")
 
 
 def _ensure_assessment_form_state() -> None:
@@ -794,10 +1009,16 @@ for key in (
     "active_project_id",
     "active_run_id",
     "assessment_project_id",
+    "comparison_project_id",
+    "comparison_baseline_run_id",
+    "comparison_run_id",
+    "comparison_payload",
 ):
     st.session_state.setdefault(key, None)
 if st.session_state.get("project_portfolio_view") is None:
     st.session_state["project_portfolio_view"] = False
+if st.session_state.get("comparison_view") is None:
+    st.session_state["comparison_view"] = False
 
 pending_navigation = st.session_state.pop("pending_navigation", None)
 if pending_navigation in PAGE_NAMES:
@@ -822,11 +1043,16 @@ selected_navigation = st.pills(
 if not selected_navigation:
     selected_navigation = st.session_state["active_navigation"]
 
+if selected_navigation != "Projects" and st.session_state.get("comparison_view"):
+    st.session_state["comparison_view"] = False
+
 if selected_navigation == "Projects":
     # Preserve the established post-assessment Decision Pack landing state,
     # while allowing the explicit portfolio view to open independently.
     active_page = (
-        "Projects"
+        "Assessment Comparison"
+        if st.session_state.get("comparison_view") and st.session_state.get("comparison_payload")
+        else "Projects"
         if st.session_state.get("project_portfolio_view") or not st.session_state.get("interlock_payload")
         else "Decision Pack"
     )
@@ -860,6 +1086,8 @@ elif active_page == "Decision Pack":
         st.info("Start a new assessment to generate a traceable INTERLOCK result.")
         if st.button("Start a new site assessment", type="primary", icon=":material/arrow_forward:"):
             request_navigation("New Assessment")
+elif active_page == "Assessment Comparison":
+    render_comparison_page()
 elif active_page == "Evidence":
     render_evidence_page(api_base_url)
 else:

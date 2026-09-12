@@ -172,6 +172,15 @@ def run_by_id(session: Session, run_id: str) -> AssessmentRun | None:
     return session.scalar(select(AssessmentRun).where(AssessmentRun.interlock_run_id == run_id))
 
 
+def project_run_by_reference(session: Session, project_id: str, run_reference: str) -> AssessmentRun | None:
+    """Resolve a run reference only when it belongs to the selected project."""
+
+    run = run_by_id(session, run_reference)
+    if run is None or run.project_id != project_id:
+        return None
+    return run
+
+
 def run_response(run: AssessmentRun) -> AssessmentRunResponse:
     return AssessmentRunResponse(
         **_run_summary(run).model_dump(),
@@ -231,6 +240,7 @@ __all__ = [
     "project_by_id",
     "project_by_reference",
     "project_detail",
+    "project_run_by_reference",
     "project_runs",
     "run_by_id",
     "run_response",

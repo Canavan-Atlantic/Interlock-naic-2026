@@ -2,7 +2,7 @@
 
 INTERLOCK is an early-stage decision-support platform for data-centre development. Its long-term purpose is to help a developer understand whether a development proposition is credible enough to progress, what could stop or delay it, what remains unknown, and what needs to happen next.
 
-## Current scope: Modules 1–13
+## Current scope: Modules 1–14
 
 Module 1 proves that a Streamlit frontend can communicate with a FastAPI backend and that both services can run with Docker Compose. Module 2 adds the structured developer project-input workflow. Module 3 converts that input into an in-memory evidence ledger. Module 4A adds deterministic raw-data inventory, validation, cleaning, provenance, and spatial standardisation. Module 4B adds deterministic site-level evidence queries over those processed outputs while retaining the Module 3 ledger and explicit limitations. Module 5A creates a deterministic, provenance-aware policy knowledge-base foundation. Module 5B adds authority-aware hybrid retrieval over that processed corpus without answer generation or project decisions.
 
@@ -315,6 +315,38 @@ Manual persistence acceptance flow:
 4. Open the older run and download its report; this must not call `POST /interlock/run`.
 5. Create or assess a second project and confirm it has an independent history.
 6. Run `docker compose restart`, reopen Projects, and confirm both projects and all runs remain.
+
+## Module 14 — Scenario and assessment comparison
+
+Module 14 compares two immutable Module 13 assessment snapshots on demand. The
+comparison reads only the stored submitted `ProjectContext` and full
+`InterlockResult` JSON; it never invokes `/interlock/run`, an Evidence Agent,
+retrieval, an LLM, scoring, or recommendations.
+
+The comparison endpoint is:
+
+```text
+GET /projects/{project_id}/compare?baseline_run_id=...&comparison_run_id=...
+```
+
+It returns deterministic input differences, domain-state transitions, finding,
+unknown, dependency, professional-review, next-action, evidence-ID and
+citation changes. Stable identifiers are preferred for matching. Records with
+no safe identity are conservatively classified as added or removed rather than
+fuzzy-matched. Missing inputs remain `Unknown / Not provided`.
+
+The Project Detail page defaults to the two most recent stored runs when at
+least two exist. `Compare Assessments` opens a customer-first `What changed?`
+view, and `Download Comparison Report` renders a PDF directly from the stored
+comparison model. The report includes both run IDs, timestamps, input changes,
+domain states, record changes, evidence/citation changes, methodology and run
+provenance. It does not create a numerical score or unsupported final project
+decision.
+
+Comparison is calculated on demand, so no comparison table or duplicate copy of
+the stored `InterlockResult` is added to PostgreSQL. The primary workflow is
+same-project run comparison; cross-project/site-option comparison remains a
+future extension.
 
 Stop the services with:
 

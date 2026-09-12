@@ -24,6 +24,7 @@ except ImportError:  # Streamlit executes frontend/app.py as a top-level script.
 
 
 REPORT_VERSION = "1.0"
+COMPARISON_REPORT_VERSION = "1.0"
 PAGE_WIDTH = 595
 PAGE_HEIGHT = 842
 MARGIN = 48
@@ -270,6 +271,53 @@ def render_assessment_report_pdf(payload: dict[str, Any]) -> bytes:
     return pdf_bytes
 
 
+def build_comparison_report_view_model(payload: dict[str, Any]) -> dict[str, Any]:
+    """Create a bounded report model from the stored comparison response."""
+
+    if not isinstance(payload, dict):
+        raise ValueError("Comparison report payload must be a JSON object")
+    model = {
+        "report_version": _text(payload.get("report_version"), COMPARISON_REPORT_VERSION),
+        "project_id": _text(payload.get("project_id"), "Not provided"),
+        "project_name": _text(payload.get("project_name"), "Unnamed project"),
+        "baseline_run_id": _text(payload.get("baseline_run_id"), "Not provided"),
+        "comparison_run_id": _text(payload.get("comparison_run_id"), "Not provided"),
+        "baseline_interlock_run_id": _text(payload.get("baseline_interlock_run_id"), "Not provided"),
+        "comparison_interlock_run_id": _text(payload.get("comparison_interlock_run_id"), "Not provided"),
+        "baseline_timestamp": _text(payload.get("baseline_timestamp"), "Not provided"),
+        "comparison_timestamp": _text(payload.get("comparison_timestamp"), "Not provided"),
+        "baseline_workflow_status": _text(payload.get("baseline_workflow_status"), "UNKNOWN"),
+        "comparison_workflow_status": _text(payload.get("comparison_workflow_status"), "UNKNOWN"),
+        "baseline_planned_power_mw": payload.get("baseline_planned_power_mw"),
+        "comparison_planned_power_mw": payload.get("comparison_planned_power_mw"),
+        "generated_at": _text(payload.get("generated_at"), "Not provided"),
+        "summary": _as_dict(payload.get("summary")),
+        "input_changes": _as_dict(payload.get("input_changes")),
+        "domain_changes": _as_list(payload.get("domain_changes")),
+        "finding_changes": _as_dict(payload.get("finding_changes")),
+        "unknown_changes": _as_dict(payload.get("unknown_changes")),
+        "dependency_changes": _as_dict(payload.get("dependency_changes")),
+        "human_review_changes": _as_dict(payload.get("human_review_changes")),
+        "next_action_changes": _as_dict(payload.get("next_action_changes")),
+        "evidence_changes": _as_dict(payload.get("evidence_changes")),
+        "citation_changes": _as_dict(payload.get("citation_changes")),
+    }
+    return model
+
+
+def render_comparison_report_pdf(payload: dict[str, Any]) -> bytes:
+    """Render a comparison PDF from stored comparison data only."""
+
+    model = build_comparison_report_view_model(payload)
+    document = fitz.open()
+    writer = _PdfWriter(document)
+    _draw_comparison_cover(writer.page, model)
+    _draw_comparison_report_sections(writer, model)
+    pdf_bytes = document.tobytes(garbage=4, deflate=True)
+    document.close()
+    return pdf_bytes
+
+
 def safe_report_filename(payload: dict[str, Any]) -> str:
     """Return a filesystem-safe, human-readable download name."""
 
@@ -280,6 +328,14 @@ def safe_report_filename(payload: dict[str, Any]) -> str:
     date_match = re.search(r"(\d{4}-\d{2}-\d{2})", generated)
     date_text = date_match.group(1) if date_match else "undated"
     return f"INTERLOCK_{safe_project}_{date_text}.pdf"
+
+
+def safe_comparison_report_filename(payload: dict[str, Any]) -> str:
+    """Return a filesystem-safe name for a comparison report."""
+
+    project = _text(payload.get("project_name") or payload.get("project_id"), "INTERLOCK_comparison")
+    safe_project = re.sub(r"[^A-Za-z0-9]+", "_", project).strip("_") or "INTERLOCK_comparison"
+    return f"INTERLOCK_{safe_project}_comparison.pdf"
 
 
 def _draw_cover(page: fitz.Page, model: dict[str, Any]) -> None:
@@ -306,6 +362,169 @@ def _draw_cover(page: fitz.Page, model: dict[str, Any]) -> None:
     page.insert_text((MARGIN + 20, 511), f"Run ID  ·  {model['run_id']}", fontsize=8.8, fontname="helv", color=(0.78, 0.9, 0.9))
     page.insert_text((MARGIN, 760), "People. Places. Possibilities.", fontsize=9, fontname="hebo", color=(0.62, 0.91, 0.88))
     page.insert_text((MARGIN, 787), f"Generated from stored InterlockResult  ·  Report version {REPORT_VERSION}", fontsize=7.5, fontname="helv", color=(0.71, 0.83, 0.84))
+
+
+def _draw_comparison_cover(page: fitz.Page, model: dict[str, Any]) -> None:
+    page.draw_rect(fitz.Rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT), color=None, fill=NAVY)
+    if WHITE_LOGO_PATH.is_file():
+        page.insert_image(fitz.Rect(MARGIN, 54, MARGIN + 165, 104), filename=str(WHITE_LOGO_PATH), keep_proportion=True)
+    else:
+        page.insert_text((MARGIN, 86), "CANAVAN ATLANTIC", fontsize=16, fontname="hebo", color=(1, 1, 1))
+    page.insert_text((MARGIN, 178), "INTERLOCK", fontsize=12, fontname="hebo", color=(0.62, 0.91, 0.88))
+    page.insert_text((MARGIN, 222), "Assessment Comparison", fontsize=29, fontname="hebo", color=(1, 1, 1))
+    page.insert_textbox(
+        fitz.Rect(MARGIN, 247, PAGE_WIDTH - MARGIN, 305),
+        "A deterministic comparison of two stored historical assessments. It describes differences without inventing causes, rankings or project decisions.",
+        fontsize=12,
+        fontname="helv",
+        color=(0.88, 0.96, 0.96),
+        lineheight=1.3,
+    )
+    page.draw_rect(fitz.Rect(MARGIN, 365, PAGE_WIDTH - MARGIN, 560), color=(0.2, 0.39, 0.43), fill=(0.04, 0.27, 0.33), width=0.7)
+    page.insert_text((MARGIN + 20, 402), _truncate(model["project_name"], 66), fontsize=18, fontname="hebo", color=(1, 1, 1))
+    page.insert_text((MARGIN + 20, 438), "Baseline run", fontsize=8.5, fontname="hebo", color=(0.62, 0.91, 0.88))
+    page.insert_text((MARGIN + 20, 458), _truncate(model["baseline_run_id"], 75), fontsize=9.2, fontname="helv", color=(0.78, 0.9, 0.9))
+    page.insert_text((MARGIN + 20, 478), f"{model['baseline_timestamp']}  ·  {model['baseline_workflow_status']}  ·  {model['baseline_planned_power_mw']} MW", fontsize=8.2, fontname="helv", color=(0.78, 0.9, 0.9))
+    page.insert_text((MARGIN + 20, 516), "Compared run", fontsize=8.5, fontname="hebo", color=(0.62, 0.91, 0.88))
+    page.insert_text((MARGIN + 20, 536), _truncate(model["comparison_run_id"], 75), fontsize=9.2, fontname="helv", color=(0.78, 0.9, 0.9))
+    page.insert_text((MARGIN + 20, 556), f"{model['comparison_timestamp']}  ·  {model['comparison_workflow_status']}  ·  {model['comparison_planned_power_mw']} MW", fontsize=8.2, fontname="helv", color=(0.78, 0.9, 0.9))
+    page.insert_text((MARGIN, 760), "People. Places. Possibilities.", fontsize=9, fontname="hebo", color=(0.62, 0.91, 0.88))
+    page.insert_text((MARGIN, 787), f"Generated from stored assessment runs  ·  Report version {COMPARISON_REPORT_VERSION}", fontsize=7.5, fontname="helv", color=(0.71, 0.83, 0.84))
+
+
+def _draw_comparison_report_sections(writer: _PdfWriter, model: dict[str, Any]) -> None:
+    summary = model["summary"]
+    writer.new_body_page()
+    writer.heading("01", "Executive change summary")
+    writer.paragraph(
+        "These differences are present between the two stored assessments. The comparison does not rerun INTERLOCK and does not infer a causal explanation unless the stored structured data itself records one."
+    )
+    summary_cards = (
+        ("Input changes", summary.get("input_changes", 0)),
+        ("Domain changes", summary.get("domain_changes", 0)),
+        ("New findings", summary.get("new_findings", 0)),
+        ("Resolved unknowns", summary.get("resolved_unknowns", 0)),
+        ("New reviews", summary.get("new_reviews", 0)),
+        ("New actions", summary.get("new_actions", 0)),
+    )
+    for title, count in summary_cards:
+        writer.card(title, str(count), accent=TEAL)
+    writer.paragraph(
+        f"Baseline run: {model['baseline_run_id']}  ·  Compared run: {model['comparison_run_id']}",
+        color=MUTED,
+        size=8.5,
+    )
+
+    writer.heading("02", "Project input changes")
+    inputs = model["input_changes"]
+    changed_inputs = _as_list(inputs.get("changed"))
+    if changed_inputs:
+        for item in changed_inputs:
+            value = f"{_text(item.get('previous_display'), 'Unknown / Not provided')}  →  {_text(item.get('comparison_display'), 'Unknown / Not provided')}"
+            writer.card(_text(item.get("label"), "Changed input"), value, accent=TEAL)
+    else:
+        writer.paragraph("No stored project input fields changed.", color=MUTED)
+    writer.paragraph(f"Unchanged inputs: {inputs.get('unchanged_count', 0)}. Missing values remain Unknown / Not provided.", color=MUTED, size=8.5)
+
+    writer.heading("03", "Domain status changes")
+    domains = _as_list(model.get("domain_changes"))
+    if domains:
+        for item in domains:
+            body = f"{_text(item.get('baseline_state'), 'NOT_ASSESSED')}  →  {_text(item.get('comparison_state'), 'NOT_ASSESSED')}\n{_text(item.get('change_kind'), 'UNCHANGED')}"
+            writer.card(_text(item.get("label"), "Domain"), body, accent=_status_color(item.get("comparison_state")))
+    else:
+        writer.paragraph("No structured domain findings were available in either run.", color=MUTED)
+
+    _draw_change_report_section(writer, "04", "Finding changes", model["finding_changes"], "Finding")
+    _draw_change_report_section(writer, "05", "Unknown changes", model["unknown_changes"], "Unknown")
+    _draw_change_report_section(writer, "06", "Dependency changes", model["dependency_changes"], "Dependency")
+    _draw_change_report_section(writer, "07", "Professional review changes", model["human_review_changes"], "Professional review")
+    _draw_change_report_section(writer, "08", "Next-action changes", model["next_action_changes"], "Next action")
+
+    writer.heading("09", "Evidence and citation changes")
+    _draw_change_report_section_items(writer, "Evidence", model["evidence_changes"], "Evidence")
+    _draw_change_report_section_items(writer, "Citations", model["citation_changes"], "Citation")
+    writer.paragraph("Only stable evidence IDs and source identifiers are compared. Large policy or project-document text is not duplicated in this report.", color=MUTED, size=8.5)
+
+    writer.heading("10", "Methodology and limitations")
+    writer.paragraph("This comparison is calculated on demand from the two immutable Module 13 snapshots: submitted ProjectContext JSON and full InterlockResult JSON. It does not invoke /interlock/run, an Evidence Agent, retrieval, an LLM, or a numerical ranking function.")
+    writer.bullet("Finding, unknown, dependency, action and review records are matched by their stable IDs where available.")
+    writer.bullet("Records without a safe stable identity are treated conservatively as added/removed rather than being fuzzy-matched.")
+    writer.bullet("A state transition is reported neutrally; no numerical readiness measure or unsupported final project decision is created.")
+
+    writer.heading("11", "Run provenance")
+    writer.label_value("Project ID", model["project_id"])
+    writer.label_value("Baseline run ID", model["baseline_run_id"])
+    writer.label_value("Baseline INTERLOCK run ID", model["baseline_interlock_run_id"])
+    writer.label_value("Baseline timestamp", model["baseline_timestamp"])
+    writer.label_value("Compared run ID", model["comparison_run_id"])
+    writer.label_value("Compared INTERLOCK run ID", model["comparison_interlock_run_id"])
+    writer.label_value("Compared timestamp", model["comparison_timestamp"])
+    writer.label_value("Comparison generated at", model["generated_at"])
+
+
+def _draw_change_report_section(
+    writer: _PdfWriter,
+    number: str,
+    title: str,
+    section: dict[str, Any],
+    fallback_title: str,
+) -> None:
+    writer.heading(number, title)
+    _draw_change_report_subsection(writer, "New", section, "added", fallback_title, TEAL)
+    _draw_change_report_subsection(writer, "Removed / resolved", section, "removed", fallback_title, BLUE)
+    _draw_change_report_subsection(writer, "Changed", section, "changed", fallback_title, AMBER)
+    writer.paragraph(f"Unchanged: {section.get('unchanged_count', 0)}", color=MUTED, size=8.5)
+
+
+def _draw_change_report_subsection(
+    writer: _PdfWriter,
+    title: str,
+    section: dict[str, Any],
+    key: str | None = None,
+    fallback_title: str = "Change",
+    accent: tuple[float, float, float] = TEAL,
+) -> None:
+    values = _as_list(section.get(key)) if key else []
+    if key and values:
+        writer.paragraph(title, color=TEAL, size=8.5, gap=3)
+        for item in values:
+            writer.card(_text(item.get("label"), fallback_title), _comparison_item_body(item), accent=accent)
+    elif key and not values:
+        writer.paragraph(f"{title}: none recorded.", color=MUTED, size=8.2, gap=4)
+
+
+def _draw_change_report_section_items(
+    writer: _PdfWriter,
+    title: str,
+    section: dict[str, Any],
+    fallback_title: str,
+) -> None:
+    writer.paragraph(title, color=TEAL, size=8.5, gap=3)
+    _draw_change_report_subsection(writer, "New", section, "added", fallback_title, TEAL)
+    _draw_change_report_subsection(writer, "Removed", section, "removed", fallback_title, BLUE)
+    _draw_change_report_subsection(writer, "Changed", section, "changed", fallback_title, AMBER)
+    writer.paragraph(f"Unchanged: {section.get('unchanged_count', 0)}", color=MUTED, size=8.2, gap=4)
+
+
+def _comparison_item_body(item: dict[str, Any]) -> str:
+    baseline = _as_dict(item.get("baseline"))
+    comparison = _as_dict(item.get("comparison"))
+    if baseline and comparison:
+        fields = item.get("changed_fields") or []
+        return f"Baseline: {_compact_comparison_value(baseline)}\nCompared: {_compact_comparison_value(comparison)}" + (f"\nChanged fields: {', '.join(str(field) for field in fields)}" if fields else "")
+    value = comparison or baseline
+    return _compact_comparison_value(value)
+
+
+def _compact_comparison_value(value: dict[str, Any]) -> str:
+    parts: list[str] = []
+    for key, item in value.items():
+        if key in {"evidence_ids", "finding_ids", "dependency_ids", "citation_ids"} and isinstance(item, list):
+            parts.append(f"{key}: {', '.join(str(ref) for ref in item)}")
+        elif key not in {"identity", "matchable"}:
+            parts.append(f"{key.replace('_', ' ')}: {_text(item, 'Unknown / Not provided')}")
+    return "\n".join(parts) or "Record present."
 
 
 def _draw_report_sections(writer: _PdfWriter, model: dict[str, Any]) -> None:
@@ -544,4 +763,13 @@ def _as_list(value: object) -> list[Any]:
     return value if isinstance(value, list) else []
 
 
-__all__ = ["REPORT_VERSION", "build_assessment_report_view_model", "render_assessment_report_pdf", "safe_report_filename"]
+__all__ = [
+    "COMPARISON_REPORT_VERSION",
+    "REPORT_VERSION",
+    "build_assessment_report_view_model",
+    "build_comparison_report_view_model",
+    "render_assessment_report_pdf",
+    "render_comparison_report_pdf",
+    "safe_comparison_report_filename",
+    "safe_report_filename",
+]
