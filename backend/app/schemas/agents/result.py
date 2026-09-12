@@ -17,6 +17,7 @@ from .common import (
 from .evidence import EvidenceBundle
 from .explanation import ExplanationResult
 from .planning import InvestigationPlan
+from .stage import StageIntelligence
 
 
 class InterlockResult(ContractModel):
@@ -30,6 +31,7 @@ class InterlockResult(ContractModel):
     # Planning is provenance only.  It cannot replace the deterministic
     # assessment or explanation contracts and contains no decision fields.
     investigation_plan: InvestigationPlan | None = None
+    stage_intelligence: StageIntelligence | None = None
     workflow_status: WorkflowStatus = WorkflowStatus.UNKNOWN
     human_reviews: list[HumanReviewRequest] = Field(default_factory=list)
     requires_human_review: bool = False

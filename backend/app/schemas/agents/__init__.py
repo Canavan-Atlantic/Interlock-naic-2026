@@ -43,6 +43,7 @@ from .planning import (
     ToolRequest,
 )
 from .result import InterlockResult
+from .stage import StageIntelligence, StageRequirement, StageRequirementStatus
 
 __all__ = [
     "AGENT_CONTRACT_VERSION",
@@ -71,6 +72,9 @@ __all__ = [
     "HumanReviewSeverity",
     "HumanReviewStatus",
     "InterlockResult",
+    "StageIntelligence",
+    "StageRequirement",
+    "StageRequirementStatus",
     "InvestigationItem",
     "InvestigationPlan",
     "InvestigationPriority",
