@@ -23,7 +23,7 @@ except ImportError:  # Streamlit executes frontend/app.py as a top-level script.
     from result_summary import assessment_domain_state_summary, summarize_interlock_result
 
 
-REPORT_VERSION = "1.0"
+REPORT_VERSION = "1.1"
 COMPARISON_REPORT_VERSION = "1.0"
 PAGE_WIDTH = 595
 PAGE_HEIGHT = 842
@@ -136,6 +136,7 @@ def build_assessment_report_view_model(payload: dict[str, Any]) -> dict[str, Any
         if item is not None
     ]
     planning = _as_dict(payload.get("investigation_plan"))
+    stage_intelligence = _as_dict(payload.get("stage_intelligence"))
     return {
         "report_version": REPORT_VERSION,
         "project": {
@@ -146,6 +147,8 @@ def build_assessment_report_view_model(payload: dict[str, Any]) -> dict[str, Any
             "lifecycle_status": _text(context.get("project_lifecycle_status"), "Not provided"),
             "stage": _text(context.get("project_stage"), "Not provided"),
             "address": _text(location.get("address"), "Not provided"),
+            "latitude": location.get("latitude"),
+            "longitude": location.get("longitude"),
             "jurisdiction": _text(location.get("jurisdiction") or location.get("country"), "Not provided"),
             "local_authority": _text(location.get("local_authority"), "Not provided"),
             "planned_power_mw": _display_value(context.get("planned_power_mw")),
@@ -182,6 +185,12 @@ def build_assessment_report_view_model(payload: dict[str, Any]) -> dict[str, Any
             "model": _text(planning.get("model"), "Not used"),
             "selected_domains": [_text(item) for item in _as_list(planning.get("selected_domains"))],
             "approved_tool_count": len(_as_list(planning.get("tool_requests"))),
+            "approved_request_count": len(_as_list(planning.get("tool_requests"))),
+            "approved_tool_types": sorted({
+                _text(_as_dict(item).get("tool"))
+                for item in _as_list(planning.get("tool_requests"))
+                if _as_dict(item).get("tool")
+            }),
             "rejected_request_count": len(_as_list(planning.get("rejected_requests"))),
             "fallback_reason": _text(planning.get("fallback_reason"), "Not applicable"),
             "planner_duration_ms": planning.get("planner_duration_ms", 0),
@@ -190,6 +199,12 @@ def build_assessment_report_view_model(payload: dict[str, Any]) -> dict[str, Any
             "output_tokens": _as_dict(planning.get("token_usage")).get("output_tokens"),
         },
         "summary": summary,
+        "stage_intelligence": stage_intelligence,
+        "required_to_progress": [
+            _as_dict(item)
+            for item in _as_list(stage_intelligence.get("required_to_progress"))
+            if _as_dict(item).get("status") == "REQUIRED_TO_PROGRESS"
+        ],
         "provenance": {
             "schema_version": _text(payload.get("schema_version"), "Not provided"),
             "stage_status": _as_dict(payload.get("stage_status")),
@@ -541,7 +556,7 @@ def _compact_comparison_value(value: dict[str, Any]) -> str:
     return "\n".join(parts) or "Record present."
 
 
-def _draw_report_sections(writer: _PdfWriter, model: dict[str, Any]) -> None:
+def _draw_technical_appendix_legacy(writer: _PdfWriter, model: dict[str, Any]) -> None:
     writer.new_body_page()
     writer.heading("01", "Executive summary")
     writer.paragraph(model["executive_summary"], size=11, gap=12)
@@ -679,7 +694,8 @@ def _draw_report_sections(writer: _PdfWriter, model: dict[str, Any]) -> None:
         writer.bullet("Deterministic evidence-planning fallback selected the existing broad evidence workflow because bounded model planning was not used or was unavailable.")
     writer.label_value("Planning mode", planning["mode"])
     writer.label_value("Planner model", planning["model"])
-    writer.label_value("Approved evidence tools", planning["approved_tool_count"])
+    writer.label_value("Approved evidence requests", planning["approved_request_count"])
+    writer.label_value("Approved tool types", ", ".join(planning["approved_tool_types"]) or "Not provided")
     writer.label_value("Planner duration (ms)", planning["planner_duration_ms"])
     writer.label_value("Plan validation duration (ms)", planning["validation_duration_ms"])
     writer.label_value("Planner input tokens", planning["input_tokens"] if planning["input_tokens"] is not None else "Not provided")
@@ -705,6 +721,97 @@ def _draw_report_sections(writer: _PdfWriter, model: dict[str, Any]) -> None:
         color=MUTED,
         size=8.2,
     )
+
+
+def _draw_report_sections(writer: _PdfWriter, model: dict[str, Any]) -> None:
+    """Draw a concise customer pack, then the existing traceable appendix."""
+
+    stage = model.get("stage_intelligence") or {}
+    summary = model["summary"]
+    writer.new_body_page()
+    writer.heading("01", "Executive decision summary")
+    writer.paragraph(model["executive_summary"], size=11, gap=10)
+    writer.card("Workflow status", model["workflow_status"], accent=_status_color(model["workflow_status"]))
+    writer.card("Project stage", _text(stage.get("stage") or model["project"].get("stage"), "Not provided"), accent=TEAL)
+    if stage.get("customer_question"):
+        writer.paragraph(f"Customer question: {stage['customer_question']}", color=TEAL, size=9.5)
+    writer.paragraph(
+        f"Recorded scope: {summary.get('finding_count', 0)} findings, "
+        f"{summary.get('unknown_theme_count', 0)} information-required themes, "
+        f"{summary.get('human_review_count', 0)} professional review requests.",
+        color=MUTED,
+        size=8.7,
+    )
+    if model["requires_human_review"]:
+        writer.paragraph("Human review required is a workflow state, not a failure or a final project decision.", color=AMBER, size=8.7)
+
+    writer.heading("02", "Visual domain summary")
+    _draw_domain_summary(writer, model["domains"])
+    writer.paragraph("Domain states are the structured assessment states returned by INTERLOCK. No unsupported numeric outcome is created.", color=MUTED, size=8.2)
+
+    writer.new_body_page()
+    writer.heading("03", "Map / spatial context")
+    project = model["project"]
+    writer.label_value("Address", project["address"])
+    writer.label_value("Latitude", _text(project.get("latitude"), "Not provided"))
+    writer.label_value("Longitude", _text(project.get("longitude"), "Not provided"))
+    writer.paragraph("The Streamlit map uses only coordinates stored in the project or deterministic GIS evidence. A missing geometry remains missing; proximity does not establish grid capacity, MIC, connection or approval.", color=MUTED, size=8.7)
+    writer.heading("04", "Key findings")
+    for finding in model["findings"][:5]:
+        body = f"Status: {finding['status']}"
+        if finding.get("narrative"):
+            body += f"\n{_truncate(finding['narrative'], 420)}"
+        elif finding.get("decision_impact"):
+            body += f"\n{_truncate(finding['decision_impact'], 420)}"
+        if finding.get("evidence_ids"):
+            body += "\nEvidence IDs: " + ", ".join(finding["evidence_ids"])
+        writer.card(f"{finding['domain']}  ·  {finding['finding_id']}", body, accent=_status_color(finding["status"]))
+    if len(model["findings"]) > 5:
+        writer.paragraph(f"Showing 5 of {len(model['findings'])} findings in the executive pack. Full findings are in the technical appendix.", color=MUTED, size=8.2)
+
+    writer.new_body_page()
+    writer.heading("05", "Required to progress")
+    requirements = model["required_to_progress"]
+    if not requirements:
+        writer.paragraph("No additional stage-specific information is recorded as required.", color=MUTED)
+    for item in requirements[:5]:
+        body = f"{_text(item.get('why_required'), 'The current evidence does not resolve this item.')}\nNext: {_text(item.get('next_step'), 'Confirm the related evidence.')}"
+        if item.get("owner"):
+            body += f"\nOwner: {item['owner']}"
+        writer.card(_text(item.get("label"), "Additional information"), body, accent=AMBER)
+    if len(requirements) > 5:
+        writer.paragraph(f"Showing 5 of {len(requirements)} required items. Full closure detail is in the appendix.", color=MUTED, size=8.2)
+
+    writer.heading("06", "Next actions and professional review")
+    for action in model["actions"][:5]:
+        body = _text(action.get("rationale"), "Resolve the related evidence gap before relying on this point.")
+        roles = [_text(role) for role in _as_list(action.get("specialist_roles"))]
+        if roles:
+            body += "\nOwner: " + ", ".join(roles)
+        writer.card(_text(action.get("title"), "Next action"), body, accent=TEAL)
+    for review in model["reviews"][:5]:
+        item = _as_dict(review)
+        writer.card(
+            f"{_display_enum(item.get('recommended_role'), 'Specialist review')}  ·  {_display_enum(item.get('domain'), 'UNKNOWN')}",
+            _text(item.get("reason"), "Review the related evidence."),
+            accent=AMBER,
+        )
+
+    writer.heading("07", "Evidence summary and key citations")
+    writer.paragraph(f"The stored result contains {len(model['source_records'])} evidence records. Full identifiers and technical provenance are retained in the appendix.", color=MUTED, size=8.7)
+    for citation in model["citations"][:6]:
+        writer.card(
+            f"{citation['document_id']}  ·  {citation['locator']}",
+            f"Source path: {citation['source_path']}",
+            accent=TEAL,
+        )
+    if len(model["citations"]) > 6:
+        writer.paragraph(f"Showing 6 of {len(model['citations'])} citations in the executive pack. Full citations are in the appendix.", color=MUTED, size=8.2)
+
+    writer.new_body_page()
+    writer.heading("A", "Technical / audit appendix")
+    writer.paragraph("The following section retains the detailed result, evidence identifiers, citations, workflow warnings and planner telemetry for reviewability. It is not the customer-facing decision narrative.", color=MUTED, size=8.7)
+    _draw_technical_appendix_legacy(writer, model)
 
 
 def _draw_domain_summary(writer: _PdfWriter, domains: list[dict[str, Any]]) -> None:

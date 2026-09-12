@@ -478,6 +478,11 @@ def render_decision_pack(payload: dict[str, Any]) -> None:
     _render_primary_actions(payload)
     if payload.get("requires_human_review"):
         st.info("Human review required is a workflow state, not an application failure or a final project decision.")
+    planning = as_dict(payload.get("investigation_plan"))
+    if planning:
+        planning_mode = str(planning.get("planning_mode") or "UNKNOWN")
+        planning_label = "Bounded intelligent orchestration" if planning_mode == "BOUNDED_LLM" and planning.get("llm_used") else "Deterministic evidence-planning fallback"
+        st.caption(f"{planning_label} · {len(as_list(planning.get('selected_domains')))} domains · {len(as_list(planning.get('tool_requests')))} approved evidence requests")
     render_report_download(payload)
 
     if st.checkbox("Show evidence, provenance and technical detail", key="decision_pack_detail"):
