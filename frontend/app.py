@@ -29,6 +29,7 @@ from demo import (
     DEMO_PROJECT_ID,
     DEMO_PROJECT_METADATA,
     DEMO_PROJECT_PRESET,
+    DEMO_PROJECT_STAGE_PRESETS,
     DEMO_PROJECT_PRESET_NAME,
     summarize_interlock_result,
 )
@@ -253,6 +254,16 @@ def render_assessment_page(api_base_url: str | None) -> None:
     ):
         _load_demo_project()
         st.rerun()
+    if st.session_state.get("demo_preset_loaded") or st.session_state.get("demo_stage_selector"):
+        selected_demo_stage = st.selectbox(
+            "Canonical demo stage",
+            options=list(DEMO_PROJECT_STAGE_PRESETS),
+            key="demo_stage_selector",
+            help="Load one of the three real-input canonical Blanchardstown scenarios. Loading a preset does not start an assessment.",
+        )
+        if st.button("Load selected demo stage", key="load_demo_stage", icon=":material/timeline:"):
+            _load_demo_project(selected_demo_stage)
+            st.rerun()
     if st.session_state.get("demo_preset_loaded"):
         st.info(f"{DEMO_PROJECT_PRESET_NAME} loaded. Review and edit the prepared inputs before running.")
     with st.form("project_input_form", border=True):
@@ -706,7 +717,6 @@ def _render_comparison_section(title: str, section: dict[str, Any], *, removed_t
                     st.caption(_comparison_item_text(item))
     if not rendered_change:
         st.caption("No added, removed or changed records were identified.")
-    st.caption(f"Unchanged: {section.get('unchanged_count', 0)}")
 
 
 def render_comparison_page() -> None:
@@ -721,7 +731,7 @@ def render_comparison_page() -> None:
         st.session_state["project_portfolio_view"] = True
         request_navigation("Projects")
 
-    st.markdown('<p class="interlock-section-kicker">Assessment comparison</p>', unsafe_allow_html=True)
+    st.markdown('<p class="interlock-section-kicker">Historical run comparison</p>', unsafe_allow_html=True)
     st.markdown('<h1 class="interlock-section-title">What changed?</h1>', unsafe_allow_html=True)
     st.markdown(
         '<p class="interlock-section-copy">A neutral comparison of two stored INTERLOCK assessments. Differences are shown from the recorded data; no new assessment has been run.</p>',
@@ -757,6 +767,20 @@ def render_comparison_page() -> None:
         with column:
             st.metric(label_text, value)
 
+    material_keys = (
+        "domain_changes", "new_findings", "resolved_unknowns", "new_reviews", "new_actions",
+        "changed_findings", "changed_unknowns", "changed_dependencies", "changed_reviews", "changed_actions",
+    )
+    if not any(int(summary.get(key, 0) or 0) for key in material_keys):
+        baseline_power = _format_portfolio_value(payload.get("baseline_planned_power_mw"))
+        comparison_power = _format_portfolio_value(payload.get("comparison_planned_power_mw"))
+        changed_inputs = as_dict(payload.get("input_changes")).get("changed", [])
+        power_changed = any("power" in str(as_dict(item).get("field_path") or "").casefold() for item in as_list(changed_inputs))
+        if power_changed:
+            st.info(f"No material assessment impact was produced by the current rule set. Planned power changed from {baseline_power} to {comparison_power}, but no stored finding, requirement or domain state changed.")
+        else:
+            st.info("No material assessment impact was produced by the current rule set. No stored finding, requirement or domain state changed.")
+
     st.markdown("### Inputs")
     input_changes = as_dict(payload.get("input_changes"))
     changed_inputs = [as_dict(item) for item in as_list(input_changes.get("changed"))]
@@ -779,7 +803,13 @@ def render_comparison_page() -> None:
             st.caption("No unchanged input fields were recorded.")
 
     st.markdown("### Domains")
-    domain_changes = [as_dict(item) for item in as_list(payload.get("domain_changes"))]
+    domain_changes = [
+        as_dict(item)
+        for item in as_list(payload.get("domain_changes"))
+        if str(as_dict(item).get("change_kind") or "").upper() != "UNCHANGED"
+    ]
+    if not domain_changes:
+        st.caption("No material domain state changes are shown. Unchanged domains are hidden from the initial view.")
     for item in domain_changes:
         with st.container(border=True):
             state_columns = st.columns(4)
@@ -835,7 +865,7 @@ def _ensure_assessment_form_state() -> None:
         st.session_state.setdefault(key, value)
 
 
-def _load_demo_project() -> None:
+def _load_demo_project(stage: str | None = None) -> None:
     text_fields = {
         "project_name",
         "development_type",
@@ -844,7 +874,8 @@ def _load_demo_project() -> None:
         "energy_strategy",
         "project_phasing_notes",
     }
-    for key, value in DEMO_PROJECT_PRESET.items():
+    preset = DEMO_PROJECT_STAGE_PRESETS.get(stage or "Early Feasibility", DEMO_PROJECT_PRESET)
+    for key, value in preset.items():
         st.session_state[key] = "" if key in text_fields and value is None else value
     st.session_state["project_evidence_mode"] = DEMO_PROJECT_EVIDENCE_MODE
     st.session_state["demo_preset_loaded"] = True
