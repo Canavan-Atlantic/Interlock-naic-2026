@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 from streamlit.testing.v1 import AppTest
 
 from backend.app.agents.orchestrator import DeterministicInterlockOrchestrator, OrchestratorOptions
@@ -115,9 +116,10 @@ class _FakeClient:
 
 
 def test_valid_plan_uses_only_approved_rag_gis_and_project_tools() -> None:
+    client = _FakeClient(_valid_payload())
     planner = BoundedInvestigationPlanner(
         settings=PlannerSettings(mode="bounded_llm", model="test-model"),
-        client=_FakeClient(_valid_payload()),
+        client=client,
     )
 
     plan = planner.plan(_context())
@@ -133,6 +135,7 @@ def test_valid_plan_uses_only_approved_rag_gis_and_project_tools() -> None:
     assert plan.token_usage is not None
     assert plan.token_usage.input_tokens == 321
     assert plan.token_usage.output_tokens == 87
+    assert client.responses.calls[0]["max_output_tokens"] == 4096
 
 
 def test_plan_validation_rejects_unknown_tool_domain_url_and_rule_override() -> None:
@@ -210,11 +213,40 @@ def test_api_failure_and_malformed_response_fall_back_without_content_logging(ca
     ).plan(_context())
 
     assert failed.planning_mode == PlanningMode.DETERMINISTIC_FALLBACK
-    assert failed.fallback_reason == "PROVIDER_RUNTIMEERROR"
-    assert malformed.fallback_reason == "MALFORMED_MODEL_RESPONSE"
+    assert failed.fallback_reason == "UNKNOWN_PROVIDER_ERROR"
+    assert malformed.fallback_reason == "STRUCTURED_OUTPUT_ERROR"
     assert "sk-secret" not in caplog.text
     assert "complete policy text" not in caplog.text
     assert "Ignore policy" not in caplog.text
+
+
+def test_structured_output_validation_failure_is_categorized_without_content_logging(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    class InvalidResponses:
+        def parse(self, **_: object) -> object:
+            try:
+                from backend.app.schemas.agents import InvestigationPlan
+
+                InvestigationPlan.model_validate_json("{")
+            except ValidationError as exc:
+                raise exc
+            raise AssertionError("expected structured-output validation error")
+
+    class InvalidClient:
+        responses = InvalidResponses()
+
+    caplog.set_level("INFO")
+    plan = BoundedInvestigationPlanner(
+        settings=PlannerSettings(mode="bounded_llm", model="gpt-5.5"),
+        client=InvalidClient(),
+    ).plan(_context())
+
+    assert plan.planning_mode == PlanningMode.DETERMINISTIC_FALLBACK
+    assert plan.fallback_reason == "STRUCTURED_OUTPUT_ERROR"
+    assert plan.model == "gpt-5.5"
+    assert "sk-test-not-for-prompt" not in caplog.text
+    assert "prompt_injection" not in caplog.text
 
 
 def test_planner_prompt_contains_canonical_context_but_not_raw_untrusted_blobs() -> None:

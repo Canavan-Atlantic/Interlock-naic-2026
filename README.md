@@ -371,9 +371,13 @@ Missing keys, provider failures, malformed plans, unsafe requests, or an
 explicit `deterministic`/`deterministic_fallback` mode produce a truthful
 `DETERMINISTIC_FALLBACK` plan and continue the existing workflow. Planning
 provenance records selected domains/tools, rejected request categories,
-fallback status, safe timings, and optional provider token counts without
+fallback status categories, safe timings, and optional provider token counts without
 storing prompts, document text, API keys, or chain-of-thought. The Decision
 Pack and report expose only a compact methodology indicator.
+
+The bounded planner uses a configurable `INTERLOCK_ORCHESTRATOR_MAX_OUTPUT_TOKENS`
+budget (default `4096`) so structured plans have sufficient output headroom;
+provider and structured-output failures remain bounded safe fallback categories.
 
 The planner receives a sanitized canonical project context and capability
 descriptions, not raw retrieved documents. No new database table or dataset

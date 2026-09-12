@@ -186,6 +186,8 @@ def build_assessment_report_view_model(payload: dict[str, Any]) -> dict[str, Any
             "fallback_reason": _text(planning.get("fallback_reason"), "Not applicable"),
             "planner_duration_ms": planning.get("planner_duration_ms", 0),
             "validation_duration_ms": planning.get("validation_duration_ms", 0),
+            "input_tokens": _as_dict(planning.get("token_usage")).get("input_tokens"),
+            "output_tokens": _as_dict(planning.get("token_usage")).get("output_tokens"),
         },
         "summary": summary,
         "provenance": {
@@ -676,9 +678,14 @@ def _draw_report_sections(writer: _PdfWriter, model: dict[str, Any]) -> None:
     else:
         writer.bullet("Deterministic evidence-planning fallback selected the existing broad evidence workflow because bounded model planning was not used or was unavailable.")
     writer.label_value("Planning mode", planning["mode"])
+    writer.label_value("Planner model", planning["model"])
     writer.label_value("Approved evidence tools", planning["approved_tool_count"])
     writer.label_value("Planner duration (ms)", planning["planner_duration_ms"])
     writer.label_value("Plan validation duration (ms)", planning["validation_duration_ms"])
+    writer.label_value("Planner input tokens", planning["input_tokens"] if planning["input_tokens"] is not None else "Not provided")
+    writer.label_value("Planner output tokens", planning["output_tokens"] if planning["output_tokens"] is not None else "Not provided")
+    if planning["fallback_reason"] != "Not applicable":
+        writer.label_value("Fallback reason", planning["fallback_reason"])
     writer.bullet("Domain groupings are presentation groupings only; combined groups retain the most cautionary state among their actual source domains.")
     if model["constraints"]:
         writer.paragraph("Recorded constraints", color=TEAL, size=8.5, gap=3)

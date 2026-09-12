@@ -492,6 +492,7 @@ def render_decision_pack(payload: dict[str, Any]) -> None:
                     "fallback_reason": planning.get("fallback_reason") or "Not applicable",
                     "planner_duration_ms": planning.get("planner_duration_ms", 0),
                     "validation_duration_ms": planning.get("validation_duration_ms", 0),
+                    "token_usage": as_dict(planning.get("token_usage")),
                 }
             )
     render_decision_summary(payload)

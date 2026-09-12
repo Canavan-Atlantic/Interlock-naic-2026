@@ -45,6 +45,29 @@ _PROMPT_MODIFICATION_RE = re.compile(
 )
 _UNSAFE_QUERY_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
 _MAX_QUERY_CHARS = 500
+_DEFAULT_MAX_OUTPUT_TOKENS = 4096
+_MAX_OUTPUT_TOKENS_LIMIT = 8192
+
+_PLANNING_FAILURE_CATEGORIES = {
+    "MALFORMED_MODEL_RESPONSE": "STRUCTURED_OUTPUT_ERROR",
+    "STRUCTURED_OUTPUT_UNAVAILABLE": "STRUCTURED_OUTPUT_ERROR",
+    "EMPTY_OR_INVALID_PLAN": "PLAN_VALIDATION_FAILED",
+    "MALFORMED_VALIDATED_PLAN": "PLAN_VALIDATION_FAILED",
+    "OPENAI_CLIENT_UNAVAILABLE": "CONFIGURATION_ERROR",
+}
+_PROVIDER_FAILURE_CATEGORIES = {
+    "APITimeoutError": "TIMEOUT",
+    "TimeoutException": "TIMEOUT",
+    "APIConnectionError": "CONNECTION_ERROR",
+    "RateLimitError": "RATE_LIMITED",
+    "AuthenticationError": "AUTHENTICATION_ERROR",
+    "PermissionDeniedError": "PERMISSION_ERROR",
+    "NotFoundError": "MODEL_UNAVAILABLE",
+    "BadRequestError": "API_ERROR",
+    "UnprocessableEntityError": "API_ERROR",
+    "InternalServerError": "API_ERROR",
+    "APIStatusError": "API_ERROR",
+}
 
 _POLICY_DOMAINS: tuple[Domain, ...] = (
     Domain.GRID,
@@ -105,7 +128,7 @@ class PlannerSettings:
     mode: str = "bounded_llm"
     model: str = "gpt-5.5"
     timeout_seconds: float = 30.0
-    max_output_tokens: int = 1800
+    max_output_tokens: int = _DEFAULT_MAX_OUTPUT_TOKENS
 
     @classmethod
     def from_environment(cls) -> "PlannerSettings":
@@ -115,7 +138,22 @@ class PlannerSettings:
             timeout = max(1.0, min(float(os.getenv("INTERLOCK_ORCHESTRATOR_TIMEOUT_SECONDS", "30")), 120.0))
         except ValueError:
             timeout = 30.0
-        return cls(mode=mode, model=model, timeout_seconds=timeout)
+        try:
+            max_output_tokens = max(
+                1024,
+                min(
+                    int(os.getenv("INTERLOCK_ORCHESTRATOR_MAX_OUTPUT_TOKENS", str(_DEFAULT_MAX_OUTPUT_TOKENS))),
+                    _MAX_OUTPUT_TOKENS_LIMIT,
+                ),
+            )
+        except ValueError:
+            max_output_tokens = _DEFAULT_MAX_OUTPUT_TOKENS
+        return cls(
+            mode=mode,
+            model=model,
+            timeout_seconds=timeout,
+            max_output_tokens=max_output_tokens,
+        )
 
 
 class PlanningValidationError(ValueError):
@@ -193,6 +231,7 @@ def _fallback_plan(
     *,
     include_project_documents: bool,
     reason_code: str,
+    model: str | None = None,
     rejected_requests: list[PlanRejection] | None = None,
     duration_ms: float = 0.0,
 ) -> InvestigationPlan:
@@ -279,6 +318,7 @@ def _fallback_plan(
         project_id=context.project_id,
         planning_mode=PlanningMode.DETERMINISTIC_FALLBACK,
         llm_used=False,
+        model=model,
         selected_domains=domains,
         investigation_items=items,
         tool_requests=requests,
@@ -288,6 +328,20 @@ def _fallback_plan(
         planner_duration_ms=duration_ms,
         total_duration_ms=duration_ms,
     )
+
+
+def _safe_planning_failure_reason(reason_code: str) -> str:
+    """Return a bounded, non-content-bearing planning failure category."""
+
+    return _PLANNING_FAILURE_CATEGORIES.get(reason_code, reason_code[:80])
+
+
+def _safe_provider_failure_reason(error: BaseException) -> str:
+    """Categorize provider failures without serializing exception payloads."""
+
+    if isinstance(error, ValidationError):
+        return "STRUCTURED_OUTPUT_ERROR"
+    return _PROVIDER_FAILURE_CATEGORIES.get(type(error).__name__, "UNKNOWN_PROVIDER_ERROR")
 
 
 def _text_is_safe(value: Any) -> bool:
@@ -645,6 +699,7 @@ class BoundedInvestigationPlanner:
                 context,
                 include_project_documents=include_project_documents,
                 reason_code="INVALID_ORCHESTRATOR_MODE",
+                model=self.settings.model,
                 duration_ms=round((perf_counter() - started) * 1000, 3),
             )
 
@@ -681,25 +736,41 @@ class BoundedInvestigationPlanner:
                 }
             )
         except PlanningValidationError as exc:
-            reason = exc.reason_code
-            LOGGER.info("bounded investigation planning fell back (%s)", reason)
+            reason = _safe_planning_failure_reason(exc.reason_code)
+            duration_ms = round((perf_counter() - started) * 1000, 3)
+            LOGGER.info(
+                "bounded investigation planning fell back (mode=%s model=%s reason=%s duration_ms=%s)",
+                mode,
+                self.settings.model,
+                reason,
+                duration_ms,
+            )
             return _fallback_plan(
                 context,
                 include_project_documents=include_project_documents,
                 reason_code=reason,
+                model=self.settings.model,
                 rejected_requests=exc.rejections,
-                duration_ms=round((perf_counter() - started) * 1000, 3),
+                duration_ms=duration_ms,
             )
         except Exception as exc:
             # Provider/authentication/timeout/SDK failures must not stop the
-            # deterministic assessment pipeline.  Log only the exception type.
-            reason = f"PROVIDER_{type(exc).__name__.upper()}"
-            LOGGER.info("bounded investigation planning fell back (%s)", reason)
+            # deterministic assessment pipeline. Log only bounded safe fields.
+            reason = _safe_provider_failure_reason(exc)
+            duration_ms = round((perf_counter() - started) * 1000, 3)
+            LOGGER.info(
+                "bounded investigation planning fell back (mode=%s model=%s reason=%s duration_ms=%s)",
+                mode,
+                self.settings.model,
+                reason,
+                duration_ms,
+            )
             return _fallback_plan(
                 context,
                 include_project_documents=include_project_documents,
-                reason_code=reason[:80],
-                duration_ms=round((perf_counter() - started) * 1000, 3),
+                reason_code=reason,
+                model=self.settings.model,
+                duration_ms=duration_ms,
             )
 
 
