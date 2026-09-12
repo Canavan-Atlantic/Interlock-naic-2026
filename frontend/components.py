@@ -738,24 +738,114 @@ def render_evidence_view(payload: dict[str, Any] | None) -> None:
                 unsafe_allow_html=True,
             )
     st.caption(f"Current run: {payload.get('run_id') or 'Not provided'} · {len(records)} evidence records")
-    render_sources(as_dict(payload.get("explanation_result")), evidence)
-    with st.expander("Developer / Debug Inspection", icon=":material/bug_report:"):
-        if records:
-            st.dataframe(
-                [
-                    {
-                        "Evidence ID": item.get("evidence_id"),
-                        "Domain": label(item.get("domain"), DOMAIN_LABELS),
-                        "Source type": source_label(item),
-                        "State": label(item.get("evidence_state")),
-                        "Finding": item.get("finding") or item.get("fact"),
-                    }
-                    for item in records
-                ],
-                hide_index=True,
+    render_map_first_view(payload, key_prefix="layers")
+    domains = ["All"] + sorted({label(item.get("domain"), DOMAIN_LABELS) for item in records})
+    sources = ["All"] + sorted({source_label(item) for item in records})
+    filter_columns = st.columns(3)
+    selected_domain = filter_columns[0].selectbox("Domain", domains, key="evidence_domain_filter")
+    selected_source = filter_columns[1].selectbox("Source class", sources, key="evidence_source_filter")
+    page_size = filter_columns[2].selectbox("Records per page", [5, 10, 20], index=1, key="evidence_page_size")
+    filtered = [
+        item for item in records
+        if (selected_domain == "All" or label(item.get("domain"), DOMAIN_LABELS) == selected_domain)
+        and (selected_source == "All" or source_label(item) == selected_source)
+    ]
+    page_count = max(1, (len(filtered) + page_size - 1) // page_size)
+    page = st.number_input("Evidence page", min_value=1, max_value=page_count, value=1, step=1, key="evidence_page")
+    start = (int(page) - 1) * page_size
+    page_records = filtered[start : start + page_size]
+    st.caption(f"Showing {len(page_records)} of {len(filtered)} matching records · page {page} of {page_count}")
+    if not page_records:
+        st.info("No evidence records match the selected filters.")
+    for item in page_records:
+        title = f"{label(item.get('domain'), DOMAIN_LABELS)} · {item.get('evidence_id') or 'Evidence record'}"
+        with st.expander(title, expanded=False):
+            st.markdown(
+                f"**State:** {label(item.get('evidence_state'))}  "
+                f"\n**Source:** {source_label(item)}"
             )
-        else:
-            st.caption("No evidence records returned.")
+            st.write(item.get("finding") or item.get("fact") or "Structured evidence record.")
+            st.caption(f"Source reference: {item.get('source_document_id') or item.get('source_name') or 'Not provided'}")
+            st.caption(f"Maturity: {_evidence_maturity(item)}")
+    with st.expander("Citations and provenance", expanded=False):
+        render_sources(as_dict(payload.get("explanation_result")), evidence)
+    with st.expander("Developer / Debug Inspection", icon=":material/bug_report:"):
+        st.caption("Technical inspection is paginated to keep the primary evidence view responsive.")
+        st.dataframe(
+            [
+                {
+                    "Evidence ID": item.get("evidence_id"),
+                    "Domain": label(item.get("domain"), DOMAIN_LABELS),
+                    "Source type": source_label(item),
+                    "State": label(item.get("evidence_state")),
+                    "Maturity": _evidence_maturity(item),
+                }
+                for item in page_records
+            ],
+            hide_index=True,
+        )
+
+
+def _evidence_maturity(record: dict[str, Any]) -> str:
+    """Map provenance to a display category without increasing certainty."""
+
+    created_by = str(record.get("created_by") or "UNKNOWN")
+    trust = str(record.get("source_trust") or "UNKNOWN")
+    state = str(record.get("evidence_state") or "UNKNOWN")
+    if created_by == "DEVELOPER_INPUT":
+        return "Developer Input"
+    if created_by == "DETERMINISTIC_GIS":
+        return "Deterministic Derived Evidence"
+    if trust == "AUTHORITATIVE_POLICY":
+        return "Observed / Authoritative Evidence"
+    if state in {"UNKNOWN", "NOT_PROVIDED"} or record.get("human_review_required"):
+        return "Confirmation Required"
+    return "Assumption / Contextual Evidence"
+
+
+def _render_maturity(payload: dict[str, Any]) -> None:
+    records = [as_dict(item) for item in as_list(as_dict(payload.get("evidence_bundle")).get("records"))]
+    counts: dict[str, int] = defaultdict(int)
+    for record in records:
+        counts[_evidence_maturity(record)] += 1
+    st.markdown("#### Evidence maturity")
+    st.caption("Maturity describes provenance and closure needs; it does not convert context into a confirmed fact.")
+    columns = st.columns(5)
+    for column, title in zip(columns, ("Developer Input", "Observed / Authoritative Evidence", "Deterministic Derived Evidence", "Assumption / Contextual Evidence", "Confirmation Required")):
+        with column:
+            st.metric(title, counts.get(title, 0))
+
+
+def render_insights(payload: dict[str, Any] | None) -> None:
+    st.markdown('<p class="interlock-section-kicker">Insights</p>', unsafe_allow_html=True)
+    st.markdown('<h1 class="interlock-section-title">Project intelligence at a glance.</h1>', unsafe_allow_html=True)
+    if not payload:
+        st.info("Run an assessment to populate project-specific insights.")
+        return
+    stage = as_dict(payload.get("stage_intelligence"))
+    if stage:
+        st.markdown(f"**{stage.get('customer_question') or 'Assessment question not provided'}**")
+        st.caption(stage.get("purpose") or "Stage purpose not provided.")
+    render_decision_summary(payload)
+    _render_maturity(payload)
+    _render_required_to_progress(payload, limit=5)
+
+
+def render_about() -> None:
+    st.markdown('<p class="interlock-section-kicker">About INTERLOCK</p>', unsafe_allow_html=True)
+    st.markdown('<h1 class="interlock-section-title">Evidence before confidence.</h1>', unsafe_allow_html=True)
+    st.markdown('<p class="interlock-section-copy">INTERLOCK helps development teams understand what is evidenced, what is constrained, what remains unknown and what should happen next.</p>', unsafe_allow_html=True)
+    topics = [
+        ("Controlled workflow", "Project inputs are validated, evidence is gathered, deterministic assessment rules run, and the result is explained and persisted."),
+        ("AI within guardrails", "Bounded intelligent orchestration may select approved evidence questions. It does not replace deterministic evidence or assessment rules."),
+        ("Evidence-first", "Developer inputs, deterministic GIS, policy retrieval and project evidence remain identifiable by provenance."),
+        ("Human accountability", "Grid, planning, environmental, legal and developer reviews remain visible where specialist confirmation is required."),
+        ("Important limitations", "Unknown means unknown. Nearby infrastructure does not prove capacity. INTERLOCK does not create a readiness score or an Advance, Hold, Reconfigure or Stop decision."),
+    ]
+    for title, copy in topics:
+        with st.container(border=True):
+            st.markdown(f"**{title}**")
+            st.write(copy)
 
 
 def render_methodology() -> None:
@@ -793,6 +883,8 @@ __all__ = [
     "render_finding_briefs",
     "render_home",
     "render_methodology",
+    "render_insights",
+    "render_about",
     "render_report_download",
     "render_sources",
     "source_label",

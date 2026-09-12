@@ -17,6 +17,8 @@ from components import (
     as_list,
     render_decision_pack,
     render_evidence_view,
+    render_insights,
+    render_about,
     render_brand_header,
     render_home,
     render_methodology,
@@ -34,15 +36,15 @@ from styles import inject_styles
 from report import render_comparison_report_pdf, safe_comparison_report_filename
 
 
-PAGE_NAMES = ("Home", "New Assessment", "Projects", "Decision Pack", "Assessment Comparison", "Evidence", "Methodology")
+PAGE_NAMES = ("Home", "New Assessment", "Projects", "Decision Pack", "Assessment Comparison", "Evidence", "Insights", "About", "Methodology")
 NAVIGATION_ITEMS = ("Home", "New Assessment", "Projects", "Data Layers", "Insights", "About")
 NAVIGATION_ROUTES = {
     "Home": "Home",
     "New Assessment": "New Assessment",
     "Projects": "Projects",
     "Data Layers": "Evidence",
-    "Insights": "Methodology",
-    "About": "Methodology",
+    "Insights": "Insights",
+    "About": "About",
 }
 PAGE_TO_NAVIGATION = {
     "Home": "Home",
@@ -51,7 +53,9 @@ PAGE_TO_NAVIGATION = {
     "Decision Pack": "Projects",
     "Assessment Comparison": "Projects",
     "Evidence": "Data Layers",
-    "Methodology": "Insights",
+    "Insights": "Insights",
+    "About": "About",
+    "Methodology": "About",
 }
 
 
@@ -1067,7 +1071,7 @@ if active_page == "Home":
     if start_clicked:
         request_navigation("New Assessment")
     if explore_clicked:
-        request_navigation("Methodology")
+        request_navigation("About")
 elif active_page == "New Assessment":
     render_assessment_page(api_base_url)
 elif active_page == "Projects":
@@ -1090,5 +1094,7 @@ elif active_page == "Assessment Comparison":
     render_comparison_page()
 elif active_page == "Evidence":
     render_evidence_page(api_base_url)
+elif active_page == "Insights":
+    render_insights(st.session_state.get("interlock_payload"))
 else:
-    render_methodology()
+    render_about()
