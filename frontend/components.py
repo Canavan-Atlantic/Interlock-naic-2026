@@ -2,18 +2,48 @@
 
 from __future__ import annotations
 
+import base64
+import html
+import time
 from collections import defaultdict
+from pathlib import Path
 from typing import Any
 
 import streamlit as st
 
+try:
+    from .report import render_assessment_report_pdf, safe_report_filename
+    from .result_summary import assessment_domain_state_summary, summarize_interlock_result
+except ImportError:  # Streamlit executes frontend/app.py as a top-level script.
+    from report import render_assessment_report_pdf, safe_report_filename
+    from result_summary import assessment_domain_state_summary, summarize_interlock_result
+
 
 SOURCE_LABELS = {
-    "DEVELOPER_INPUT": "Developer provided",
-    "DETERMINISTIC_GIS": "Public / GIS evidence",
-    "RAG_RETRIEVAL": "Authoritative policy",
-    "PROJECT_DOCUMENT": "Project evidence",
-    "AI_EXTRACTION": "Extracted project evidence",
+    "DEVELOPER_INPUT": "Developer Provided",
+    "DETERMINISTIC_GIS": "Public / GIS Evidence",
+    "RAG_RETRIEVAL": "Supporting Policy",
+    "PROJECT_DOCUMENT": "Project Evidence",
+    "AI_EXTRACTION": "Project Evidence",
+}
+
+HERO_ASSET_PATH = Path(__file__).with_name("assets") / "interlock_hero.png"
+LOGO_ASSET_PATH = Path(__file__).with_name("assets") / "canavan_atlantic_logo.png"
+WHITE_LOGO_ASSET_PATH = Path(__file__).with_name("assets") / "canavan_atlantic_logo_white.png"
+HERO_GRADIENT = (
+    "linear-gradient(90deg, rgba(2, 49, 63, 0.97) 0%, "
+    "rgba(2, 55, 67, 0.88) 28%, rgba(2, 55, 67, 0.55) 43%, "
+    "rgba(2, 55, 67, 0.18) 58%, rgba(0, 0, 0, 0.02) 72%)"
+)
+
+LINE_ICONS = {
+    "leaf": '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M38 8C22 9 11 17 11 30c0 5 4 9 9 9 13 0 21-11 18-31Z"/><path d="M10 40c5-10 12-16 24-23"/></svg>',
+    "layers": '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="m24 7 17 10-17 10L7 17 24 7Z"/><path d="m10 25 14 8 14-8"/><path d="m10 34 14 8 14-8"/></svg>',
+    "chart": '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M8 41h33"/><path d="M13 36V25h7v11M24 36V16h7v20M35 36V9h7v27"/></svg>',
+    "shield": '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 6c6 5 11 6 17 7v11c0 10-7 16-17 20C14 40 7 34 7 24V13c6-1 11-2 17-7Z"/></svg>',
+    "folder": '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M7 14h13l4 4h17v22H7V14Z"/><path d="M7 19h34"/></svg>',
+    "search": '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="21" cy="21" r="12"/><path d="m30 30 11 11"/></svg>',
+    "document": '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M11 6h19l8 8v28H11V6Z"/><path d="M30 6v9h8M17 23h15M17 30h15M17 37h10"/></svg>',
 }
 
 ROLE_LABELS = {
@@ -68,8 +98,8 @@ def source_label(record: dict[str, Any]) -> str:
     created_by = str(record.get("created_by") or "UNKNOWN")
     source_class = str(record.get("source_class") or record.get("authority_class") or "")
     if created_by == "RAG_RETRIEVAL" and source_class in {"PRIMARY", "CURATED"}:
-        return "Authoritative policy"
-    return SOURCE_LABELS.get(created_by, "Supporting evidence")
+        return "Authoritative Policy"
+    return SOURCE_LABELS.get(created_by, "Supporting Policy")
 
 
 def status_class(text: str) -> str:
@@ -89,101 +119,305 @@ def status_label(workflow_status: str) -> tuple[str, str]:
     }.get(workflow_status, ("Assessment status unavailable", "review"))
 
 
-def render_topbar(active_page: str) -> str:
-    """Render the branded identity; navigation is owned by the caller."""
+def render_decision_summary(payload: dict[str, Any]) -> None:
+    """Render the compact result summary before the detailed assessment sections."""
 
+    summary = summarize_interlock_result(payload)
+    workflow_status = str(summary.get("workflow_status") or "UNKNOWN")
+    status_text, _ = status_label(workflow_status)
+    domains = assessment_domain_state_summary(payload)
+    nodes = "".join(
+        f'<div class="interlock-domain-node status-{html.escape(str(item["state"]).casefold())}">'
+        f'<span class="interlock-domain-ring" aria-hidden="true"></span>'
+        f'<strong>{html.escape(str(item["label"]))}</strong>'
+        f'<small>{html.escape(str(item["state"]).replace("_", " "))}</small></div>'
+        for item in domains
+    )
+    if not nodes:
+        nodes = '<p class="interlock-domain-empty">No structured domain findings were returned by the assessment stage.</p>'
+    st.markdown("#### Decision summary")
     st.markdown(
-        '<div class="interlock-topbar"><div class="interlock-brand-wordmark">INTERLOCK</div>'
-        '<div class="interlock-brand-caption">Canavan Atlantic · Development intelligence</div></div>',
+        f'<div class="interlock-domain-visual"><div class="interlock-domain-centre">'
+        f'<span>WORKFLOW RESULT</span><strong>{html.escape(status_text.upper())}</strong>'
+        f'<small>No unsupported project outcome is inferred.</small></div>'
+        f'<div class="interlock-domain-nodes">{nodes}</div></div>',
         unsafe_allow_html=True,
     )
-    return active_page
+    if domains:
+        st.caption("Domain states: " + " · ".join(f"{item['label']} — {item['state']}" for item in domains))
+    st.caption(
+        "UNKNOWN means INTERLOCK does not have sufficient verified evidence to reach a reliable conclusion. "
+        "Combined groups show the most cautionary state actually returned for their source domains."
+    )
+    metrics = (
+        ("Findings", summary.get("finding_count", 0)),
+        ("Conditional / constrained", summary.get("conditional_or_constrained_finding_count", 0)),
+        ("Unknown themes", summary.get("unknown_theme_count", 0)),
+        ("Dependencies", summary.get("dependency_count", 0)),
+        ("Contradictions", summary.get("contradiction_count", 0)),
+        ("Professional reviews", summary.get("human_review_count", 0)),
+    )
+    columns = st.columns(6)
+    for column, (title, value) in zip(columns, metrics):
+        with column:
+            st.metric(title, value)
+
+
+def render_finding_briefs(payload: dict[str, Any]) -> None:
+    """Render structured finding context without adding conclusions."""
+
+    assessment = as_dict(payload.get("assessment_result"))
+    explanation = as_dict(payload.get("explanation_result"))
+    findings = [as_dict(item) for item in as_list(assessment.get("findings"))]
+    key_findings = as_list(explanation.get("key_findings"))
+    reviews = [as_dict(item) for item in as_list(payload.get("human_reviews"))]
+    actions = [as_dict(item) for item in as_list(explanation.get("next_action_plan"))]
+    if not findings:
+        return
+    narrative_by_id: dict[str, str] = {}
+    for value in key_findings:
+        text = str(value)
+        marker = "[finding:"
+        if marker in text:
+            finding_id = text.split(marker, 1)[1].split("]", 1)[0].strip()
+            narrative_by_id[finding_id] = text.split(" [finding:", 1)[0]
+    st.markdown("#### Findings at a glance")
+    for finding in findings:
+        finding_id = str(finding.get("finding_id") or "Finding")
+        domain = label(finding.get("domain"), DOMAIN_LABELS)
+        status = str(finding.get("status") or "UNKNOWN")
+        evidence_ids = [str(item) for item in as_list(finding.get("evidence_ids"))]
+        finding_reviews = [
+            review for review in reviews
+            if str(review.get("domain") or "") == str(finding.get("domain") or "")
+            or bool(set(evidence_ids).intersection(as_list(review.get("evidence_ids"))))
+        ]
+        finding_actions = [
+            action for action in actions
+            if finding_id in {str(item) for item in as_list(action.get("finding_ids"))}
+        ]
+        with st.container(border=True):
+            st.markdown(f"**{domain}** · <span class=\"interlock-pill {status_class(status)}\">{html.escape(status.replace('_', ' '))}</span>", unsafe_allow_html=True)
+            if narrative_by_id.get(finding_id):
+                st.write(narrative_by_id[finding_id])
+            if finding.get("decision_impact"):
+                st.caption(f"Why it matters: {finding['decision_impact']}")
+            if finding.get("constraint"):
+                st.caption(f"Constraint recorded: {finding['constraint']}")
+            unknowns = as_list(finding.get("material_unknowns"))
+            if unknowns:
+                st.caption("What remains unknown: " + "; ".join(str(item) for item in unknowns))
+            if evidence_ids:
+                st.caption("Supporting evidence: " + ", ".join(evidence_ids))
+            if finding_actions:
+                st.caption("Next action: " + "; ".join(str(item.get("title") or "Not established") for item in finding_actions))
+            if finding_reviews:
+                roles = [label(item.get("recommended_role"), ROLE_LABELS) for item in finding_reviews]
+                st.caption("Professional review required: " + ", ".join(dict.fromkeys(roles)))
+
+
+def render_report_download(payload: dict[str, Any]) -> None:
+    """Offer a PDF rendering of the stored result without calling the backend."""
+
+    workflow_status = str(payload.get("workflow_status") or "UNKNOWN")
+    if workflow_status not in {"COMPLETE", "REQUIRES_HUMAN_REVIEW"}:
+        return
+    try:
+        started = time.perf_counter()
+        pdf_bytes = render_assessment_report_pdf(payload)
+        elapsed_ms = (time.perf_counter() - started) * 1000
+        st.download_button(
+            "Download Assessment Report",
+            data=pdf_bytes,
+            file_name=safe_report_filename(payload),
+            mime="application/pdf",
+            key="download_assessment_report",
+            icon=":material/download:",
+        )
+        st.caption(f"Generated from the stored InterlockResult in {elapsed_ms:.1f} ms. Running a new assessment is not required.")
+    except Exception:
+        st.error("The assessment report could not be generated from this result.")
+
+
+def asset_data_uri(path: Path, mime_type: str) -> str | None:
+    """Return a data URI for a local, project-owned image asset."""
+
+    if not path.is_file():
+        return None
+    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+    return f"data:{mime_type};base64,{encoded}"
+
+
+def image_markup(path: Path, *, alt: str, class_name: str) -> str:
+    """Render a local image asset without making remote network requests."""
+
+    data_uri = asset_data_uri(path, "image/png")
+    if not data_uri:
+        return ""
+    return f'<img class="{class_name}" src="{data_uri}" alt="{alt}" />'
+
+
+def hero_asset_style() -> str:
+    """Return a local data URI style only when the approved asset is present."""
+
+    data_uri = asset_data_uri(HERO_ASSET_PATH, "image/png")
+    if not data_uri:
+        return ""
+    return f' style="--interlock-hero-image: url(\'{data_uri}\')"'
+
+
+def hero_background_css() -> str:
+    """Return a direct image rule so the approved PNG cannot fall back silently."""
+
+    data_uri = asset_data_uri(HERO_ASSET_PATH, "image/png")
+    if not data_uri:
+        return ""
+    return (
+        "<style>"
+        f".st-key-hero_shell {{ background-image: {HERO_GRADIENT}, url(\"{data_uri}\") !important; }}"
+        "</style>"
+    )
+
+
+def render_brand_header() -> None:
+    """Render the Canavan Atlantic identity and user-facing header chrome."""
+
+    logo = image_markup(LOGO_ASSET_PATH, alt="CANAVAN ATLANTIC", class_name="interlock-ca-logo")
+    if not logo:
+        logo = '<span class="interlock-ca-fallback">CANAVAN <small>ATLANTIC</small></span>'
+    st.markdown(
+        f"""
+        <header class="interlock-site-header" aria-label="Canavan Atlantic header">
+          <div class="interlock-ca-brand" aria-label="Canavan Atlantic">
+            {logo}
+          </div>
+          <div class="interlock-profile" aria-label="Welcome, User">
+            <span class="interlock-profile-icon" aria-hidden="true"></span>
+            <span>Welcome, User</span><span class="interlock-chevron">⌄</span>
+          </div>
+        </header>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def render_home() -> tuple[bool, bool]:
     """Render the public-facing landing page and return CTA selections."""
 
-    st.markdown(
-        """
-        <section class="interlock-hero" aria-label="INTERLOCK introduction">
-          <div class="interlock-hero-content">
-            <p class="interlock-eyebrow">Data centre development intelligence</p>
-            <h1>Better sites.<br><em>Stronger decisions.</em></h1>
-            <p class="interlock-hero-copy">Bring environmental, planning and infrastructure evidence together to assess data centre projects with greater confidence.</p>
-            <p class="interlock-hero-note">See the whole project earlier — with evidence, uncertainty and professional review kept visible.</p>
-          </div>
-        </section>
+    st.markdown(hero_background_css(), unsafe_allow_html=True)
+    with st.container(key="hero_shell"):
+        st.markdown(
+            f"""
+        <div class="interlock-hero-content" aria-label="INTERLOCK introduction" data-interlock-hero-image="{'local' if HERO_ASSET_PATH.is_file() else 'fallback'}">
+          <p class="interlock-hero-kicker">INTERLOCK</p>
+          <p class="interlock-eyebrow">DATA CENTRE DEVELOPMENT INTELLIGENCE</p>
+          <h1>Better sites.<br><em>Stronger decisions.</em></h1>
+          <p class="interlock-hero-copy">Bring environmental, planning and infrastructure evidence together to assess data centre sites with confidence.</p>
+        </div>
         """,
-        unsafe_allow_html=True,
-    )
-    st.space("small")
-    with st.container(horizontal=True, horizontal_alignment="left"):
-        start = st.button(
-            "Start a new site assessment",
-            type="primary",
-            icon=":material/arrow_forward:",
-            key="home_start_assessment",
+            unsafe_allow_html=True,
         )
-        explore = st.button(
-            "Explore how INTERLOCK works",
-            icon=":material/lan:",
-            key="home_explore_methodology",
-        )
+        with st.container(
+            horizontal=True,
+            horizontal_alignment="left",
+            wrap=True,
+            key="hero_actions",
+        ):
+            start = st.button(
+                "Start a new site assessment",
+                type="primary",
+                icon=":material/arrow_forward:",
+                key="home_start_assessment",
+            )
+            explore = st.button(
+                "Explore data layers",
+                icon=":material/arrow_forward:",
+                key="home_explore_methodology",
+            )
 
-    st.markdown('<p class="interlock-section-kicker">What INTERLOCK brings together</p>', unsafe_allow_html=True)
-    st.markdown('<h2 class="interlock-section-title">Evidence-led infrastructure decisions.</h2>', unsafe_allow_html=True)
-    st.markdown(
-        '<p class="interlock-section-copy">A controlled workflow for understanding what the current evidence supports, what could delay a project, and what still needs accountable human attention.</p>',
-        unsafe_allow_html=True,
-    )
     capabilities = [
         (
-            "Environmental intelligence",
-            "Planning, biodiversity, flood, water, heritage and ground evidence.",
-            ":material/public:",
+            "Environmental Intelligence",
+            "Assess planning, biodiversity, water and flood risk.",
+            "leaf",
         ),
         (
-            "Integrated evidence",
-            "Developer inputs, deterministic GIS, authoritative policy and project documents.",
-            ":material/hub:",
+            "Integrated Data",
+            "Combine public data, policy, project documents and GIS.",
+            "layers",
         ),
         (
-            "Traceable assessment",
-            "Constraints, conditions, unknowns, dependencies and contradictions stay connected to source evidence.",
-            ":material/account_tree:",
+            "Actionable Insights",
+            "Identify constraints, risks and opportunities.",
+            "chart",
         ),
         (
-            "Human-accountable decisions",
-            "High-consequence findings remain subject to professional human review.",
-            ":material/groups:",
+            "Sustainable Growth",
+            "Support resilient and responsible development.",
+            "shield",
         ),
     ]
-    columns = st.columns(4)
-    for column, (title, copy, icon) in zip(columns, capabilities):
-        with column:
-            with st.container(border=True, height="stretch"):
-                st.markdown(f"{icon}")
-                st.markdown(f'<div class="interlock-capability-title">{title}</div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="interlock-capability-copy">{copy}</div>', unsafe_allow_html=True)
+    with st.container(key="capability_strip"):
+        columns = st.columns(4)
+        for column, (title, copy, icon) in zip(columns, capabilities):
+            with column:
+                st.markdown(
+                    f'<div class="interlock-capability"><div class="interlock-line-icon">{LINE_ICONS[icon]}</div>'
+                    f'<div class="interlock-capability-title">{title}</div>'
+                    f'<div class="interlock-capability-copy">{copy}</div></div>',
+                    unsafe_allow_html=True,
+                )
 
-    st.markdown('<p class="interlock-section-kicker">How INTERLOCK works</p>', unsafe_allow_html=True)
-    st.markdown('<h2 class="interlock-section-title">A clear path from evidence to accountable review.</h2>', unsafe_allow_html=True)
+    truths = [
+        ("MULTI-SOURCE", "Evidence integration"),
+        ("TRACEABLE", "Evidence chain"),
+        ("CONTROLLED", "Agent workflow"),
+        ("HUMAN REVIEW", "Built in"),
+    ]
+    with st.container(key="truth_band"):
+        columns = st.columns(4)
+        for column, (title, copy) in zip(columns, truths):
+            with column:
+                st.markdown(
+                    f'<div class="interlock-truth-item"><strong>{title}</strong><span>{copy}</span></div>',
+                    unsafe_allow_html=True,
+                )
+
     stages = [
-        ("01", "Evidence", "Developer inputs, project documents, public/GIS evidence and authoritative policy."),
-        ("02", "Assessment", "Constraints, conditional issues, unknowns, dependencies and contradictions."),
-        ("03", "Explanation", "Concise rationale, material unknown themes, next actions and traceable citations."),
-        ("04", "Human review", "Specialists validate high-consequence findings before accountable decisions are made."),
+        ("01", "Gather", "Integrate public, policy and project data.", "folder"),
+        ("02", "Analyse", "Evidence analysis across key domains.", "search"),
+        ("03", "Assess", "Identify constraints, risks and opportunities.", "document"),
+        ("04", "Enable", "Support accountable, resilient development.", "leaf"),
     ]
-    columns = st.columns(4)
-    for column, (number, title, copy) in zip(columns, stages):
-        with column:
-            with st.container(border=True, height="stretch"):
-                st.markdown(f'<div class="interlock-number">{number}</div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="interlock-stage-title">{title}</div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="interlock-stage-copy">{copy}</div>', unsafe_allow_html=True)
+    with st.container(key="approach_section"):
+        approach_copy, approach_steps = st.columns([0.95, 2.05], gap="large")
+        with approach_copy:
+            st.markdown('<p class="interlock-section-kicker">Our approach</p>', unsafe_allow_html=True)
+            st.markdown(
+                '<h2 class="interlock-section-title">From data to decisions.<br>Built for a better tomorrow.</h2>',
+                unsafe_allow_html=True,
+            )
+        with approach_steps:
+            columns = st.columns(4)
+            for column, (number, title, copy, icon) in zip(columns, stages):
+                with column:
+                    st.markdown(
+                        f'<div class="interlock-approach-step"><div class="interlock-step-icon">{LINE_ICONS[icon]}</div>'
+                        f'<div class="interlock-step-number">{number}</div>'
+                        f'<div class="interlock-stage-title">{title}</div>'
+                        f'<div class="interlock-stage-copy">{copy}</div></div>',
+                        unsafe_allow_html=True,
+                    )
 
+    footer_logo = image_markup(
+        WHITE_LOGO_ASSET_PATH,
+        alt="CANAVAN ATLANTIC",
+        class_name="interlock-footer-logo",
+    ) or '<span class="interlock-ca-fallback">CANAVAN <small>ATLANTIC</small></span>'
     st.markdown(
-        '<footer class="interlock-footer"><div class="interlock-footer-caption">Canavan Atlantic</div><p><strong>INTERLOCK</strong> keeps the evidence chain visible from early site assessment through professional review.</p><p>It does not guarantee planning approval, grid capacity, water capacity, viability or investment success.</p></footer>',
+        f'<footer class="interlock-footer"><div class="interlock-footer-brand">{footer_logo}</div>'
+        '<div class="interlock-footer-motto">People. Places. Possibilities.</div>'
+        '<div class="interlock-footer-copyright">© 2026 Canavan Atlantic. All rights reserved.</div></footer>',
         unsafe_allow_html=True,
     )
     return start, explore
@@ -210,9 +444,17 @@ def render_decision_pack(payload: dict[str, Any]) -> None:
     status_text, status_style = status_label(workflow_status)
     project_name = context.get("project_name") or context.get("project_id") or "Unnamed project"
     place = location.get("address") or location.get("local_authority") or location.get("country") or "Location not provided"
+    findings = as_list(explanation.get("key_findings"))
+    unknown_themes = as_list(explanation.get("material_unknown_themes"))
+    assessment_dependencies = as_list(assessment.get("dependencies"))
+    dependencies = assessment_dependencies or as_list(explanation.get("dependencies"))
+    reviews = as_list(payload.get("human_reviews"))
 
     st.markdown('<p class="interlock-section-kicker">Project / assessment result</p>', unsafe_allow_html=True)
-    st.markdown('<h1 class="interlock-section-title">INTERLOCK Development Readiness Decision Pack</h1>', unsafe_allow_html=True)
+    st.markdown(
+        '<h1 class="interlock-section-title interlock-pack-title">INTERLOCK Development Readiness Decision Pack</h1>',
+        unsafe_allow_html=True,
+    )
     status_message = (
         "Automated analysis completed. Professional review is required for identified high-consequence items."
         if workflow_status == "REQUIRES_HUMAN_REVIEW"
@@ -224,6 +466,8 @@ def render_decision_pack(payload: dict[str, Any]) -> None:
         f'<div class="interlock-status-card {status_style}"><div class="interlock-status-label">{status_text}</div><div>{status_message}</div></div>',
         unsafe_allow_html=True,
     )
+    render_decision_summary(payload)
+    render_report_download(payload)
     stage_errors = as_dict(payload.get("stage_errors"))
     if stage_errors:
         failed_stage = payload.get("failure_stage") or next(iter(stage_errors), "workflow")
@@ -236,6 +480,23 @@ def render_decision_pack(payload: dict[str, Any]) -> None:
         project_columns[2].markdown(f"**Run**  \n{payload.get('run_id') or 'Not provided'}")
         if payload.get("generated_at"):
             st.caption(f"Assessment timestamp: {payload['generated_at']}")
+
+    render_finding_briefs(payload)
+
+    summary_cards = (
+        ("Findings", len(findings), "Structured findings returned"),
+        ("Unknown themes", len(unknown_themes), "Evidence gaps to resolve"),
+        ("Dependencies", len(dependencies), "Items linked to delivery"),
+        ("Human reviews", len(reviews), "Accountable specialist checks"),
+    )
+    summary_columns = st.columns(4)
+    for column, (title, value, caption) in zip(summary_columns, summary_cards):
+        with column:
+            st.markdown(
+                f'<div class="interlock-summary-card"><span>{title}</span><strong>{value}</strong>'
+                f'<small>{caption}</small></div>',
+                unsafe_allow_html=True,
+            )
 
     stage_status = as_dict(payload.get("stage_status"))
     if stage_status:
@@ -254,7 +515,6 @@ def render_decision_pack(payload: dict[str, Any]) -> None:
             st.caption("Human review is a workflow state, not an application failure or a final project decision.")
 
     st.markdown("#### Key findings")
-    findings = as_list(explanation.get("key_findings"))
     if findings:
         for finding in findings:
             text = str(finding)
@@ -279,7 +539,6 @@ def render_decision_pack(payload: dict[str, Any]) -> None:
         st.caption("No explicit hard constraints are recorded in the current assessment.")
 
     st.markdown("#### Material unknowns")
-    unknown_themes = as_list(explanation.get("material_unknown_themes"))
     if unknown_themes:
         for theme in unknown_themes:
             item = as_dict(theme)
@@ -299,21 +558,21 @@ def render_decision_pack(payload: dict[str, Any]) -> None:
         st.caption("No consolidated material unknown themes were returned.")
 
     st.markdown("#### Dependencies")
-    dependencies = as_list(assessment.get("dependencies"))
     if dependencies:
-        for dependency in dependencies:
-            item = as_dict(dependency)
-            with st.container(border=True):
-                st.markdown(f"**{item.get('dependency_id') or 'Dependency'}** · {label(item.get('status'))}")
-                st.write(item.get("impact_description") or item.get("description") or "Dependency impact not described.")
-                if item.get("evidence_ids"):
-                    st.caption("Evidence: " + ", ".join(str(ref) for ref in item["evidence_ids"]))
-                if item.get("human_review_required"):
-                    st.caption("Specialist review is required for this dependency.")
-    elif as_list(explanation.get("dependencies")):
-        for dependency in explanation["dependencies"]:
-            with st.container(border=True):
-                st.write(str(dependency))
+        if assessment_dependencies:
+            for dependency in assessment_dependencies:
+                item = as_dict(dependency)
+                with st.container(border=True):
+                    st.markdown(f"**{item.get('dependency_id') or 'Dependency'}** · {label(item.get('status'))}")
+                    st.write(item.get("impact_description") or item.get("description") or "Dependency impact not described.")
+                    if item.get("evidence_ids"):
+                        st.caption("Evidence: " + ", ".join(str(ref) for ref in item["evidence_ids"]))
+                    if item.get("human_review_required"):
+                        st.caption("Specialist review is required for this dependency.")
+        else:
+            for dependency in dependencies:
+                with st.container(border=True):
+                    st.write(str(dependency))
     else:
         st.caption("No unresolved dependencies are recorded in the current assessment.")
 
@@ -327,10 +586,45 @@ def render_decision_pack(payload: dict[str, Any]) -> None:
     else:
         st.caption("No material evidence contradictions identified in the current assessment.")
 
-    render_human_reviews(as_list(payload.get("human_reviews")))
+    render_human_reviews(reviews)
     render_action_plan(as_list(explanation.get("next_action_plan")))
     render_sources(explanation, evidence)
     render_technical_details(payload, evidence, assessment)
+
+
+def render_demo_run_summary(summary: dict[str, Any] | None) -> None:
+    """Render the actual result summary for a successfully run demo preset."""
+
+    if not summary:
+        return
+    st.markdown("#### Demo run summary")
+    st.caption("Derived from the completed InterlockResult returned for this demo run.")
+    metric_items = (
+        ("Evidence records", summary.get("evidence_record_count", 0)),
+        ("Findings", summary.get("finding_count", 0)),
+        ("Unknown themes", summary.get("unknown_theme_count", 0)),
+        ("Human reviews", summary.get("human_review_count", 0)),
+    )
+    columns = st.columns(4)
+    for column, (title, value) in zip(columns, metric_items):
+        with column:
+            st.metric(title, value)
+    st.write(
+        {
+            "workflow_status": summary.get("workflow_status"),
+            "conditional_or_constrained_findings": summary.get("conditional_or_constrained_finding_count", 0),
+            "material_unknowns": summary.get("material_unknown_count", 0),
+            "dependencies": summary.get("dependency_count", 0),
+            "contradictions": summary.get("contradiction_count", 0),
+            "customer_facing_citations": summary.get("customer_facing_citation_count", 0),
+            "source_counts": {
+                source_label({"created_by": source}): count
+                for source, count in as_dict(summary.get("source_counts")).items()
+            },
+            "stage_counts": summary.get("stage_counts", {}),
+            "timings_ms": summary.get("timings_ms", {}),
+        }
+    )
 
 
 def render_human_reviews(reviews: list[Any]) -> None:
@@ -447,13 +741,25 @@ def render_evidence_view(payload: dict[str, Any] | None) -> None:
     counts: dict[str, int] = defaultdict(int)
     for record in records:
         counts[source_label(record)] += 1
-    with st.container(border=True):
-        st.write("**Current run:** " + str(payload.get("run_id") or "Not provided"))
-        st.write("**Evidence records:** " + str(len(records)))
-        if counts:
-            st.write(dict(counts))
+    st.caption("Source classes remain distinct so the evidence chain can be reviewed before assessment.")
+    count_columns = st.columns(5)
+    source_classes = (
+        "Developer Provided",
+        "Public / GIS Evidence",
+        "Authoritative Policy",
+        "Project Evidence",
+        "Supporting Policy",
+    )
+    for column, source_class in zip(count_columns, source_classes):
+        with column:
+            st.markdown(
+                f'<div class="interlock-evidence-count"><strong>{counts.get(source_class, 0)}</strong>'
+                f'<span>{source_class}</span></div>',
+                unsafe_allow_html=True,
+            )
+    st.caption(f"Current run: {payload.get('run_id') or 'Not provided'} · {len(records)} evidence records")
     render_sources(as_dict(payload.get("explanation_result")), evidence)
-    with st.expander("Developer / debug evidence inspection"):
+    with st.expander("Developer / Debug Inspection", icon=":material/bug_report:"):
         if records:
             st.dataframe(
                 [
@@ -499,10 +805,15 @@ __all__ = [
     "display_value",
     "label",
     "render_assessment_intro",
+    "render_brand_header",
     "render_decision_pack",
+    "render_decision_summary",
+    "render_demo_run_summary",
     "render_evidence_view",
+    "render_finding_briefs",
     "render_home",
     "render_methodology",
+    "render_report_download",
     "render_sources",
     "source_label",
     "status_label",

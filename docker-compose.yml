@@ -1,10 +1,29 @@
 services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-interlock}
+      POSTGRES_USER: ${POSTGRES_USER:-interlock}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-interlock_local_dev}
+    volumes:
+      - interlock_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-interlock} -d ${POSTGRES_DB:-interlock}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   backend:
     build:
       context: .
       dockerfile: backend/Dockerfile
     ports:
       - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-interlock}:${POSTGRES_PASSWORD:-interlock_local_dev}@db:5432/${POSTGRES_DB:-interlock}
     volumes:
       - ./data:/data:ro
 
@@ -18,3 +37,6 @@ services:
       INTERLOCK_API_BASE_URL: http://backend:8000
     ports:
       - "8501:8501"
+
+volumes:
+  interlock_postgres_data:
