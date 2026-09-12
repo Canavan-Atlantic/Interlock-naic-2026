@@ -13,6 +13,14 @@ from .orchestrator import (
     InterlockOrchestrator,
     OrchestratorOptions,
 )
+from .planner import (
+    APPROVED_TOOL_REGISTRY,
+    BoundedInvestigationPlanner,
+    InvestigationPlanner,
+    PlannerSettings,
+    PlanningValidationError,
+    validate_investigation_plan,
+)
 
 __all__ = [
     "AssessmentAgentError",
@@ -25,5 +33,11 @@ __all__ = [
     "DeterministicInterlockOrchestrator",
     "InterlockOrchestrator",
     "OrchestratorOptions",
+    "APPROVED_TOOL_REGISTRY",
+    "BoundedInvestigationPlanner",
+    "InvestigationPlanner",
+    "PlannerSettings",
+    "PlanningValidationError",
     "build_retrieval_requests",
+    "validate_investigation_plan",
 ]

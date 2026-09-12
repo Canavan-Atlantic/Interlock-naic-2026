@@ -29,6 +29,7 @@ from ..schemas.agents import (
     HumanReviewRole,
     ProjectContext,
     PotentialContradiction,
+    InvestigationPlan,
 )
 from ..schemas.agents.common import HumanReviewSeverity
 from ..schemas.evidence import (
@@ -76,6 +77,9 @@ class EvidenceAgentOptions:
     project_document_query: str = (
         "project description planning engineering power energy grid water utility connection feasibility"
     )
+    # Planning is advisory scope/provenance.  The concrete Evidence Agent
+    # still owns every deterministic capability and its existing filters.
+    investigation_plan: InvestigationPlan | None = None
 
 
 @dataclass(frozen=True)
@@ -1075,6 +1079,11 @@ class DeterministicEvidenceAgent:
         """Load only project-scoped evidence; never route it through policy RAG."""
 
         if not options.include_project_documents:
+            return [], [], []
+        if options.investigation_plan is not None and not any(
+            str(getattr(request.tool, "value", request.tool)) == "PROJECT_DOCUMENT_SEARCH"
+            for request in options.investigation_plan.tool_requests
+        ):
             return [], [], []
         retriever = ProjectEvidenceRetriever(options.project_evidence_root or self.project_root)
         try:

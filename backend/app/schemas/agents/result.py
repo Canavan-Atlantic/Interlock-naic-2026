@@ -16,6 +16,7 @@ from .common import (
 )
 from .evidence import EvidenceBundle
 from .explanation import ExplanationResult
+from .planning import InvestigationPlan
 
 
 class InterlockResult(ContractModel):
@@ -26,6 +27,9 @@ class InterlockResult(ContractModel):
     evidence_bundle: EvidenceBundle | None = None
     assessment_result: AssessmentResult | None = None
     explanation_result: ExplanationResult | None = None
+    # Planning is provenance only.  It cannot replace the deterministic
+    # assessment or explanation contracts and contains no decision fields.
+    investigation_plan: InvestigationPlan | None = None
     workflow_status: WorkflowStatus = WorkflowStatus.UNKNOWN
     human_reviews: list[HumanReviewRequest] = Field(default_factory=list)
     requires_human_review: bool = False

@@ -11,7 +11,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from streamlit.testing.v1 import AppTest
 
 from backend.app import main
-from backend.app.db import configure_database, init_db, session_scope
+from backend.app.db import init_db, session_scope
 from backend.app.db.repository import persist_successful_interlock_result
 from backend.app.schemas.agents import (
     AssessmentFinding,
@@ -34,9 +34,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 @pytest.fixture
 def portfolio_database() -> Iterator[None]:
-    """Give each portfolio test a fresh in-memory database."""
+    """Use the pytest-wide isolated database for each portfolio test."""
 
-    configure_database("sqlite+pysqlite:///:memory:")
     init_db()
     yield
 

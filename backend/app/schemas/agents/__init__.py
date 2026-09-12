@@ -32,6 +32,16 @@ from .explanation import (
     ExplanationUnknownTheme,
 )
 from .interfaces import AssessmentAgent, EvidenceAgent, ExplanationAgent
+from .planning import (
+    ApprovedToolName,
+    InvestigationItem,
+    InvestigationPlan,
+    InvestigationPriority,
+    PlanRejection,
+    PlannerTokenUsage,
+    PlanningMode,
+    ToolRequest,
+)
 from .result import InterlockResult
 
 __all__ = [
@@ -55,15 +65,23 @@ __all__ = [
     "ExplanationRequest",
     "ExplanationResult",
     "ExplanationUnknownTheme",
+    "ApprovedToolName",
     "HumanReviewRequest",
     "HumanReviewRole",
     "HumanReviewSeverity",
     "HumanReviewStatus",
     "InterlockResult",
+    "InvestigationItem",
+    "InvestigationPlan",
+    "InvestigationPriority",
+    "PlanRejection",
+    "PlannerTokenUsage",
+    "PlanningMode",
     "PotentialContradiction",
     "ProjectContext",
     "ProjectLifecycleStatus",
     "ProjectLocation",
     "SiteBoundary",
+    "ToolRequest",
     "WorkflowStatus",
 ]
