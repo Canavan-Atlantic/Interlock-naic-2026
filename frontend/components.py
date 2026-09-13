@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import html
+import os
 import time
 from collections import defaultdict
 from pathlib import Path
@@ -526,7 +527,7 @@ def render_decision_pack(payload: dict[str, Any]) -> None:
         evidence = as_dict(payload.get("evidence_bundle"))
         assessment = as_dict(payload.get("assessment_result"))
         planning = as_dict(payload.get("investigation_plan"))
-        if planning:
+        if planning and os.getenv("INTERLOCK_DEBUG_UI", "").strip().casefold() in {"1", "true", "yes", "on"}:
             planning_mode = str(planning.get("planning_mode") or "UNKNOWN")
             st.markdown("#### Investigation provenance")
             st.write({
@@ -539,7 +540,8 @@ def render_decision_pack(payload: dict[str, Any]) -> None:
             })
         render_human_reviews(as_list(payload.get("human_reviews")))
         render_sources(explanation, evidence)
-        render_technical_details(payload, evidence, assessment)
+        if os.getenv("INTERLOCK_DEBUG_UI", "").strip().casefold() in {"1", "true", "yes", "on"}:
+            render_technical_details(payload, evidence, assessment)
 
 
 def _render_primary_findings(payload: dict[str, Any], limit: int = 5) -> None:

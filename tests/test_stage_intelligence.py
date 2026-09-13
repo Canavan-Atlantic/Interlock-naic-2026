@@ -1,5 +1,6 @@
-from backend.app.schemas.agents import EvidenceBundle, ProjectContext
+from backend.app.schemas.agents import AssessmentFinding, AssessmentResult, EvidenceBundle, ProjectContext
 from backend.app.services.stage_intelligence import build_stage_intelligence
+from backend.app.services.stage_view import build_stage_assessment_view
 
 
 def _context(stage: str, **values: object) -> ProjectContext:
@@ -53,3 +54,23 @@ def test_stage_layer_does_not_add_assessment_or_score_fields() -> None:
     payload = result.model_dump()
     assert "score" not in payload
     assert "decision" not in payload
+
+
+def test_stage_assessment_view_is_relevant_and_reportable() -> None:
+    context = _context("Site Discovery")
+    assessment = AssessmentResult(
+        project_context=context,
+        findings=[
+            AssessmentFinding(finding_id="site-planning", domain="PLANNING", status="UNKNOWN"),
+            AssessmentFinding(finding_id="later-energy", domain="ENERGY", status="UNKNOWN"),
+        ],
+    )
+    intelligence = build_stage_intelligence(context)
+    view = build_stage_assessment_view(context, EvidenceBundle(project_context=context), assessment, intelligence)
+
+    assert view.requirement_heading == "Further Investigation"
+    assert [item["finding_id"] for item in view.relevant_findings] == ["site-planning"]
+    assert view.relevant_evidence_count == 0
+    assert view.total_evidence_count == 0
+    assert "score" not in view.model_dump()
+    assert "decision" not in view.model_dump()

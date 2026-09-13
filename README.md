@@ -2,7 +2,7 @@
 
 INTERLOCK is an early-stage decision-support platform for data-centre development. Its long-term purpose is to help a developer understand whether a development proposition is credible enough to progress, what could stop or delay it, what remains unknown, and what needs to happen next.
 
-## Current scope: Modules 1–14
+## Current scope: Modules 1–16
 
 Module 1 proves that a Streamlit frontend can communicate with a FastAPI backend and that both services can run with Docker Compose. Module 2 adds the structured developer project-input workflow. Module 3 converts that input into an in-memory evidence ledger. Module 4A adds deterministic raw-data inventory, validation, cleaning, provenance, and spatial standardisation. Module 4B adds deterministic site-level evidence queries over those processed outputs while retaining the Module 3 ledger and explicit limitations. Module 5A creates a deterministic, provenance-aware policy knowledge-base foundation. Module 5B adds authority-aware hybrid retrieval over that processed corpus without answer generation or project decisions.
 
@@ -179,6 +179,27 @@ and is never rendered as application content or a background.
 Completed assessments can also be downloaded as a deterministic PDF report
 from the stored `InterlockResult`; generating the report does not rerun the
 backend assessment.
+
+## Module 16 — Product hardening
+
+Module 16 keeps the original evidence, assessment and explanation outputs
+intact while adding a deterministic `StageAssessmentView` for the customer
+surface and executive report. Site Discovery is a screening scope; Early
+Feasibility adds planning, grid/energy and water progression requirements; and
+Deliverability separates supplied project inputs from project-specific delivery
+evidence. Stage-scoped planning and evidence execution do not expand the
+underlying deterministic rules.
+
+The Decision Pack uses stage-relevant findings, requirements, actions, domain
+states and evidence counts. The full stored result remains available in the
+technical appendix. Registered GIS geometries are transformed to WGS84 only
+for bounded map display; unavailable geometry remains unavailable and no
+location is fabricated. Generic biodiversity policy cannot create a
+site-specific constraint without a tested protected-site intersection.
+
+Planner telemetry, raw JSON, timings and stage counts are available only in
+the developer/debug surface. Set `INTERLOCK_DEBUG_UI=true` for that surface;
+normal customer pages show concise stage content and evidence drill-downs.
 
 ## Module 12 — Visual Decision Pack and assessment report
 

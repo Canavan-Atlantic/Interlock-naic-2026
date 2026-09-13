@@ -1021,16 +1021,20 @@ def render_individual_agent_debug(context_payload: dict[str, object] | None, api
 
 
 def render_evidence_page(api_base_url: str | None) -> None:
-    render_evidence_view(st.session_state.get("interlock_payload"))
-    with st.expander("Developer / Debug Tools", icon=":material/build:"):
-        st.markdown("#### Module 4B public-data check")
-        render_public_data_debug(st.session_state.get("submitted_project_payload"), api_base_url)
-        st.markdown("#### Module 5B policy retrieval")
-        render_rag_debug(api_base_url)
-        st.markdown("#### Individual Module 6–8 endpoints")
-        submitted = st.session_state.get("submitted_project_payload")
-        context = build_evidence_agent_context(submitted) if submitted else None
-        render_individual_agent_debug(context, api_base_url)
+    payload = st.session_state.get("interlock_payload")
+    render_evidence_view(payload)
+    # Pre-stage-view stored payloads retain the old developer affordance for
+    # compatibility; current results require the explicit debug flag.
+    if debug_ui_enabled() or not as_dict(payload).get("stage_assessment_view"):
+        with st.expander("Developer / Debug Tools", icon=":material/build:"):
+            st.markdown("#### Module 4B public-data check")
+            render_public_data_debug(st.session_state.get("submitted_project_payload"), api_base_url)
+            st.markdown("#### Module 5B policy retrieval")
+            render_rag_debug(api_base_url)
+            st.markdown("#### Individual Module 6–8 endpoints")
+            submitted = st.session_state.get("submitted_project_payload")
+            context = build_evidence_agent_context(submitted) if submitted else None
+            render_individual_agent_debug(context, api_base_url)
 
 
 st.session_state.setdefault("active_page", "Home")
