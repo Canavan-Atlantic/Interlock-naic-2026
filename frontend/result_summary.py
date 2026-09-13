@@ -89,6 +89,17 @@ def summarize_interlock_result(payload: dict[str, Any]) -> dict[str, Any]:
     )
 
     view_counts = _as_dict(stage_view.get("counts"))
+    legacy_conditional_or_constrained = sum(
+        status_counts.get(status, 0) for status in ("CONDITIONAL", "CONSTRAINED")
+    )
+    explicit_constraints = status_counts.get("CONSTRAINED", 0)
+    human_review_count = len(_as_list(payload.get("human_reviews")))
+    if stage_view:
+        explicit_constraints = int(view_counts.get("constraint_count", explicit_constraints))
+        legacy_conditional_or_constrained = int(
+            view_counts.get("conditional_or_constrained_finding_count", legacy_conditional_or_constrained)
+        )
+        human_review_count = int(view_counts.get("professional_review_count", human_review_count))
     return {
         "project_id": context.get("project_id"),
         "project_name": context.get("project_name"),
@@ -100,14 +111,15 @@ def summarize_interlock_result(payload: dict[str, Any]) -> dict[str, Any]:
         "total_evidence_record_count": int(view_counts.get("total_evidence_count", len(records))),
         "finding_count": int(view_counts.get("finding_count", len(findings))),
         "finding_status_counts": dict(sorted(status_counts.items())),
-        "conditional_or_constrained_finding_count": int(view_counts.get("constraint_count", sum(
-            status_counts.get(status, 0) for status in ("CONDITIONAL", "CONSTRAINED")
-        ))),
+        # Retained as a compatibility field for technical/demo summaries. It
+        # must not be presented as a count of hard constraints.
+        "conditional_or_constrained_finding_count": legacy_conditional_or_constrained,
+        "explicit_constraint_count": explicit_constraints,
         "material_unknown_count": len(_as_list(assessment.get("material_unknowns"))),
         "unknown_theme_count": len(_as_list(explanation.get("material_unknown_themes"))),
         "dependency_count": len(dependencies),
         "contradiction_count": len(_as_list(explanation.get("contradictions"))),
-        "human_review_count": len(_as_list(payload.get("human_reviews"))),
+        "human_review_count": human_review_count,
         "customer_facing_citation_count": len(citations),
         "source_counts": dict(sorted(source_counts.items())),
         "stage_counts": dict(_as_dict(payload.get("stage_counts"))),

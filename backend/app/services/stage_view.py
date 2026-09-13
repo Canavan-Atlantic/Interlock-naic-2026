@@ -70,6 +70,12 @@ def _stage_domains(stage: str) -> set[str]:
 
 
 def _headline(domain: str, status: str, stage: str) -> str:
+    if stage == "Site Discovery" and domain == "GRID":
+        if status == "CONDITIONAL":
+            return "Nearby grid infrastructure is screening context; project-specific connection readiness is a later-stage question."
+        return "Project-specific connection and MIC evidence is a later-stage question, not required for this site screening."
+    if stage == "Site Discovery" and domain == "GENERAL":
+        return "Project-definition detail beyond the screening inputs is not required to answer this site-screening question."
     if domain == "GRID":
         if stage == "Deliverability Validation":
             return "Project-specific grid connection pathway and energisation evidence remains outstanding."
@@ -97,7 +103,11 @@ def _headline(domain: str, status: str, stage: str) -> str:
     return "Project definition and phasing information remains incomplete."
 
 
-def _why(domain: str, status: str) -> str:
+def _why(domain: str, status: str, stage: str = "") -> str:
+    if stage == "Site Discovery" and domain == "GRID":
+        return "Grid context supports site screening; project-specific connection readiness is intentionally outside this stage."
+    if stage == "Site Discovery" and domain == "GENERAL":
+        return "The screening question can be answered without later-stage project-definition detail."
     if status == "CONSTRAINED":
         return "A material constraint is recorded in the evidence chain and needs accountable specialist review."
     if status == "CONDITIONAL":
@@ -133,8 +143,13 @@ def _finding_view(finding: dict[str, Any], stage: str) -> dict[str, Any]:
         "domain": domain,
         "domain_label": _FRIENDLY_DOMAINS.get(domain, domain.replace("_", " ").title()),
         "status": status,
+        "display_status": (
+            "SCREENING_CONTEXT"
+            if stage == "Site Discovery" and domain in {"GRID", "GENERAL"} and status in {"UNKNOWN", "CONDITIONAL"}
+            else status
+        ),
         "headline": _headline(domain, status, stage),
-        "why_it_matters": _why(domain, status),
+        "why_it_matters": _why(domain, status, stage),
         "evidence_ids": ids,
         "next_action": _short(
             (_as_list(finding.get("evidence_required_next")) or ["Confirm the related evidence."])[0],
@@ -145,41 +160,137 @@ def _finding_view(finding: dict[str, Any], stage: str) -> dict[str, Any]:
     }
 
 
-def _domain_states(findings: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _domain_states(findings: list[dict[str, Any]], stage: str) -> list[dict[str, Any]]:
     states: list[dict[str, Any]] = []
     for key, label, domains in _DOMAIN_GROUPS:
         matching = [item for item in findings if item["domain"] in domains]
         if not matching:
             continue
         state = max((item["status"] for item in matching), key=lambda value: _STATUS_PRIORITY.get(value, 3))
+        display_state = (
+            "SCREENING_CONTEXT"
+            if stage == "Site Discovery" and domains in (("GRID", "ENERGY"), ("GENERAL",)) and state in {"UNKNOWN", "CONDITIONAL"}
+            else state
+        )
         states.append({
             "key": key,
             "label": label,
             "state": state,
             "finding_count": len(matching),
+            "finding_ids": [item["finding_id"] for item in matching],
+            "display_state": display_state,
             "evidence_ids": list(dict.fromkeys(id for item in matching for id in item["evidence_ids"])),
         })
     return states
 
 
-def _action_view(action: dict[str, Any], finding_by_id: dict[str, dict[str, Any]]) -> dict[str, Any] | None:
+def _clean_rationale(value: object) -> str:
+    text = " ".join(str(value or "").split())
+    prefix = "This action addresses the assessment evidence requirements:"
+    if text.casefold().startswith(prefix.casefold()):
+        text = text[len(prefix):].strip()
+    return text
+
+
+def _action_reason(domain: str, status: str) -> str:
+    return {
+        "CONSTRAINED": "A recorded constraint needs an accountable closure path.",
+        "CONDITIONAL": "The current evidence position remains conditional.",
+        "UNKNOWN": "The related evidence gap remains unresolved.",
+        "CLEAR": "Confirm that the evidence basis remains current.",
+        "INFORMATIONAL": "Review the linked evidence context for this stage.",
+    }.get(status, f"Review the linked {_FRIENDLY_DOMAINS.get(domain, 'project')} evidence for this stage.")
+
+
+def _action_view(
+    action: dict[str, Any],
+    finding_by_id: dict[str, dict[str, Any]],
+    stage: str,
+) -> dict[str, Any] | None:
     ids = [str(item) for item in _as_list(action.get("finding_ids")) if item]
+    known_ids = set(finding_by_id)
+    if ids and not known_ids.intersection(ids):
+        # An action tied only to a finding outside this stage must never be
+        # reclassified as GENERAL merely because the customer projection is
+        # narrower than the raw explanation result.
+        return None
+    ids = [item for item in ids if item in known_ids]
     linked = next((finding_by_id[item] for item in ids if item in finding_by_id), None)
     domain = linked["domain"] if linked else "GENERAL"
-    title = _short(action.get("title"), "Confirm related evidence.", 100)
+    if stage == "Site Discovery" and domain == "GENERAL":
+        return None
+    title = " ".join(str(action.get("title") or "Confirm related evidence.").split())
+    rationale = _clean_rationale(action.get("rationale"))
+    if stage == "Site Discovery" and domain == "GRID":
+        title = "Review nearby grid infrastructure context"
+        reason = "Grid context supports site screening; connection readiness is a later-stage question."
+        why_this_action = "Use the available grid context to decide whether deeper site investigation is worthwhile; do not treat it as project-specific connection capacity or approval."
+    else:
+        status = linked.get("status", "UNKNOWN") if linked else "UNKNOWN"
+        reason = _action_reason(domain, status)
+        why_this_action = rationale or reason
+        if why_this_action.casefold() == reason.casefold():
+            why_this_action = f"Closure detail: {why_this_action}"
     roles = [_role_label(item) for item in _as_list(action.get("specialist_roles")) if item]
-    owner = roles[0] if roles else _owner(domain)
+    owner = _owner(domain) if linked else (roles[0] if roles else _owner(domain))
     return {
         "action_id": str(action.get("action_id") or f"action-{domain.casefold()}"),
         "title": title,
         "domain": domain,
         "domain_label": _FRIENDLY_DOMAINS.get(domain, domain.replace("_", " ").title()),
         "owner": owner,
-        "reason": _short(action.get("rationale"), "Resolve the related evidence gap.", 150),
-        "why_this_action": _short(action.get("rationale"), "Resolve the related evidence gap.", 500),
+        "reason": _short(reason, "Review the related evidence.", 180),
+        "why_this_action": _short(why_this_action, "Review the related evidence.", 700),
         "finding_ids": ids,
         "evidence_ids": [str(item) for item in _as_list(action.get("evidence_ids")) if item],
     }
+
+
+def _fallback_action_title(requirement: dict[str, Any]) -> str:
+    return {
+        "site-extent": "Provide the site area or confirmed site boundary.",
+        "project-definition": "Confirm project phasing and delivery sequence.",
+        "planned-power": "Confirm the current project demand and units.",
+        "grid-readiness": "Confirm the current grid-readiness evidence.",
+        "energy-strategy": "Record the current energy strategy or explicitly mark it unknown.",
+        "planning-position": "Obtain current site-specific planning or zoning evidence.",
+        "water-pathway": "Obtain site-specific water and wastewater capacity or connection evidence.",
+        "grid-pathway": "Obtain the project-specific grid pathway and energisation evidence.",
+        "energy-pathway": "Obtain project-specific energy delivery and commissioning evidence.",
+        "project-documents": "Upload or reference the current technical project documents.",
+    }.get(str(requirement.get("requirement_id")), _short(requirement.get("label"), "Confirm related evidence.", 140))
+
+
+def _deduplicate_reviews(reviews: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+    output: list[dict[str, Any]] = []
+    by_key: dict[tuple[str, ...], dict[str, Any]] = {}
+    for item in reviews:
+        key = (
+            str(item.get("domain") or "UNKNOWN"),
+            str(item.get("recommended_role") or "UNKNOWN"),
+            str(item.get("reason") or ""),
+        )
+        if not key[2]:
+            key = (*key, str(item.get("review_id") or ""))
+        existing = by_key.get(key)
+        if existing is None:
+            existing = dict(item)
+            existing["evidence_ids"] = list(dict.fromkeys(str(value) for value in _as_list(item.get("evidence_ids")) if value))
+            by_key[key] = existing
+            output.append(existing)
+            continue
+        existing["evidence_ids"] = list(dict.fromkeys([
+            *existing.get("evidence_ids", []),
+            *(str(value) for value in _as_list(item.get("evidence_ids")) if value),
+        ]))
+    return output
+
+
+def _is_later_stage_site_review(item: dict[str, Any], stage: str) -> bool:
+    if stage != "Site Discovery" or str(item.get("domain") or "") != "GRID":
+        return False
+    reason = str(item.get("reason") or "").casefold()
+    return any(term in reason for term in ("mic", "connection", "energisation", "energization"))
 
 
 def build_stage_assessment_view(
@@ -215,24 +326,26 @@ def build_stage_assessment_view(
         *(assessment_result.human_reviews if assessment_result else []),
     ]:
         item = _as_dict(review.model_dump(mode="python") if hasattr(review, "model_dump") else review)
+        if _is_later_stage_site_review(item, stage):
+            continue
         review_domains = {_enum(item.get("domain"))}
         review_ids = {str(value) for value in _as_list(item.get("evidence_ids"))}
         if review_domains & domains or review_ids & set(relevant_ids):
             reviews.append(item)
+    reviews = _deduplicate_reviews(reviews)
     finding_by_id = {item["finding_id"]: item for item in findings}
     actions: list[dict[str, Any]] = []
     explanation = explanation_result
     if explanation is not None:
         for raw in _as_list(getattr(explanation, "next_action_plan", None)):
-            item = _action_view(_as_dict(raw.model_dump(mode="python") if hasattr(raw, "model_dump") else raw), finding_by_id)
+            item = _action_view(_as_dict(raw.model_dump(mode="python") if hasattr(raw, "model_dump") else raw), finding_by_id, stage)
             if item and (item["domain"] in domains or not item["finding_ids"]):
                 actions.append(item)
     if not actions:
         for requirement in requirements:
-            domain = _enum(requirement.get("owner")) or "GENERAL"
             actions.append({
                 "action_id": f"action-{requirement.get('requirement_id', 'evidence')}",
-                "title": _short(requirement.get("label"), "Confirm related evidence.", 100),
+                "title": _fallback_action_title(requirement),
                 "domain": "GENERAL",
                 "domain_label": "Project Definition",
                 "owner": requirement.get("owner") or "Project team",
@@ -252,13 +365,14 @@ def build_stage_assessment_view(
         information_required=requirements,
         professional_reviews=reviews,
         next_actions=actions,
-        domain_states=_domain_states(findings),
+        domain_states=_domain_states(findings, stage),
         relevant_evidence_ids=list(dict.fromkeys(relevant_ids)),
         relevant_evidence_count=len(set(relevant_ids)),
         total_evidence_count=len(evidence_records),
         counts={
             "finding_count": len(findings),
-            "constraint_count": sum(item["status"] in {"CONSTRAINED", "CONDITIONAL"} for item in findings),
+            "constraint_count": sum(item["status"] == "CONSTRAINED" for item in findings),
+            "conditional_or_constrained_finding_count": sum(item["status"] in {"CONSTRAINED", "CONDITIONAL"} for item in findings),
             "information_required_count": len(requirements),
             "professional_review_count": len(reviews),
             "action_count": len(actions),

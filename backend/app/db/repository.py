@@ -185,31 +185,30 @@ def project_run_by_reference(session: Session, project_id: str, run_reference: s
 
 def run_response(run: AssessmentRun) -> AssessmentRunResponse:
     result_payload = dict(run.interlock_result)
-    # Older stored runs predate the bounded stage view.  Derive that additive
-    # presentation projection at read time so historical Decision Packs can
-    # use the same customer view without rerunning evidence or mutating the
-    # immutable database snapshot.
-    if not result_payload.get("stage_assessment_view"):
-        try:
-            result = InterlockResult.model_validate(result_payload)
-            stage_intelligence = result.stage_intelligence or build_stage_intelligence(
-                result.project_context,
-                result.evidence_bundle,
-                result.assessment_result,
-            )
-            stage_view = build_stage_assessment_view(
-                result.project_context,
-                result.evidence_bundle,
-                result.assessment_result,
-                stage_intelligence,
-                result.explanation_result,
-            )
-            result_payload["stage_intelligence"] = stage_intelligence.model_dump(mode="json")
-            result_payload["stage_assessment_view"] = stage_view.model_dump(mode="json")
-        except (TypeError, ValueError):
-            # Preserve compatibility for legacy/partial snapshots that cannot
-            # be reconstructed into the current result contract.
-            pass
+    # Derive the additive presentation projection at read time so historical
+    # Decision Packs use the current stage semantics.  This deliberately
+    # rebuilds even when an older projection is already stored: the database
+    # snapshot remains immutable and no evidence or assessment stage reruns.
+    try:
+        result = InterlockResult.model_validate(result_payload)
+        stage_intelligence = result.stage_intelligence or build_stage_intelligence(
+            result.project_context,
+            result.evidence_bundle,
+            result.assessment_result,
+        )
+        stage_view = build_stage_assessment_view(
+            result.project_context,
+            result.evidence_bundle,
+            result.assessment_result,
+            stage_intelligence,
+            result.explanation_result,
+        )
+        result_payload["stage_intelligence"] = stage_intelligence.model_dump(mode="json")
+        result_payload["stage_assessment_view"] = stage_view.model_dump(mode="json")
+    except (TypeError, ValueError):
+        # Preserve compatibility for legacy/partial snapshots that cannot be
+        # reconstructed into the current result contract.
+        pass
     return AssessmentRunResponse(
         **_run_summary(run).model_dump(),
         submitted_project_context=dict(run.submitted_project_context),

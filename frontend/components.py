@@ -129,11 +129,12 @@ def render_decision_summary(payload: dict[str, Any]) -> None:
     status_text, _ = status_label(workflow_status)
     domains = assessment_domain_state_summary(payload)
     state_labels = {
-        "CLEAR": "No explicit constraint",
+        "CLEAR": "No explicit hard constraint identified",
         "CONDITIONAL": "Conditional",
         "CONSTRAINED": "Constraint recorded",
         "UNKNOWN": "Information required",
         "INFORMATIONAL": "Informational",
+        "SCREENING_CONTEXT": "Screening context",
     }
     colours = {
         "CLEAR": "#16877d",
@@ -150,13 +151,13 @@ def render_decision_summary(payload: dict[str, Any]) -> None:
         f'stroke="{colours.get(str(item.get("state")), "#4b7890")}" '
         f'stroke-dasharray="{segment - 3:.2f} {circumference - segment + 3:.2f}" '
         f'stroke-dashoffset="{-index * segment:.2f}" aria-label="{html.escape(str(item.get("label")))}: '
-        f'{html.escape(state_labels.get(str(item.get("state")), "Information required"))}" />'
+        f'{html.escape(state_labels.get(str(item.get("display_state") or item.get("state")), "Information required"))}" />'
         for index, item in enumerate(domains)
     )
     legend = "".join(
         f'<li><span class="interlock-legend-dot" style="background:{colours.get(str(item.get("state")), "#4b7890")}"></span>'
         f'<span><strong>{html.escape(str(item.get("label")))}</strong>'
-        f'<small>{html.escape(state_labels.get(str(item.get("state")), "Information required"))}</small></span></li>'
+        f'<small>{html.escape(state_labels.get(str(item.get("display_state") or item.get("state")), "Information required"))}</small></span></li>'
         for item in domains
     )
     if not domains:
@@ -178,19 +179,20 @@ def render_decision_summary(payload: dict[str, Any]) -> None:
             f" of {stage_view.get('total_evidence_count', summary.get('evidence_record_count', 0))} stored records."
         )
         st.caption("Domain states: " + " · ".join(
-            f"{item.get('label', 'Domain')} — {state_labels.get(str(item.get('state')), 'Information required')}"
+            f"{item.get('label', 'Domain')} — {state_labels.get(str(item.get('display_state') or item.get('state')), 'Information required')}"
             for item in domains
         ))
     st.caption(
         "UNKNOWN means INTERLOCK does not have sufficient verified evidence to reach a reliable conclusion. "
-        "Combined groups show the most cautionary state actually returned for their source domains."
+        "Combined groups show the most cautionary state actually returned for their source domains. "
+        "CLEAR does not mean approved, compliant, fully resolved or deliverable."
     )
     metrics = (
-        ("Key findings", summary.get("finding_count", 0)),
-        ("Constraints", summary.get("conditional_or_constrained_finding_count", 0)),
+        ("Stage findings", summary.get("finding_count", 0)),
+        ("Explicit constraints", summary.get("explicit_constraint_count", 0)),
         ("Information required", as_dict(payload.get("stage_assessment_view")).get("counts", {}).get("information_required_count", summary.get("unknown_theme_count", 0))),
         ("Professional reviews", summary.get("human_review_count", 0)),
-        ("Evidence records", summary.get("evidence_record_count", 0)),
+        ("Stage-relevant evidence", summary.get("evidence_record_count", 0)),
     )
     columns = st.columns(5)
     for column, (title, value) in zip(columns, metrics):
@@ -508,9 +510,11 @@ def render_decision_pack(payload: dict[str, Any]) -> None:
     _render_primary_findings(payload)
     _render_required_to_progress(payload)
     _render_primary_actions(payload)
+    render_stage_review_summary(payload)
     if payload.get("requires_human_review"):
         st.info("Human review required is a workflow state, not an application failure or a final project decision.")
     planning = as_dict(payload.get("investigation_plan"))
+    render_workflow_provenance(payload)
     # New results expose a shared stage view; planner telemetry belongs in the
     # technical detail panel.  Keep the legacy fallback visible for old stored
     # payloads that predate that contract.
@@ -555,9 +559,10 @@ def _render_primary_findings(payload: dict[str, Any], limit: int = 5) -> None:
                 "UNKNOWN": "Information required",
                 "CONDITIONAL": "Conditional",
                 "CONSTRAINED": "Constraint recorded",
-                "CLEAR": "No explicit constraint",
+                "CLEAR": "No explicit hard constraint identified",
                 "INFORMATIONAL": "Informational",
-            }.get(status, "Information required")
+                "SCREENING_CONTEXT": "Screening context",
+            }.get(str(finding.get("display_status") or status), "Information required")
             with st.container(border=True):
                 st.markdown(
                     f"**{finding.get('domain_label') or label(finding.get('domain'), DOMAIN_LABELS)}** · "
@@ -686,6 +691,50 @@ def _render_primary_actions(payload: dict[str, Any], limit: int = 5) -> None:
         st.caption(f"Showing {limit} of {len(actions)} actions. Related evidence remains available in the drill-down.")
 
 
+def render_stage_review_summary(payload: dict[str, Any]) -> None:
+    """Show the real stage-routed professional reviews in the customer pack."""
+
+    stage_view = as_dict(payload.get("stage_assessment_view"))
+    reviews = [as_dict(item) for item in as_list(stage_view.get("professional_reviews"))]
+    if not reviews:
+        return
+    st.markdown("#### Professional review pathway")
+    st.caption("These are the specialist hand-offs returned for this stage; they are not approval or a final project decision.")
+    for item in reviews:
+        role = label(item.get("recommended_role"), ROLE_LABELS)
+        domain = label(item.get("domain"), DOMAIN_LABELS)
+        reason = item.get("reason") or "Review the related evidence."
+        st.markdown(f"**{role}** · {domain}")
+        st.caption(str(reason))
+
+
+def render_workflow_provenance(payload: dict[str, Any]) -> None:
+    """Show compact factual workflow provenance without model transcripts."""
+
+    stage_status = as_dict(payload.get("stage_status"))
+    planning = as_dict(payload.get("investigation_plan"))
+    if not stage_status and not planning:
+        return
+    st.markdown("#### Workflow provenance")
+    ordered = (
+        ("evidence", "Evidence gathered"),
+        ("assessment", "Deterministic assessment"),
+        ("explanation", "Explanation prepared"),
+    )
+    status_text = " · ".join(
+        f"{label_text}: {stage_status.get(key, 'NOT_RECORDED')}"
+        for key, label_text in ordered
+        if key in stage_status
+    )
+    if status_text:
+        st.caption(status_text)
+    planning_mode = str(planning.get("planning_mode") or "")
+    if planning_mode == "BOUNDED_LLM" and planning.get("llm_used"):
+        st.caption("Bounded intelligent orchestration selected evidence questions; evidence, assessment and explanation remained deterministic.")
+    elif planning:
+        st.caption("Deterministic evidence planning selected the workflow; evidence, assessment and explanation remained deterministic.")
+
+
 def render_demo_run_summary(summary: dict[str, Any] | None) -> None:
     """Render the actual result summary for a successfully run demo preset."""
 
@@ -694,8 +743,8 @@ def render_demo_run_summary(summary: dict[str, Any] | None) -> None:
     st.markdown("#### Demo run summary")
     st.caption("Derived from the completed InterlockResult returned for this demo run.")
     metric_items = (
-        ("Evidence records", summary.get("evidence_record_count", 0)),
-        ("Findings", summary.get("finding_count", 0)),
+        ("Stage-relevant evidence", summary.get("evidence_record_count", 0)),
+        ("Stage findings", summary.get("finding_count", 0)),
         ("Unknown themes", summary.get("unknown_theme_count", 0)),
         ("Human reviews", summary.get("human_review_count", 0)),
     )
@@ -781,7 +830,10 @@ def render_sources(explanation: dict[str, Any], evidence: dict[str, Any]) -> Non
             document_id = str(item.get("document_id") or "")
             record = record_by_document.get(document_id, {})
             with st.container(border=True):
-                st.markdown(f"**{source_label(record)}** · {document_id or 'Source reference'}")
+                title = record.get("source_name") or record.get("source") or item.get("title") or "Source reference"
+                authority = record.get("authority_class") or record.get("source_class")
+                authority_text = f" · {label(authority)}" if authority else ""
+                st.markdown(f"**{title}** · {source_label(record)}{authority_text}")
                 st.caption(item.get("locator") or item.get("source_path") or "Structured citation returned by the backend.")
     else:
         st.caption("No customer-facing citations were returned.")

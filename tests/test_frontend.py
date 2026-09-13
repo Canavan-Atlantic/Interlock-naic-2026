@@ -322,6 +322,7 @@ def test_demo_summary_uses_only_actual_interlock_result_fields() -> None:
     assert summary["evidence_record_count"] == 2
     assert summary["finding_count"] == 2
     assert summary["conditional_or_constrained_finding_count"] == 1
+    assert summary["explicit_constraint_count"] == 0
     assert summary["unknown_theme_count"] == 1
     assert summary["contradiction_count"] == 1
     assert summary["human_review_count"] == 1
@@ -439,6 +440,86 @@ def test_module_12_report_download_uses_stored_result_without_backend_rerun(monk
     assert not app.exception
     assert any(item.label == "Download Assessment Report" for item in app.download_button)
     assert calls == []
+
+
+def test_report_projection_uses_friendly_citations_and_deduplicates_warnings() -> None:
+    payload = _module_12_report_payload()
+    payload["explanation_result"]["warnings"] = [
+        "Evidence requires professional validation before reliance.",
+        "A second distinct warning.",
+    ]
+    payload["evidence_bundle"]["warnings"] = [
+        "Evidence requires professional validation before reliance.",
+    ]
+
+    model = build_assessment_report_view_model(payload)
+
+    assert model["warnings"] == [
+        "Evidence requires professional validation before reliance.",
+        "A second distinct warning.",
+    ]
+    assert model["citations"][0]["title"] == "Eirgrid Plan"
+    assert model["citations"][0]["authority"] == "Authority classification not provided"
+
+
+def test_pdf_wraps_long_customer_content_and_keeps_empty_raw_findings_traceable() -> None:
+    payload = _module_12_report_payload()
+    long_finding_id = "finding-" + "x" * 120
+    payload["assessment_result"]["findings"] = [
+        {"finding_id": long_finding_id, "domain": "GRID", "status": "UNKNOWN"},
+    ]
+    payload["explanation_result"]["key_findings"] = []
+    payload["explanation_result"]["next_action_plan"] = []
+
+    import fitz
+
+    document = fitz.open(stream=render_assessment_report_pdf(payload), filetype="pdf")
+    report_text = "\n".join(page.get_text() for page in document)
+    document.close()
+
+    assert long_finding_id in report_text.replace("\n", "")
+    assert "No explanatory text was returned for this raw finding" in " ".join(report_text.split())
+
+
+def test_decision_pack_shows_truthful_workflow_provenance_and_review_routing() -> None:
+    payload = _module_12_report_payload()
+    payload["stage_assessment_view"] = {
+        "stage": "Deliverability Validation",
+        "customer_question": "Which delivery-critical requirements are confirmed, and what remains unresolved?",
+        "requirement_heading": "Delivery-critical evidence missing",
+        "relevant_findings": [],
+        "information_required": [],
+        "professional_reviews": [
+            {
+                "review_id": "review-planning",
+                "domain": "PLANNING",
+                "recommended_role": "PLANNING_CONSULTANT",
+                "reason": "Confirm the site-specific planning position.",
+            }
+        ],
+        "next_actions": [],
+        "domain_states": [],
+        "counts": {},
+    }
+    payload["investigation_plan"] = {
+        "planning_mode": "DETERMINISTIC_FALLBACK",
+        "llm_used": False,
+        "selected_domains": ["PLANNING"],
+        "tool_requests": [],
+    }
+
+    app = AppTest.from_file(APP_PATH, default_timeout=10).run()
+    app.session_state["active_page"] = "Decision Pack"
+    app.session_state["interlock_payload"] = payload
+    app.run()
+
+    assert not app.exception
+    rendered_text = " ".join(item.value for item in list(app.markdown) + list(app.caption))
+    assert "Professional review pathway" in rendered_text
+    assert "Planning consultant" in rendered_text
+    assert "Evidence gathered" in rendered_text
+    assert "Deterministic assessment" in rendered_text
+    assert "reasoning transcript" not in rendered_text.casefold()
 
 
 def test_successful_assessment_queues_safe_navigation_and_persists_result(monkeypatch: pytest.MonkeyPatch) -> None:

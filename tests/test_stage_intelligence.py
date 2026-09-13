@@ -1,4 +1,12 @@
-from backend.app.schemas.agents import AssessmentFinding, AssessmentResult, EvidenceBundle, ProjectContext
+from backend.app.schemas.agents import (
+    AssessmentFinding,
+    AssessmentResult,
+    EvidenceBundle,
+    ExplanationAction,
+    ExplanationResult,
+    HumanReviewRequest,
+    ProjectContext,
+)
 from backend.app.services.stage_intelligence import build_stage_intelligence
 from backend.app.services.stage_view import build_stage_assessment_view
 
@@ -33,6 +41,11 @@ def test_deliverability_is_stronger_and_requires_project_specific_pathway() -> N
     assert "energy-pathway" in required
     assert stage.missing_evidence_wording == "Delivery-critical evidence missing"
     assert stage.customer_question != build_stage_intelligence(_context("Site Discovery")).customer_question
+    for item in stage.required_to_progress:
+        if item.status == "REQUIRED_TO_PROGRESS":
+            assert item.why_required
+            assert item.next_step
+            assert item.owner
 
 
 def test_deliverability_inputs_are_not_delivery_evidence() -> None:
@@ -74,3 +87,146 @@ def test_stage_assessment_view_is_relevant_and_reportable() -> None:
     assert view.total_evidence_count == 0
     assert "score" not in view.model_dump()
     assert "decision" not in view.model_dump()
+
+
+def test_stage_view_counts_explicit_constraints_and_preserves_finding_ids() -> None:
+    context = _context("Early Feasibility")
+    assessment = AssessmentResult(
+        project_context=context,
+        findings=[
+            AssessmentFinding(finding_id="conditional", domain="GRID", status="CONDITIONAL"),
+            AssessmentFinding(finding_id="hard", domain="PLANNING", status="CONSTRAINED"),
+            AssessmentFinding(finding_id="unknown", domain="WATER", status="UNKNOWN"),
+        ],
+    )
+    view = build_stage_assessment_view(
+        context,
+        EvidenceBundle(project_context=context),
+        assessment,
+        build_stage_intelligence(context),
+    )
+
+    assert view.counts["constraint_count"] == 1
+    assert view.counts["conditional_or_constrained_finding_count"] == 2
+    assert {item["finding_ids"][0] for item in view.domain_states} == {"conditional", "hard", "unknown"}
+
+
+def test_site_discovery_does_not_surface_later_stage_actions_as_immediate_requirements() -> None:
+    context = _context("Site Discovery")
+    assessment = AssessmentResult(
+        project_context=context,
+        findings=[
+            AssessmentFinding(finding_id="site-grid", domain="GRID", status="UNKNOWN"),
+            AssessmentFinding(finding_id="site-planning", domain="PLANNING", status="UNKNOWN"),
+        ],
+    )
+    explanation = ExplanationResult(
+        next_action_plan=[
+            ExplanationAction(
+                action_id="grid-mic",
+                title="Confirm MIC and energy strategy",
+                rationale="This action addresses the assessment evidence requirements: project-specific grid evidence.",
+                finding_ids=["site-grid"],
+            ),
+            ExplanationAction(
+                action_id="water",
+                title="Confirm water capacity",
+                rationale="This action addresses the assessment evidence requirements: water capacity.",
+                finding_ids=["later-water"],
+            ),
+            ExplanationAction(
+                action_id="planning",
+                title="Review planning position",
+                rationale="This action addresses the assessment evidence requirements: site planning evidence.",
+                finding_ids=["site-planning"],
+            ),
+        ]
+    )
+    view = build_stage_assessment_view(
+        context,
+        EvidenceBundle(project_context=context),
+        assessment,
+        build_stage_intelligence(context),
+        explanation,
+    )
+
+    action_text = " ".join(item["title"] + " " + item["why_this_action"] for item in view.next_actions)
+    assert "water capacity" not in action_text.casefold()
+    assert "mic and energy strategy" not in action_text.casefold()
+    assert any(item["title"] == "Review nearby grid infrastructure context" for item in view.next_actions)
+    grid = next(item for item in view.relevant_findings if item["finding_id"] == "site-grid")
+    assert grid["display_status"] == "SCREENING_CONTEXT"
+    assert "later-stage question" in grid["headline"]
+    assert "site screening" in grid["why_it_matters"]
+
+
+def test_site_discovery_does_not_route_later_stage_grid_review() -> None:
+    context = _context("Site Discovery")
+    late_review = HumanReviewRequest(
+        review_id="grid-mic-review",
+        project_id=context.project_id,
+        domain="GRID",
+        reason="MIC not provided for the project connection pathway.",
+        recommended_role="GRID_ENGINEER",
+    )
+    assessment = AssessmentResult(project_context=context, human_reviews=[late_review])
+    view = build_stage_assessment_view(
+        context,
+        EvidenceBundle(project_context=context),
+        assessment,
+        build_stage_intelligence(context),
+    )
+
+    assert view.professional_reviews == []
+
+
+def test_stage_view_deduplicates_professional_reviews_and_keeps_action_reason_distinct() -> None:
+    context = _context("Deliverability Validation")
+    review = HumanReviewRequest(
+        review_id="planning-review",
+        project_id=context.project_id,
+        domain="PLANNING",
+        reason="Confirm the site-specific planning position.",
+        recommended_role="PLANNING_CONSULTANT",
+        evidence_ids=["planning-evidence"],
+    )
+    assessment = AssessmentResult(
+        project_context=context,
+        findings=[AssessmentFinding(finding_id="planning", domain="PLANNING", status="UNKNOWN")],
+        human_reviews=[review],
+    )
+    explanation = ExplanationResult(
+        next_action_plan=[
+            ExplanationAction(
+                action_id="planning-action",
+                title="Confirm planning position",
+                rationale="This action addresses the assessment evidence requirements: obtain site-specific planning evidence.",
+                finding_ids=["planning"],
+            )
+        ]
+    )
+    view = build_stage_assessment_view(
+        context,
+        EvidenceBundle(project_context=context, human_review_requests=[review]),
+        assessment,
+        build_stage_intelligence(context),
+        explanation,
+    )
+
+    assert len(view.professional_reviews) == 1
+    assert view.professional_reviews[0]["recommended_role"] == "PLANNING_CONSULTANT"
+    assert view.next_actions[0]["reason"] != view.next_actions[0]["why_this_action"]
+
+
+def test_stage_view_fallback_actions_name_the_missing_input() -> None:
+    context = _context("Early Feasibility")
+    view = build_stage_assessment_view(
+        context,
+        EvidenceBundle(project_context=context),
+        AssessmentResult(project_context=context),
+        build_stage_intelligence(context),
+    )
+
+    titles = {item["title"] for item in view.next_actions}
+    assert "Provide the site area or confirmed site boundary." in titles
+    assert "Confirm the current project definition, stage and phasing inputs." not in titles

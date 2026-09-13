@@ -23,7 +23,7 @@ except ImportError:  # Streamlit executes frontend/app.py as a top-level script.
     from result_summary import assessment_domain_state_summary, summarize_interlock_result
 
 
-REPORT_VERSION = "1.1"
+REPORT_VERSION = "1.2"
 COMPARISON_REPORT_VERSION = "1.0"
 PAGE_WIDTH = 595
 PAGE_HEIGHT = 842
@@ -118,10 +118,14 @@ def build_assessment_report_view_model(payload: dict[str, Any]) -> dict[str, Any
         item = _as_dict(citation)
         document_id = _text(item.get("document_id"), "Source reference")
         source_record = record_by_document.get(document_id, {})
+        source_path = _text(item.get("source_path") or source_record.get("source_path"), "Not provided")
+        authority = _friendly_authority(source_record.get("authority_class") or source_record.get("source_class"))
         citation_items.append(
             {
                 "document_id": document_id,
-                "source_path": _text(item.get("source_path") or source_record.get("source_path"), "Not provided"),
+                "title": _friendly_source_title(source_record, source_path, document_id),
+                "authority": authority,
+                "source_path": source_path,
                 "locator": _text(item.get("locator"), "Locator not provided"),
                 "page_start": item.get("page_start"),
                 "page_end": item.get("page_end"),
@@ -130,22 +134,24 @@ def build_assessment_report_view_model(payload: dict[str, Any]) -> dict[str, Any
         )
 
     summary = summarize_interlock_result(payload)
-    warnings = [
+    warnings = _unique_text(
         _text(item)
         for item in [*_as_list(evidence.get("warnings")), *_as_list(explanation.get("warnings"))]
         if item is not None
-    ]
+    )
     planning = _as_dict(payload.get("investigation_plan"))
     stage_intelligence = _as_dict(payload.get("stage_intelligence"))
     stage_view = _as_dict(payload.get("stage_assessment_view"))
     raw_findings = findings
     raw_actions = action_items
+    raw_reviews = reviews
     if stage_view:
         # The executive report and Streamlit customer view consume the same
         # bounded projection.  Raw result fields remain available below for
         # the audit appendix.
         findings = [_as_dict(item) for item in _as_list(stage_view.get("relevant_findings"))]
         actions = [_as_dict(item) for item in _as_list(stage_view.get("next_actions"))]
+        reviews = [_as_dict(item) for item in _as_list(stage_view.get("professional_reviews"))]
     return {
         "report_version": REPORT_VERSION,
         "project": {
@@ -184,6 +190,7 @@ def build_assessment_report_view_model(payload: dict[str, Any]) -> dict[str, Any
         "dependencies": dependency_items,
         "contradictions": [_text(item) for item in _as_list(explanation.get("contradictions"))],
         "reviews": reviews,
+        "raw_reviews": raw_reviews,
         "actions": actions if stage_view else action_items,
         "raw_actions": raw_actions,
         "citations": citation_items,
@@ -251,26 +258,24 @@ class _PdfWriter:
             self.new_body_page()
 
     def heading(self, number: str, title: str) -> None:
-        self.ensure(58)
+        heading_text = f"{number}  {_text(title)}"
+        lines = _wrap_lines(heading_text, 55)
+        height = max(1, len(lines)) * 22 + 18
+        self.ensure(height)
         self.page.draw_line(fitz.Point(MARGIN, self.y), fitz.Point(PAGE_WIDTH - MARGIN, self.y), color=TURQUOISE, width=2)
-        self.y += 17
-        self.page.insert_text((MARGIN, self.y), f"{number}  {title}", fontsize=17, fontname="hebo", color=NAVY)
-        self.y += 27
+        for index, line in enumerate(lines):
+            self.page.insert_text((MARGIN, self.y + 20 + index * 22), line, fontsize=17, fontname="hebo", color=NAVY)
+        self.y += height
 
     def paragraph(self, value: object, *, color: tuple[float, float, float] = INK, size: float = 9.5, gap: float = 7) -> None:
-        text = _truncate(_text(value), 1500)
+        text = _text(value)
         if not text:
             return
-        lines = max(1, len(textwrap.wrap(text, width=94, break_long_words=False, break_on_hyphens=False)))
+        lines = max(1, len(_wrap_lines(text, 94)))
         height = lines * (size + 3) + gap
         self.ensure(height)
-        self.page.insert_textbox(
-            fitz.Rect(MARGIN, self.y, PAGE_WIDTH - MARGIN, self.y + height),
-            text,
-            fontsize=size,
-            fontname="helv",
-            color=color,
-        )
+        for index, line in enumerate(_wrap_lines(text, 94)):
+            self.page.insert_text((MARGIN, self.y + size + index * (size + 3)), line, fontsize=size, fontname="helv", color=color)
         self.y += height
 
     def bullet(self, value: object, *, prefix: str = "• ") -> None:
@@ -283,21 +288,21 @@ class _PdfWriter:
         self.paragraph(value, size=9.2, gap=8)
 
     def card(self, title: str, body: object, *, accent: tuple[float, float, float] = TURQUOISE) -> None:
-        text = _truncate(_text(body), 720)
-        lines = max(1, len(textwrap.wrap(text, width=84, break_long_words=False, break_on_hyphens=False)))
-        height = 31 + lines * 12
+        title_text = _text(title)
+        text = _text(body)
+        title_lines = max(1, len(_wrap_lines(title_text, 72)))
+        body_lines = max(1, len(_wrap_lines(text, 84)))
+        title_height = title_lines * 12
+        height = 17 + title_height + body_lines * 12
         self.ensure(height + 9)
         rect = fitz.Rect(MARGIN, self.y, PAGE_WIDTH - MARGIN, self.y + height)
         self.page.draw_rect(rect, color=LINE, fill=PALE, width=0.7)
         self.page.draw_rect(fitz.Rect(rect.x0, rect.y0, rect.x0 + 4, rect.y1), color=None, fill=accent)
-        self.page.insert_text((rect.x0 + 15, rect.y0 + 16), _truncate(title, 90), fontsize=10, fontname="hebo", color=NAVY)
-        self.page.insert_textbox(
-            fitz.Rect(rect.x0 + 15, rect.y0 + 22, rect.x1 - 12, rect.y1 - 6),
-            text,
-            fontsize=8.7,
-            fontname="helv",
-            color=INK,
-        )
+        for index, line in enumerate(_wrap_lines(title_text, 72)):
+            self.page.insert_text((rect.x0 + 15, rect.y0 + 15 + index * 12), line, fontsize=10, fontname="hebo", color=NAVY)
+        body_top = rect.y0 + 15 + title_height
+        for index, line in enumerate(_wrap_lines(text, 84)):
+            self.page.insert_text((rect.x0 + 15, body_top + index * 12), line, fontsize=8.7, fontname="helv", color=INK)
         self.y += height + 9
 
 
@@ -580,7 +585,8 @@ def _draw_technical_appendix_legacy(writer: _PdfWriter, model: dict[str, Any]) -
     writer.card("Workflow status", model["workflow_status"], accent=_status_color(model["workflow_status"]))
     writer.card(
         "Recorded scope",
-        f"{summary.get('finding_count', 0)} structured findings, {summary.get('evidence_record_count', 0)} evidence records, "
+        f"{summary.get('finding_count', 0)} stage findings, {summary.get('evidence_record_count', 0)} stage-relevant evidence records "
+        f"from {summary.get('total_evidence_record_count', len(model['source_records']))} total stored records, "
         f"{summary.get('unknown_theme_count', 0)} unknown themes and {summary.get('human_review_count', 0)} professional review requests.",
     )
     if model["known_facts"]:
@@ -615,7 +621,20 @@ def _draw_technical_appendix_legacy(writer: _PdfWriter, model: dict[str, Any]) -
                 body_parts.append("Unknowns: " + "; ".join(finding["material_unknowns"]))
             if finding.get("evidence_ids"):
                 body_parts.append("Evidence IDs: " + ", ".join(finding["evidence_ids"]))
-            writer.card(f"{finding['domain']}  ·  {finding['finding_id']}", "\n".join(body_parts), accent=_status_color(finding["status"]))
+            if len(body_parts) == 1:
+                evidence_text = (
+                    " Evidence IDs: " + ", ".join(finding["evidence_ids"])
+                    if finding.get("evidence_ids")
+                    else ""
+                )
+                writer.paragraph(
+                    f"{finding['domain']} · {finding['finding_id']} — Status: {finding['status']}. "
+                    f"No explanatory text was returned for this raw finding; inspect its linked provenance.{evidence_text}",
+                    color=MUTED,
+                    size=8.2,
+                )
+            else:
+                writer.card(f"{finding['domain']}  ·  {finding['finding_id']}", "\n".join(body_parts), accent=_status_color(finding["status"]))
     else:
         writer.paragraph("No structured findings were returned by the assessment stage.", color=MUTED)
         for item in model["key_findings"]:
@@ -655,8 +674,9 @@ def _draw_technical_appendix_legacy(writer: _PdfWriter, model: dict[str, Any]) -
         writer.paragraph("No material evidence contradictions were returned.", color=MUTED)
 
     writer.heading("08", "Professional review")
-    if model["reviews"]:
-        for review in model["reviews"]:
+    appendix_reviews = model.get("raw_reviews", model["reviews"])
+    if appendix_reviews:
+        for review in appendix_reviews:
             item = _as_dict(review)
             role = _display_enum(item.get("recommended_role"), "Specialist review")
             domain = _display_enum(item.get("domain"), "UNKNOWN")
@@ -697,7 +717,7 @@ def _draw_technical_appendix_legacy(writer: _PdfWriter, model: dict[str, Any]) -
     else:
         writer.paragraph("No customer-facing citations were returned.", color=MUTED)
     if model["source_records"]:
-        writer.paragraph(f"Evidence provenance includes {len(model['source_records'])} stored evidence records. Full evidence IDs remain available in the Streamlit Decision Pack.", color=MUTED, size=8.2)
+        writer.paragraph(f"Evidence provenance includes {len(model['source_records'])} total stored evidence records. Full evidence IDs remain available in the Streamlit Decision Pack.", color=MUTED, size=8.2)
 
     writer.heading("11", "Methodology & limitations")
     writer.paragraph("This PDF is generated from the successful stored InterlockResult in the browser session. It presents deterministic evidence, structured assessment findings, explanation fields, unknowns, dependencies, contradictions, actions and human-review requests as returned by the workflow.")
@@ -752,7 +772,9 @@ def _draw_report_sections(writer: _PdfWriter, model: dict[str, Any]) -> None:
     if stage.get("customer_question"):
         writer.paragraph(f"Customer question: {stage['customer_question']}", color=TEAL, size=9.5)
     writer.paragraph(
-        f"Recorded scope: {summary.get('finding_count', 0)} findings, "
+        f"Recorded scope: {summary.get('finding_count', 0)} stage findings, "
+        f"{summary.get('evidence_record_count', 0)} stage-relevant evidence records "
+        f"({summary.get('total_evidence_record_count', len(model['source_records']))} total stored), "
         f"{_as_dict(model.get('stage_assessment_view')).get('counts', {}).get('information_required_count', summary.get('unknown_theme_count', 0))} information-required items, "
         f"{summary.get('human_review_count', 0)} professional review requests.",
         color=MUTED,
@@ -763,7 +785,7 @@ def _draw_report_sections(writer: _PdfWriter, model: dict[str, Any]) -> None:
 
     writer.heading("02", "Visual domain summary")
     _draw_domain_summary(writer, model["domains"])
-    writer.paragraph("Domain states are the structured assessment states returned by INTERLOCK. No unsupported numeric outcome is created.", color=MUTED, size=8.2)
+    writer.paragraph("Domain states are the structured assessment states returned by INTERLOCK. CLEAR means no explicit hard constraint was identified; it does not mean approved, compliant, fully resolved or deliverable. No unsupported numeric outcome is created.", color=MUTED, size=8.2)
 
     writer.new_body_page()
     writer.heading("03", "Map / spatial context")
@@ -776,13 +798,13 @@ def _draw_report_sections(writer: _PdfWriter, model: dict[str, Any]) -> None:
     for finding in model["findings"][:5]:
         body = f"Status: {finding['status']}"
         if finding.get("headline"):
-            body += f"\n{_truncate(finding['headline'], 420)}"
+            body += f"\n{_text(finding['headline'])}"
             if finding.get("why_it_matters"):
-                body += f"\nWhy it matters: {_truncate(finding['why_it_matters'], 320)}"
+                body += f"\nWhy it matters: {_text(finding['why_it_matters'])}"
         elif finding.get("narrative"):
-            body += f"\n{_truncate(finding['narrative'], 420)}"
+            body += f"\n{_text(finding['narrative'])}"
         elif finding.get("decision_impact"):
-            body += f"\n{_truncate(finding['decision_impact'], 420)}"
+            body += f"\n{_text(finding['decision_impact'])}"
         if finding.get("evidence_ids"):
             body += "\nEvidence IDs: " + ", ".join(finding["evidence_ids"])
         writer.card(f"{finding['domain']}  ·  {finding['finding_id']}", body, accent=_status_color(finding["status"]))
@@ -823,11 +845,11 @@ def _draw_report_sections(writer: _PdfWriter, model: dict[str, Any]) -> None:
         )
 
     writer.heading("07", "Evidence summary and key citations")
-    writer.paragraph(f"The stored result contains {len(model['source_records'])} evidence records. Full identifiers and technical provenance are retained in the appendix.", color=MUTED, size=8.7)
+    writer.paragraph(f"This stage used {model['summary'].get('evidence_record_count', 0)} stage-relevant evidence records from {model['summary'].get('total_evidence_record_count', len(model['source_records']))} total stored records. Full identifiers and technical provenance are retained in the appendix.", color=MUTED, size=8.7)
     for citation in model["citations"][:6]:
         writer.card(
-            f"{citation['document_id']}  ·  {citation['locator']}",
-            f"Source path: {citation['source_path']}",
+            f"{citation['title']}  ·  {citation['locator']}",
+            f"Authority: {citation['authority']}" + (f"\nSection: {citation['section_heading']}" if citation.get("section_heading") else ""),
             accent=TEAL,
         )
     if len(model["citations"]) > 6:
@@ -849,8 +871,14 @@ def _draw_domain_summary(writer: _PdfWriter, domains: list[dict[str, Any]]) -> N
         x = MARGIN + (index % 2) * (BODY_WIDTH / 2)
         y = writer.y
         writer.page.draw_circle(fitz.Point(x + 9, y + 7), 7, color=color, fill=color)
-        writer.page.insert_text((x + 23, y + 10), _truncate(f"{item['label']}  ·  {item['state']}", 42), fontsize=8.8, fontname="hebo", color=INK)
-        writer.page.insert_text((x + 23, y + 22), f"Findings: {len(item.get('finding_ids', []))}  |  Evidence: {len(item.get('evidence_ids', []))}", fontsize=7.4, fontname="helv", color=MUTED)
+        display_state = _domain_display_state(item)
+        title = f"{item['label']}  ·  {display_state}"
+        writer.page.insert_textbox(fitz.Rect(x + 23, y, x + BODY_WIDTH / 2 - 8, y + 13), title, fontsize=8.8, fontname="hebo", color=INK)
+        finding_count = item.get("finding_count")
+        if finding_count is None:
+            finding_count = len(item.get("finding_ids", []))
+        evidence_count = len(item.get("evidence_ids", []))
+        writer.page.insert_text((x + 23, y + 22), f"Stage findings: {finding_count}  |  Stage-relevant evidence: {evidence_count}", fontsize=7.4, fontname="helv", color=MUTED)
         if index % 2 == 1 or index == len(domains) - 1:
             writer.y += 36
 
@@ -876,6 +904,63 @@ def _status_color(value: object) -> tuple[float, float, float]:
     if status == "CONSTRAINED":
         return RED
     return BLUE
+
+
+def _domain_display_state(item: dict[str, Any]) -> str:
+    state = _display_enum(item.get("display_state") or item.get("state"), "UNKNOWN")
+    return {
+        "CLEAR": "No explicit hard constraint identified",
+        "CONDITIONAL": "Conditional",
+        "CONSTRAINED": "Constraint recorded",
+        "UNKNOWN": "Information required",
+        "INFORMATIONAL": "Informational",
+        "SCREENING_CONTEXT": "Screening context",
+    }.get(state, state.replace("_", " ").title())
+
+
+def _friendly_authority(value: object) -> str:
+    return {
+        "PRIMARY": "Authoritative policy",
+        "CURATED": "Curated policy",
+        "SUPPORTING": "Supporting policy",
+        "SECONDARY": "Supporting source",
+    }.get(_display_enum(value, ""), "Authority classification not provided")
+
+
+def _friendly_source_title(record: dict[str, Any], source_path: str, document_id: str) -> str:
+    source_name = record.get("source_name") or record.get("source")
+    if source_name:
+        return str(source_name)
+    if source_path and source_path != "Not provided":
+        stem = Path(source_path).stem.replace("_", " ").replace("-", " ")
+        if stem:
+            return " ".join(word.capitalize() for word in stem.split())
+    return "Source reference"
+
+
+def _unique_text(values: Any) -> list[str]:
+    output: list[str] = []
+    for value in values:
+        text = _text(value).strip()
+        if text and text not in output:
+            output.append(text)
+    return output
+
+
+def _wrap_lines(value: object, width: int) -> list[str]:
+    text = _text(value)
+    if not text:
+        return [""]
+    lines: list[str] = []
+    for paragraph in text.splitlines() or [""]:
+        wrapped = textwrap.wrap(
+            paragraph,
+            width=width,
+            break_long_words=True,
+            break_on_hyphens=False,
+        )
+        lines.extend(wrapped or [""])
+    return lines or [""]
 
 
 def _format_mapping(value: object) -> str:
