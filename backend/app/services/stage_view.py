@@ -193,7 +193,7 @@ def build_stage_assessment_view(
     requirements = [
         _as_dict(item.model_dump(mode="python") if hasattr(item, "model_dump") else item)
         for item in stage_intelligence.required_to_progress
-        if _enum(item.get("status")) == "REQUIRED_TO_PROGRESS"
+        if _enum(getattr(item, "status", None)) == "REQUIRED_TO_PROGRESS"
     ]
     reviews: list[dict[str, Any]] = []
     for review in [
