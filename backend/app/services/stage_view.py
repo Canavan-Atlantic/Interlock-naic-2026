@@ -27,6 +27,15 @@ _FRIENDLY_DOMAINS = {
     "DATA_CENTRE_POLICY": "Data Centre Policy",
     "GENERAL": "Project Definition",
 }
+_FRIENDLY_ROLES = {
+    "PLANNING_CONSULTANT": "Planning consultant",
+    "ECOLOGIST": "Ecologist",
+    "GRID_ENGINEER": "Grid engineer",
+    "EIA_ENVIRONMENTAL_CONSULTANT": "Environmental / EIA specialist",
+    "DEVELOPER": "Developer / project team",
+    "LEGAL_REGULATORY": "Legal / regulatory specialist",
+    "UNKNOWN": "Project team",
+}
 _DOMAIN_GROUPS = (
     ("planning", "Planning & Zoning", ("PLANNING",)),
     ("grid-energy", "Grid & Energy", ("GRID", "ENERGY")),
@@ -110,6 +119,11 @@ def _owner(domain: str) -> str:
     }.get(domain, "Project team")
 
 
+def _role_label(value: object) -> str:
+    role = _enum(value)
+    return _FRIENDLY_ROLES.get(role, role.replace("_", " ").title() if role else "Project team")
+
+
 def _finding_view(finding: dict[str, Any], stage: str) -> dict[str, Any]:
     domain = _enum(finding.get("domain")) or "GENERAL"
     status = _enum(finding.get("status")) or "UNKNOWN"
@@ -153,7 +167,7 @@ def _action_view(action: dict[str, Any], finding_by_id: dict[str, dict[str, Any]
     linked = next((finding_by_id[item] for item in ids if item in finding_by_id), None)
     domain = linked["domain"] if linked else "GENERAL"
     title = _short(action.get("title"), "Confirm related evidence.", 100)
-    roles = [_short(item, "Project team", 60) for item in _as_list(action.get("specialist_roles")) if item]
+    roles = [_role_label(item) for item in _as_list(action.get("specialist_roles")) if item]
     owner = roles[0] if roles else _owner(domain)
     return {
         "action_id": str(action.get("action_id") or f"action-{domain.casefold()}"),

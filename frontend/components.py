@@ -5,7 +5,6 @@ from __future__ import annotations
 import base64
 import html
 import os
-import time
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
@@ -259,9 +258,7 @@ def render_report_download(payload: dict[str, Any]) -> None:
     if workflow_status not in {"COMPLETE", "REQUIRES_HUMAN_REVIEW"}:
         return
     try:
-        started = time.perf_counter()
         pdf_bytes = render_assessment_report_pdf(payload)
-        elapsed_ms = (time.perf_counter() - started) * 1000
         st.download_button(
             "Download Assessment Report",
             data=pdf_bytes,
@@ -270,7 +267,7 @@ def render_report_download(payload: dict[str, Any]) -> None:
             key="download_assessment_report",
             icon=":material/download:",
         )
-        st.caption(f"Generated from the stored InterlockResult in {elapsed_ms:.1f} ms. Running a new assessment is not required.")
+        st.caption("Generated from the stored InterlockResult. Running a new assessment is not required.")
     except Exception:
         st.error("The assessment report could not be generated from this result.")
 
@@ -667,7 +664,8 @@ def _render_primary_actions(payload: dict[str, Any], limit: int = 5) -> None:
         for action in actions[:limit]:
             with st.container(border=True):
                 st.markdown(f"**{action.get('title') or 'Next action'}**")
-                st.caption(f"Owner: {action.get('owner') or 'Project team'} · {action.get('reason') or 'Resolve the related evidence gap.'}")
+                domain = action.get("domain_label") or action.get("domain") or "Project evidence"
+                st.caption(f"{domain} · Owner: {action.get('owner') or 'Project team'} · {action.get('reason') or 'Resolve the related evidence gap.'}")
                 with st.expander("Why this action?", expanded=False):
                     st.write(action.get("why_this_action") or action.get("reason") or "Resolve the related evidence gap.")
         if len(actions) > limit:

@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import time
 from typing import Any
 from urllib.parse import quote, urlencode
 
@@ -835,9 +834,7 @@ def render_comparison_page() -> None:
     _render_comparison_section("Citations", as_dict(payload.get("citation_changes")))
 
     try:
-        started = time.perf_counter()
         pdf_bytes = render_comparison_report_pdf(payload)
-        elapsed_ms = (time.perf_counter() - started) * 1000
         st.download_button(
             "Download Comparison Report",
             data=pdf_bytes,
@@ -846,7 +843,7 @@ def render_comparison_page() -> None:
             key="download_comparison_report",
             icon=":material/download:",
         )
-        st.caption(f"Generated from the stored comparison in {elapsed_ms:.1f} ms. Running a new assessment is not required.")
+        st.caption("Generated from the stored comparison. Running a new assessment is not required.")
     except Exception:
         st.error("The comparison report could not be generated from these stored runs.")
 

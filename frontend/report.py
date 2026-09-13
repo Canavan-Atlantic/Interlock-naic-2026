@@ -138,6 +138,8 @@ def build_assessment_report_view_model(payload: dict[str, Any]) -> dict[str, Any
     planning = _as_dict(payload.get("investigation_plan"))
     stage_intelligence = _as_dict(payload.get("stage_intelligence"))
     stage_view = _as_dict(payload.get("stage_assessment_view"))
+    raw_findings = findings
+    raw_actions = action_items
     if stage_view:
         # The executive report and Streamlit customer view consume the same
         # bounded projection.  Raw result fields remain available below for
@@ -176,12 +178,14 @@ def build_assessment_report_view_model(payload: dict[str, Any]) -> dict[str, Any
         "why_it_matters": [_text(item) for item in _as_list(explanation.get("why_it_matters"))],
         "domains": [_as_dict(item) for item in _as_list(stage_view.get("domain_states"))] if stage_view else assessment_domain_state_summary(payload),
         "findings": findings,
+        "raw_findings": raw_findings,
         "key_findings": [_text(item) for item in _as_list(explanation.get("key_findings"))],
         "unknowns": unknowns,
         "dependencies": dependency_items,
         "contradictions": [_text(item) for item in _as_list(explanation.get("contradictions"))],
         "reviews": reviews,
         "actions": actions if stage_view else action_items,
+        "raw_actions": raw_actions,
         "citations": citation_items,
         "source_records": records,
         "constraints": [_text(item) for item in _as_list(assessment.get("constraints")) or _as_list(explanation.get("constraints"))],
@@ -567,6 +571,8 @@ def _compact_comparison_value(value: dict[str, Any]) -> str:
 
 
 def _draw_technical_appendix_legacy(writer: _PdfWriter, model: dict[str, Any]) -> None:
+    appendix_findings = model.get("raw_findings", model["findings"])
+    appendix_actions = model.get("raw_actions", model["actions"])
     writer.new_body_page()
     writer.heading("01", "Executive summary")
     writer.paragraph(model["executive_summary"], size=11, gap=12)
@@ -596,8 +602,8 @@ def _draw_technical_appendix_legacy(writer: _PdfWriter, model: dict[str, Any]) -
     _draw_domain_summary(writer, model["domains"])
 
     writer.heading("04", "Findings")
-    if model["findings"]:
-        for finding in model["findings"]:
+    if appendix_findings:
+        for finding in appendix_findings:
             body_parts = [f"Status: {finding['status']}"]
             if finding.get("narrative"):
                 body_parts.append(finding["narrative"])
@@ -663,8 +669,8 @@ def _draw_technical_appendix_legacy(writer: _PdfWriter, model: dict[str, Any]) -
         writer.paragraph("No unresolved specialist reviews are recorded.", color=MUTED)
 
     writer.heading("09", "Actions")
-    if model["actions"]:
-        for action in model["actions"]:
+    if appendix_actions:
+        for action in appendix_actions:
             item = _as_dict(action)
             body = _text(item.get("rationale"), "Resolve the related evidence gap before relying on this point.")
             if item.get("specialist_roles"):

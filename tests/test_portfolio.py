@@ -140,6 +140,7 @@ def test_projects_and_runs_preserve_multiple_immutable_snapshots(portfolio_datab
     assert historical.json()["interlock_result"]["assessment_result"]["findings"][0]["status"] == "UNKNOWN"
     assert historical.json()["interlock_result"]["explanation_result"]["source_citations"][0]["document_id"] == "eirgrid-plan-001"
     assert historical.json()["interlock_result"]["human_reviews"][0]["review_id"] == "review-run-50"
+    assert historical.json()["interlock_result"]["stage_assessment_view"]["requirement_heading"] == "Required to progress"
 
 
 def test_successful_interlock_endpoint_persists_without_changing_result_contract(
