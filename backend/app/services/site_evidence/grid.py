@@ -14,6 +14,7 @@ from .base import (
     evidence_record,
     query_references,
     records_from_rows,
+    map_features_from_rows,
     source_provenance,
     source_reference_label,
 )
@@ -153,6 +154,7 @@ def evaluate_grid(
         "evidence_state": "FACT",
         "filters": filters,
         "nearby_assets": assets,
+        "map_features": map_features_from_rows(frame, references[0], context.point_itm, layer="grid", fields=GRID_FIELDS),
         "grouped_by_voltage_class": grouped,
         "policy_documents": policies,
         "source": source_provenance(references[0]),

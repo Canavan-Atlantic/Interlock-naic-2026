@@ -11,6 +11,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import json
+import inspect
 from pathlib import Path
 import re
 from time import perf_counter
@@ -61,6 +62,8 @@ from ..services.rag.retrieval import (
     search_index,
 )
 from ..services.site_evidence import evaluate_site
+from ..services.site_evidence.service import SiteEvidenceOptions
+from ..services.stage_scope import StageInvestigationScope, scope_for_context
 
 
 class EvidenceAgentError(RuntimeError):
@@ -420,6 +423,7 @@ def _format_context_value(value: Any, fallback: str = "unknown/not provided") ->
 def build_retrieval_requests(
     context: ProjectContext,
     templates: Iterable[RetrievalQueryTemplate] = DEFAULT_RETRIEVAL_QUERY_TEMPLATES,
+    domains: Iterable[Domain] | None = None,
 ) -> list[RetrievalRequest]:
     """Build the small deterministic policy-query plan for one project."""
 
@@ -444,6 +448,7 @@ def build_retrieval_requests(
         "local_authority": location.local_authority,
         "country": location.country,
     }
+    allowed = set(domains) if domains is not None else None
     return [
         RetrievalRequest(
             query=template.template.format(**values),
@@ -460,6 +465,7 @@ def build_retrieval_requests(
             project_context=project_context,
         )
         for template in templates
+        if allowed is None or template.domain in allowed
     ]
 
 
@@ -982,25 +988,59 @@ class DeterministicEvidenceAgent:
         records.extend(structured)
         return records, warnings
 
+    @staticmethod
+    def _planned_domains(
+        plan: InvestigationPlan | None,
+        tool_name: str,
+        allowed: Iterable[Domain],
+    ) -> tuple[Domain, ...]:
+        allowed_set = set(allowed)
+        if plan is None:
+            return tuple(allowed)
+        requested = {
+            Domain(_enum_value(request.domain))
+            for request in plan.tool_requests
+            if _enum_value(request.tool) == tool_name
+            and _enum_value(request.domain) in {domain.value for domain in allowed_set}
+        }
+        return tuple(domain for domain in allowed if domain in requested)
+
     def _gis_records(
         self,
         context: ProjectContext,
         project_input: ProjectInput,
-    ) -> tuple[list[EvidenceRecord], list[str], list[str]]:
+        options: EvidenceAgentOptions,
+    ) -> tuple[list[EvidenceRecord], list[str], list[str], list[dict[str, Any]]]:
+        scope = scope_for_context(context)
+        selected_domains = self._planned_domains(
+            options.investigation_plan,
+            "GIS_SITE_EVIDENCE",
+            scope.gis_domains,
+        )
+        self._last_gis_timings = {}
         if project_input.latitude is None or project_input.longitude is None:
             return [], ["GIS evidence not run: latitude and longitude are not provided."], [
                 "GIS evidence unavailable because site coordinates are not provided"
-            ]
+            ], []
         try:
-            response = self.site_evidence_runner(project_input, self.project_root)
+            site_options = SiteEvidenceOptions(domains=selected_domains)
+            runner = self.site_evidence_runner
+            try:
+                inspect.signature(runner).bind(project_input, self.project_root, site_options)
+            except (TypeError, ValueError):
+                response = runner(project_input, self.project_root)
+            else:
+                response = runner(project_input, self.project_root, site_options)
         except Exception as exc:  # The bundle remains usable with a clear tool warning.
             return [], [f"Module 4B site evidence could not be evaluated: {type(exc).__name__}"], [
                 "GIS evidence unavailable because the Module 4B service failed"
-            ]
+            ], []
         self._last_gis_timings = dict(response.timings_ms)
         records: list[EvidenceRecord] = []
         for entry in response.evidence_ledger.entries:
             if entry.evidence_id.startswith("project-input-"):
+                continue
+            if selected_domains and _domain_for_field(entry.field_name) not in selected_domains:
                 continue
             records.append(
                 _convert_ledger_entry(
@@ -1017,12 +1057,13 @@ class DeterministicEvidenceAgent:
             for record in records
             if (item := _missing_item_for_record(record)) is not None
         ]
-        return records, warnings, missing
+        return records, warnings, missing, list(getattr(response, "map_features", []) or [])
 
     def _policy_records(
         self,
         context: ProjectContext,
         checked_at: datetime,
+        options: EvidenceAgentOptions,
     ) -> tuple[list[EvidenceRecord], list[str], list[str]]:
         records: list[EvidenceRecord] = []
         warnings: list[str] = []
@@ -1035,7 +1076,13 @@ class DeterministicEvidenceAgent:
                 loaded_index = load_retrieval_index(self.project_root)
             except (IndexNotBuiltError, StaleIndexError, FileNotFoundError, ValueError) as exc:
                 load_error = exc
-        for request in build_retrieval_requests(context, self.retrieval_templates):
+        scope = scope_for_context(context)
+        selected_domains = self._planned_domains(
+            options.investigation_plan,
+            "POLICY_RAG_SEARCH",
+            scope.policy_domains,
+        )
+        for request in build_retrieval_requests(context, self.retrieval_templates, selected_domains):
             domain = Domain(_enum_value(request.domains[0]) or Domain.UNKNOWN.value)
             try:
                 if load_error is not None:
@@ -1081,6 +1128,8 @@ class DeterministicEvidenceAgent:
         """Load only project-scoped evidence; never route it through policy RAG."""
 
         if not options.include_project_documents:
+            return [], [], []
+        if not scope_for_context(context).project_documents_allowed:
             return [], [], []
         if options.investigation_plan is not None and not any(
             str(getattr(request.tool, "value", request.tool)) == "PROJECT_DOCUMENT_SEARCH"
@@ -1128,10 +1177,14 @@ class DeterministicEvidenceAgent:
         developer_records, warnings = self._developer_records(project_context, project_input, checked_at)
         developer_elapsed_ms = round((perf_counter() - stage_started) * 1000, 3)
         stage_started = perf_counter()
-        gis_records, gis_warnings, gis_missing = self._gis_records(project_context, project_input)
+        gis_records, gis_warnings, gis_missing, gis_map_features = self._gis_records(
+            project_context, project_input, options
+        )
         gis_elapsed_ms = round((perf_counter() - stage_started) * 1000, 3)
         stage_started = perf_counter()
-        policy_records, policy_warnings, retrieval_gaps = self._policy_records(project_context, checked_at)
+        policy_records, policy_warnings, retrieval_gaps = self._policy_records(
+            project_context, checked_at, options
+        )
         policy_elapsed_ms = round((perf_counter() - stage_started) * 1000, 3)
         stage_started = perf_counter()
         project_document_records, project_document_warnings, project_document_gaps = self._project_document_records(
@@ -1224,6 +1277,7 @@ class DeterministicEvidenceAgent:
             human_review_requests=reviews,
             warnings=list(dict.fromkeys(warnings)),
             provenance_summary=provenance_summary,
+            map_features=gis_map_features,
         )
 
 

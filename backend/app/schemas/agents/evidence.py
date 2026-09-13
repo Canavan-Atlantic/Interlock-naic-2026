@@ -93,6 +93,9 @@ class EvidenceBundle(ContractModel):
     human_review_requests: list[HumanReviewRequest] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
     provenance_summary: dict[str, Any] = Field(default_factory=dict)
+    # Bounded GeoJSON features from registered deterministic layers.  This is
+    # presentation metadata; it never replaces the evidence ledger.
+    map_features: list[dict[str, Any]] = Field(default_factory=list)
 
 
 __all__ = [

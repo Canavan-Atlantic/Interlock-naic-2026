@@ -273,6 +273,22 @@ def test_deterministic_mode_never_needs_a_provider() -> None:
     assert plan.fallback_reason == "CONFIGURED_DETERMINISTIC_MODE"
 
 
+def test_investigation_scope_changes_by_stage() -> None:
+    planner = BoundedInvestigationPlanner(settings=PlannerSettings(mode="deterministic_fallback"))
+    site = planner.plan(_context().model_copy(update={"project_stage": "Site Discovery"}))
+    early = planner.plan(_context().model_copy(update={"project_stage": "Early Feasibility"}))
+    deliverability = planner.plan(_context().model_copy(update={"project_stage": "Deliverability Validation"}))
+
+    site_policy = {item.domain for item in site.tool_requests if str(item.tool) == "POLICY_RAG_SEARCH"}
+    site_gis = {item.domain for item in site.tool_requests if str(item.tool) == "GIS_SITE_EVIDENCE"}
+    assert Domain.ENERGY not in site_policy
+    assert Domain.WATER not in site_policy
+    assert Domain.WATER not in site_gis
+    assert not any(str(item.tool) == "PROJECT_DOCUMENT_SEARCH" for item in site.tool_requests)
+    assert Domain.ENERGY in {item.domain for item in early.tool_requests}
+    assert Domain.WATER in {item.domain for item in deliverability.tool_requests}
+
+
 def test_decision_pack_and_report_expose_only_compact_planning_provenance() -> None:
     plan = BoundedInvestigationPlanner(
         settings=PlannerSettings(mode="deterministic_fallback")

@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .evidence import EvidenceLedger
 
@@ -22,3 +22,4 @@ class SiteEvidenceResponse(BaseModel):
     evidence_ledger: EvidenceLedger
     limitations: list[str]
     timings_ms: dict[str, float]
+    map_features: list[dict[str, Any]] = Field(default_factory=list)

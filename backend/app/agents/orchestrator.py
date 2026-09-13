@@ -26,6 +26,7 @@ from .evidence import DeterministicEvidenceAgent, EvidenceAgentOptions
 from .explanation import DeterministicExplanationAgent
 from .planner import BoundedInvestigationPlanner, InvestigationPlanner, PlannerSettings
 from ..services.stage_intelligence import build_stage_intelligence
+from ..services.stage_view import build_stage_assessment_view
 
 
 @dataclass(frozen=True)
@@ -180,13 +181,22 @@ class DeterministicInterlockOrchestrator:
         failure_message: str | None = None,
     ) -> InterlockResult:
         reviews = _reviews_for(evidence_bundle, assessment_result)
+        stage_intelligence = build_stage_intelligence(context, evidence_bundle, assessment_result)
+        stage_view = build_stage_assessment_view(
+            context,
+            evidence_bundle,
+            assessment_result,
+            stage_intelligence,
+            explanation_result,
+        )
         return InterlockResult(
             project_context=context,
             evidence_bundle=evidence_bundle,
             assessment_result=assessment_result,
             explanation_result=explanation_result,
             investigation_plan=investigation_plan,
-            stage_intelligence=build_stage_intelligence(context, evidence_bundle, assessment_result),
+            stage_intelligence=stage_intelligence,
+            stage_assessment_view=stage_view,
             workflow_status=workflow_status,
             human_reviews=reviews,
             requires_human_review=_requires_human_review(reviews),

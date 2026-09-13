@@ -17,6 +17,7 @@ from .base import (
     nearest_row,
     query_references,
     records_from_rows,
+    map_features_from_rows,
     source_provenance,
     source_reference_label,
 )
@@ -82,7 +83,16 @@ def _layer_result(context: SiteEvidenceContext, reference: Any) -> dict[str, Any
             reference,
             FLOOD_FIELDS,
             context.point_itm,
-        )[0]
+            )[0]
+
+    map_features = map_features_from_rows(
+        hits if not hits.empty else (nearest.to_frame().T if nearest is not None else hits),
+        reference,
+        context.point_itm,
+        layer=f"flood-{flood_type}",
+        fields=FLOOD_FIELDS,
+        limit=10,
+    )
 
     limitations = dedupe_strings(
         [
@@ -99,6 +109,7 @@ def _layer_result(context: SiteEvidenceContext, reference: Any) -> dict[str, Any
         "project_point_intersects": bool(intersecting_records),
         "intersecting_extents": intersecting_records,
         "nearest_extent": None if intersecting_records else nearest_extent,
+        "map_features": map_features,
         "source": source_provenance(reference),
         "limitations": limitations,
         "checked_at": context.checked_at.isoformat().replace("+00:00", "Z"),

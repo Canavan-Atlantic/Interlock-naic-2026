@@ -150,6 +150,17 @@ def _has_no_intersection(record: EvidenceRecord) -> bool:
     return False
 
 
+def _has_site_specific_protected_intersection(record: EvidenceRecord) -> bool:
+    """Only deterministic site evidence can establish a protected intersection."""
+
+    if not _is_deterministic(record) or _value(record.domain) != Domain.BIODIVERSITY.value:
+        return False
+    value = record.value
+    if isinstance(value, dict):
+        return value.get("intersects") is True or value.get("project_point_intersects") is True
+    return False
+
+
 def _missing_for_domain(
     domain: Domain,
     records: list[EvidenceRecord],
@@ -352,6 +363,31 @@ class DeterministicAssessmentAgent:
             unknown_records = [record for record in records if _is_unknown(record)]
             missing = _missing_for_domain(domain, records, bundle.missing_evidence, bundle.retrieval_gaps)
             explicit = _explicit_constraints(records)
+            # Generic biodiversity policy describes the legal framework; it is
+            # not a site finding.  Keep it from turning a missing/negative
+            # spatial intersection into a site-specific CONSTRAINED state.
+            if domain == Domain.BIODIVERSITY:
+                site_intersection_ids = [
+                    record.evidence_id
+                    for record in records
+                    if _has_site_specific_protected_intersection(record)
+                ]
+                if site_intersection_ids:
+                    constraint_ids = _unique([
+                        *site_intersection_ids,
+                        *(record.evidence_id for record in explicit),
+                    ])
+                    add_finding(
+                        domain,
+                        "CONSTRAINED",
+                        evidence_ids=constraint_ids,
+                        constraint="A tested protected-site intersection is recorded; ecological review is required.",
+                        impact="Deterministic spatial evidence records a protected-site intersection; specialist ecological review is required.",
+                        required_next=["Confirm the protected-site designation and complete the required ecological assessment."],
+                        review=True,
+                    )
+                    continue
+                explicit = []
             domain_ids = [record.evidence_id for record in records]
 
             if explicit:

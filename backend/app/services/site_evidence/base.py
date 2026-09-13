@@ -11,7 +11,7 @@ from pathlib import Path
 import re
 from typing import Any, Iterable, Sequence
 
-from shapely.geometry import Point
+from shapely.geometry import Point, mapping
 
 from ...schemas.evidence import (
     EvidenceCategory,
@@ -334,6 +334,57 @@ def records_from_rows(
         item.update(source_provenance(reference))
         result.append(item)
     return result
+
+
+def map_features_from_rows(
+    rows: Any,
+    reference: DatasetReference,
+    point: Point,
+    *,
+    layer: str,
+    fields: Sequence[str] = (),
+    limit: int = 30,
+) -> list[dict[str, Any]]:
+    """Serialize bounded registered geometries to WGS84 GeoJSON features."""
+
+    if rows is None or rows.empty:
+        return []
+    import geopandas as gpd
+
+    ranked = rows.copy()
+    if "distance_m" not in ranked.columns:
+        ranked = _distance_frame(ranked, point)
+    ranked = ranked.head(max(1, limit))
+    source_crs = str(
+        getattr(ranked, "crs", None)
+        or getattr(getattr(ranked, "geometry", None), "crs", None)
+        or "EPSG:2157"
+    )
+    if not source_crs:
+        return []
+    geometries = gpd.GeoSeries(ranked.geometry, index=ranked.index, crs=source_crs).to_crs("EPSG:4326")
+    provenance = source_provenance(reference)
+    features: list[dict[str, Any]] = []
+    for index, geometry in geometries.items():
+        if geometry is None or geometry.is_empty or not geometry.is_valid:
+            continue
+        row = ranked.loc[index]
+        properties = row_values(row, fields)
+        properties.update({
+            "layer": layer,
+            "distance_m": round(float(row.get("distance_m")), 3) if row.get("distance_m") is not None else None,
+            "evidence_maturity": "Deterministic Derived Evidence",
+            "source_dataset": provenance.get("source_dataset"),
+            "source_reference": provenance.get("source_reference"),
+            "source_crs": source_crs,
+            "display_note": "Spatial context only; no suitability or capacity conclusion.",
+        })
+        features.append({
+            "type": "Feature",
+            "geometry": mapping(geometry),
+            "properties": properties,
+        })
+    return features
 
 
 def source_provenance(reference: DatasetReference) -> dict[str, Any]:

@@ -14,6 +14,7 @@ _LAYER_LABELS = {
     "biodiversity": "Protected-site / biodiversity context",
     "grid": "Nearby grid infrastructure",
     "planning": "Planning / zoning context",
+    "zoning": "Zoning geometry",
     "water": "Water / wastewater context",
 }
 
@@ -87,6 +88,46 @@ def _layer_records(payload: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
     return output
 
 
+def _feature_layer(feature: dict[str, Any]) -> str | None:
+    properties = _as_dict(feature.get("properties"))
+    value = str(properties.get("layer") or feature.get("layer") or "").casefold()
+    if value.startswith("biodiversity"):
+        return "biodiversity"
+    if value.startswith("flood"):
+        return "flood"
+    if value.startswith("grid"):
+        return "grid"
+    if value.startswith("planning"):
+        return "planning"
+    if value.startswith("zoning"):
+        return "zoning"
+    if value.startswith("water"):
+        return "water"
+    if value.startswith("ground") or value.startswith("karst") or value.startswith("heritage"):
+        return "planning"
+    return None
+
+
+def _map_features(payload: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
+    features = _as_list(_as_dict(payload.get("evidence_bundle")).get("map_features"))
+    output: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for feature in features:
+        item = _as_dict(feature)
+        layer = _feature_layer(item)
+        if layer:
+            output[layer].append(item)
+    return output
+
+
+def _feature_point(feature: dict[str, Any]) -> tuple[float, float] | None:
+    geometry = _as_dict(feature.get("geometry"))
+    coordinates = geometry.get("coordinates")
+    if geometry.get("type") == "Point" and isinstance(coordinates, list) and len(coordinates) >= 2:
+        if all(isinstance(value, (int, float)) for value in coordinates[:2]):
+            return float(coordinates[1]), float(coordinates[0])
+    return None
+
+
 def _value_summary(record: dict[str, Any]) -> str:
     field = str(record.get("field_name") or "GIS evidence")
     value = record.get("value")
@@ -107,16 +148,68 @@ def render_map_first_view(payload: dict[str, Any], *, key_prefix: str = "decisio
     st.caption("Map markers come only from coordinates stored in the project or deterministic GIS evidence. Spatial proximity does not establish capacity, connection or approval.")
     points = build_map_points(payload)
     layer_records = _layer_records(payload)
+    feature_layers = _map_features(payload)
     enabled: dict[str, bool] = {"site": True}
     with st.container(horizontal=True):
         for layer, title in _LAYER_LABELS.items():
-            enabled[layer] = st.checkbox(title, value=True, key=f"{key_prefix}_layer_{layer}")
+            available = bool(feature_layers.get(layer)) or bool(layer_records.get(layer))
+            enabled[layer] = st.checkbox(
+                title if available else f"{title} (unavailable)",
+                value=available,
+                disabled=not available,
+                key=f"{key_prefix}_layer_{layer}",
+            )
 
     visible = [row for row in points if enabled.get(row["layer"], False)]
-    if visible:
+    visible_features = [feature for layer, values in feature_layers.items() if enabled.get(layer, False) for feature in values]
+    if visible_features:
+        try:
+            import pydeck as pdk
+
+            site = _coordinates(_as_dict(_as_dict(payload.get("project_context")).get("location")))
+            feature_points = [point for feature in visible_features if (point := _feature_point(feature)) is not None]
+            centres = ([site] if site else []) + feature_points
+            if centres:
+                latitude = sum(point[0] for point in centres) / len(centres)
+                longitude = sum(point[1] for point in centres) / len(centres)
+            else:
+                latitude, longitude = 53.4, -6.3
+            layers = []
+            colours = {"flood": [166, 61, 74, 90], "biodiversity": [22, 135, 125, 90], "grid": [0, 168, 157, 220], "planning": [200, 146, 53, 90], "zoning": [75, 120, 144, 90], "water": [32, 107, 159, 90]}
+            for layer, values in feature_layers.items():
+                active_values = values if enabled.get(layer, False) else []
+                if not active_values:
+                    continue
+                layers.append(pdk.Layer(
+                    "GeoJsonLayer",
+                    f"interlock-{key_prefix}-{layer}",
+                    data={"type": "FeatureCollection", "features": active_values},
+                    pickable=True,
+                    stroked=True,
+                    filled=True,
+                    get_fill_color=colours.get(layer, [75, 120, 144, 90]),
+                    get_line_color=[6, 55, 71, 210],
+                    line_width_min_pixels=2,
+                ))
+            if enabled.get("site") and site:
+                layers.append(pdk.Layer("ScatterplotLayer", f"interlock-{key_prefix}-site", data=pd.DataFrame([{"latitude": site[0], "longitude": site[1], "label": "Project site"}]), get_position="[longitude, latitude]", get_radius=130, get_fill_color=[6, 55, 71, 255], pickable=True))
+            deck = pdk.Deck(
+                layers=layers,
+                initial_view_state=pdk.ViewState(latitude=latitude, longitude=longitude, zoom=11.5),
+                tooltip={"html": "<b>{layer}</b><br/>{display_note}<br/>Source: {source_reference}", "style": {"backgroundColor": "#063747", "color": "white"}},
+            )
+            st.pydeck_chart(deck, height=390, key=f"{key_prefix}_spatial_map")
+        except (ImportError, RuntimeError, TypeError, ValueError):
+            # A native point map remains a truthful fallback if pydeck is not
+            # available in a minimal runtime; no geometry is fabricated.
+            if visible:
+                st.map(pd.DataFrame(visible), latitude="latitude", longitude="longitude", color=None, zoom=11, height=390)
+            else:
+                st.info("Registered geometries are unavailable in this runtime.")
+    elif visible:
         st.map(pd.DataFrame(visible), latitude="latitude", longitude="longitude", color=None, zoom=11, height=390)
     else:
-        st.info("No stored coordinates are available for the selected layers.")
+        st.info("No stored geometries or coordinates are available for the selected layers.")
 
     columns = st.columns(len(_LAYER_LABELS))
     for column, (layer, title) in zip(columns, _LAYER_LABELS.items()):
@@ -124,8 +217,8 @@ def render_map_first_view(payload: dict[str, Any], *, key_prefix: str = "decisio
             with st.container(border=True):
                 st.markdown(f"**{title}**")
                 values = layer_records.get(layer, [])
-                if not values:
-                    st.caption("No deterministic record in this run.")
+                if not values and not feature_layers.get(layer):
+                    st.caption("Unavailable from the current registered source; no geometry is shown.")
                 else:
                     for record in values[:3]:
                         st.caption(_value_summary(record))

@@ -207,6 +207,37 @@ def test_no_spatial_intersection_does_not_become_no_environmental_risk() -> None
     assert not any("no environmental risk" in item.casefold() for item in result.constraints)
 
 
+def test_generic_biodiversity_policy_cannot_create_site_constraint() -> None:
+    result = _assess(_bundle([_record(
+        "ev-generic-biodiversity-policy",
+        Domain.BIODIVERSITY,
+        "policy.biodiversity.framework",
+        "The Birds Directive prohibits damage to protected sites.",
+        created_by=EvidenceCreatedBy.RAG_RETRIEVAL,
+        source_trust=EvidenceSourceTrust.AUTHORITATIVE_POLICY,
+        source_class=SourceClass.PRIMARY,
+        document_status=DocumentStatus.CURRENT,
+    )]))
+
+    assert not any(item.status == "CONSTRAINED" for item in result.findings if item.domain == Domain.BIODIVERSITY)
+
+
+def test_actual_protected_site_intersection_can_be_constrained() -> None:
+    result = _assess(_bundle([_record(
+        "ev-protected-intersection",
+        Domain.BIODIVERSITY,
+        "biodiversity.sac.intersects",
+        "Deterministic SAC intersection recorded.",
+        value={"intersects": True},
+        created_by=EvidenceCreatedBy.DETERMINISTIC_GIS,
+        source_trust=EvidenceSourceTrust.DETERMINISTIC_SOURCE,
+        deterministic=True,
+    )]))
+
+    finding = _finding(result, Domain.BIODIVERSITY, "CONSTRAINED")
+    assert finding.evidence_ids == ["ev-protected-intersection"]
+
+
 def test_project_document_policy_interpretation_cannot_override_authority() -> None:
     records = [
         _record("ev-project-policy", Domain.GRID, "project.policy_interpretation", "Project policy interpretation says connection is feasible.", created_by=EvidenceCreatedBy.PROJECT_DOCUMENT, source_trust=EvidenceSourceTrust.UNTRUSTED_PROJECT_DOCUMENT),

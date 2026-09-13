@@ -50,7 +50,7 @@ _PROFILES: dict[str, _StageProfile] = {
             "Final water or wastewater capacity confirmation",
         ),
         emphasis=("Early constraints", "Evidence gaps worth resolving", "Further-investigation triggers"),
-        missing_wording="Further investigation required",
+        missing_wording="Further Investigation",
         progression=(
             "Confirm the site location and development type",
             "Review any early high-consequence spatial constraints",
@@ -162,6 +162,51 @@ def _has_verified_domain(records: list[Any], domains: set[str]) -> tuple[bool, l
     return bool(ids), ids
 
 
+def _has_site_specific_evidence(records: list[Any], domain: str) -> tuple[bool, list[str]]:
+    """Return non-policy site evidence suitable for an early site position."""
+
+    ids: list[str] = []
+    for record in records:
+        if _enum(getattr(record, "domain", None)) != domain:
+            continue
+        state = _enum(getattr(record, "evidence_state", None))
+        creator = _enum(getattr(record, "created_by", None))
+        field = str(getattr(record, "field_name", "")).casefold()
+        if state in {AgentEvidenceState.UNKNOWN.value, AgentEvidenceState.NOT_PROVIDED.value}:
+            continue
+        if creator in {EvidenceCreatedBy.DEVELOPER_INPUT.value, EvidenceCreatedBy.RAG_RETRIEVAL.value}:
+            continue
+        if field == "zoning.state":
+            continue
+        ids.append(str(getattr(record, "evidence_id", "")))
+    return bool(ids), ids
+
+
+def _has_delivery_evidence(records: list[Any], domain: str) -> tuple[bool, list[str]]:
+    """Find project-specific delivery confirmation, not contextual policy/GIS."""
+
+    terms = {
+        "GRID": ("connection offer", "connection agreement", "energisation", "energization", "mic allocation", "capacity confirmed"),
+        "ENERGY": ("commissioned", "operational capacity", "energy delivery confirmation"),
+        "PLANNING": ("planning permission", "planning decision", "planning approval", "site-specific planning position"),
+        "WATER": ("water connection agreement", "wastewater connection", "water capacity confirmed", "utility capacity confirmation"),
+    }.get(domain, ())
+    ids: list[str] = []
+    for record in records:
+        if _enum(getattr(record, "domain", None)) != domain:
+            continue
+        state = _enum(getattr(record, "evidence_state", None))
+        if state in {AgentEvidenceState.UNKNOWN.value, AgentEvidenceState.NOT_PROVIDED.value}:
+            continue
+        creator = _enum(getattr(record, "created_by", None))
+        if creator in {EvidenceCreatedBy.DEVELOPER_INPUT.value, EvidenceCreatedBy.RAG_RETRIEVAL.value, EvidenceCreatedBy.DETERMINISTIC_GIS.value}:
+            continue
+        text = " ".join(str(getattr(record, key, "") or "") for key in ("field_name", "fact", "finding", "value")).casefold()
+        if any(term in text for term in terms):
+            ids.append(str(getattr(record, "evidence_id", "")))
+    return bool(ids), ids
+
+
 def _requirement(
     requirement_id: str,
     label: str,
@@ -218,6 +263,7 @@ def build_stage_intelligence(
     profile = _profile(context)
     records = _records(evidence_bundle)
     requirements: list[StageRequirement] = []
+    provided_inputs: list[str] = []
     stage = _stage(context)
 
     if stage == "Site Discovery":
@@ -244,18 +290,32 @@ def build_stage_intelligence(
             _requirement("grid-readiness", "MIC or equivalent grid-readiness evidence", _has_input(context, "mic") or _has_input(context, "power_strategy"), "Grid pathway information is required to understand a potential delivery constraint.", "Confirm MIC, connection strategy or the current operator evidence.", "Grid engineer"),
             _requirement("energy-strategy", "Energy strategy", _has_input(context, "energy_strategy"), "Energy strategy affects the evidence needed for power and environmental review.", "Record the current energy strategy or explicitly mark it unknown.", "Developer / energy specialist"),
         ])
+        planning_ok, planning_ids = _has_site_specific_evidence(records, "PLANNING")
+        requirements.append(_requirement(
+            "planning-position", "Planning / zoning position", planning_ok,
+            "A site-specific planning or zoning position is needed before feasibility can progress.",
+            "Obtain current site-specific planning or zoning evidence.",
+            "Planning consultant", planning_ids,
+        ))
         water_ok, water_ids = _has_verified_domain(records, {"WATER"})
         requirements.append(_requirement("water-pathway", "Water / wastewater pathway", water_ok, "Site-specific capacity or connection evidence is needed before progressing feasibility.", "Obtain a site-specific utility or capacity confirmation.", "Water / wastewater specialist", water_ids))
     elif stage == "Deliverability Validation":
+        if _has_input(context, "mic"):
+            provided_inputs.append("MIC input supplied — delivery confirmation remains separate")
+        if _has_input(context, "power_strategy"):
+            provided_inputs.append("Power strategy input supplied — connection pathway remains separate")
+        grid_ok, grid_ids = _has_delivery_evidence(records, "GRID")
+        energy_ok, energy_ids = _has_delivery_evidence(records, "ENERGY")
         requirements.extend([
             _requirement("planned-power", "Confirmed planned power", _has_input(context, "planned_power"), "Delivery validation needs a defined demand envelope.", "Confirm the current project demand.", "Developer"),
-            _requirement("grid-pathway", "Project-specific grid / MIC pathway", _has_input(context, "mic") and _has_input(context, "power_strategy"), "Nearby infrastructure does not prove capacity, connection or energisation.", "Obtain project-specific grid and MIC evidence.", "Grid engineer"),
+            _requirement("grid-pathway", "Project-specific grid / MIC pathway", grid_ok, "Nearby infrastructure and developer inputs do not prove capacity, connection or energisation.", "Obtain project-specific grid pathway, MIC allocation and energisation evidence.", "Grid engineer", grid_ids),
+            _requirement("energy-pathway", "Confirmed energy delivery pathway", energy_ok, "An energy input or strategy is not delivery confirmation.", "Obtain project-specific energy delivery and commissioning evidence.", "Energy specialist", energy_ids),
             _requirement("project-definition", "Confirmed phasing and project definition", _has_input(context, "phasing"), "Delivery-critical sequencing must be explicit before deliverability can be established.", "Confirm phasing and key delivery assumptions.", "Developer / delivery lead"),
             _requirement("project-documents", "Supporting technical project documents", _has_input(context, "project_documents"), "Supporting documents provide the project-specific confirmation needed at this stage.", "Upload or reference the current technical documents.", "Developer"),
         ])
-        planning_ok, planning_ids = _has_verified_domain(records, {"PLANNING"})
+        planning_ok, planning_ids = _has_delivery_evidence(records, "PLANNING")
         requirements.append(_requirement("planning-position", "Authoritative planning position", planning_ok, "Planning status is delivery-critical at validation.", "Obtain site-specific planning confirmation.", "Planning consultant", planning_ids))
-        water_ok, water_ids = _has_verified_domain(records, {"WATER"})
+        water_ok, water_ids = _has_delivery_evidence(records, "WATER")
         requirements.append(_requirement("water-pathway", "Water / wastewater pathway", water_ok, "Utility pathway evidence is delivery-critical at validation.", "Obtain site-specific capacity or connection confirmation.", "Water / wastewater specialist", water_ids))
 
     # Assessment is intentionally read but not used to alter raw finding
@@ -271,6 +331,7 @@ def build_stage_intelligence(
         investigation_emphasis=list(profile.emphasis),
         missing_evidence_wording=profile.missing_wording,
         progression_criteria=list(profile.progression),
+        provided_inputs=provided_inputs,
         required_to_progress=requirements,
         evidence_maturity_summary=_maturity_summary(records),
     )

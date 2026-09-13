@@ -35,6 +35,10 @@ DOMAIN_GROUPS = (
 def assessment_domain_state_summary(payload: dict[str, Any]) -> list[dict[str, Any]]:
     """Map structured assessment findings into truthful visual domain groups."""
 
+    stage_view = _as_dict(payload.get("stage_assessment_view"))
+    if stage_view.get("domain_states"):
+        return [_as_dict(item) for item in _as_list(stage_view.get("domain_states"))]
+
     assessment = _as_dict(payload.get("assessment_result"))
     findings = [_as_dict(item) for item in _as_list(assessment.get("findings"))]
     result: list[dict[str, Any]] = []
@@ -73,6 +77,7 @@ def summarize_interlock_result(payload: dict[str, Any]) -> dict[str, Any]:
     findings = _as_list(assessment.get("findings"))
     dependencies = _as_list(assessment.get("dependencies")) or _as_list(explanation.get("dependencies"))
     citations = _as_list(explanation.get("customer_facing_citations"))
+    stage_view = _as_dict(payload.get("stage_assessment_view"))
 
     status_counts = Counter(
         _enum_text(_as_dict(finding).get("status")) or "UNKNOWN"
@@ -83,6 +88,7 @@ def summarize_interlock_result(payload: dict[str, Any]) -> dict[str, Any]:
         for record in records
     )
 
+    view_counts = _as_dict(stage_view.get("counts"))
     return {
         "project_id": context.get("project_id"),
         "project_name": context.get("project_name"),
@@ -90,12 +96,13 @@ def summarize_interlock_result(payload: dict[str, Any]) -> dict[str, Any]:
         "run_id": payload.get("run_id"),
         "generated_at": payload.get("generated_at"),
         "workflow_status": payload.get("workflow_status"),
-        "evidence_record_count": len(records),
-        "finding_count": len(findings),
+        "evidence_record_count": int(view_counts.get("relevant_evidence_count", len(records))),
+        "total_evidence_record_count": int(view_counts.get("total_evidence_count", len(records))),
+        "finding_count": int(view_counts.get("finding_count", len(findings))),
         "finding_status_counts": dict(sorted(status_counts.items())),
-        "conditional_or_constrained_finding_count": sum(
+        "conditional_or_constrained_finding_count": int(view_counts.get("constraint_count", sum(
             status_counts.get(status, 0) for status in ("CONDITIONAL", "CONSTRAINED")
-        ),
+        ))),
         "material_unknown_count": len(_as_list(assessment.get("material_unknowns"))),
         "unknown_theme_count": len(_as_list(explanation.get("material_unknown_themes"))),
         "dependency_count": len(dependencies),
@@ -105,6 +112,7 @@ def summarize_interlock_result(payload: dict[str, Any]) -> dict[str, Any]:
         "source_counts": dict(sorted(source_counts.items())),
         "stage_counts": dict(_as_dict(payload.get("stage_counts"))),
         "timings_ms": dict(_as_dict(payload.get("timings_ms"))),
+        "stage_view": stage_view,
     }
 
 

@@ -15,6 +15,7 @@ from .base import (
     nearest_row,
     query_references,
     records_from_rows,
+    map_features_from_rows,
     source_provenance,
     source_reference_label,
 )
@@ -91,9 +92,11 @@ def evaluate_biodiversity(context: SiteEvidenceContext) -> DomainResult:
             continue
 
         intersections: list[dict[str, Any]] = []
+        map_features: list[dict[str, Any]] = []
         for reference in references:
             local = query_references([reference], context.point_itm, 1.0)
             hits = intersecting_rows(local, context.point_itm)
+            map_features.extend(map_features_from_rows(hits, reference, context.point_itm, layer=f"biodiversity-{kind.casefold()}", fields=SITE_FIELDS))
             intersections.extend(
                 records_from_rows(hits, reference, SITE_FIELDS, context.point_itm)
             )
@@ -114,6 +117,8 @@ def evaluate_biodiversity(context: SiteEvidenceContext) -> DomainResult:
                 SITE_FIELDS,
                 context.point_itm,
             )[0]
+            if not intersections:
+                map_features.extend(map_features_from_rows(candidates.loc[[nearest.name]], nearest_reference, context.point_itm, layer=f"biodiversity-{kind.casefold()}", fields=SITE_FIELDS, limit=1))
 
         source_limitations = dedupe_strings(
             limitation
@@ -132,6 +137,7 @@ def evaluate_biodiversity(context: SiteEvidenceContext) -> DomainResult:
             "intersects": bool(intersections),
             "intersecting_sites": intersections,
             "nearest_protected_site": nearest_record,
+            "map_features": map_features,
             "source_datasets": [source_reference_label(reference) for reference in references],
             "limitations": dedupe_strings(source_limitations),
             "checked_at": context.checked_at.isoformat().replace("+00:00", "Z"),

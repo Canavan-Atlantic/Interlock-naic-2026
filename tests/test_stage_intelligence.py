@@ -21,7 +21,7 @@ def test_site_discovery_does_not_require_later_stage_mic_or_energy() -> None:
 def test_early_feasibility_requires_grid_and_energy_inputs() -> None:
     stage = build_stage_intelligence(_context("Early Feasibility", planned_power_mw=50))
     required = {item.requirement_id for item in stage.required_to_progress if item.status == "REQUIRED_TO_PROGRESS"}
-    assert {"grid-readiness", "energy-strategy", "site-extent"}.issubset(required)
+    assert {"grid-readiness", "energy-strategy", "site-extent", "planning-position", "water-pathway"}.issubset(required)
     assert stage.missing_evidence_wording == "Required to progress"
 
 
@@ -29,8 +29,23 @@ def test_deliverability_is_stronger_and_requires_project_specific_pathway() -> N
     stage = build_stage_intelligence(_context("Deliverability Validation", planned_power_mw=50, phasing="Phase 1"))
     required = {item.requirement_id for item in stage.required_to_progress}
     assert "grid-pathway" in required
+    assert "energy-pathway" in required
     assert stage.missing_evidence_wording == "Delivery-critical evidence missing"
     assert stage.customer_question != build_stage_intelligence(_context("Site Discovery")).customer_question
+
+
+def test_deliverability_inputs_are_not_delivery_evidence() -> None:
+    stage = build_stage_intelligence(_context(
+        "Deliverability Validation",
+        planned_power_mw=50,
+        requested_mic_mva=60,
+        power_strategy="New Grid Connection",
+        energy_strategy="On-site renewable and storage",
+        phasing="Phase 1",
+    ))
+    required = {item.requirement_id for item in stage.required_to_progress if item.status == "REQUIRED_TO_PROGRESS"}
+    assert {"grid-pathway", "energy-pathway", "planning-position", "water-pathway"}.issubset(required)
+    assert stage.provided_inputs
 
 
 def test_stage_layer_does_not_add_assessment_or_score_fields() -> None:

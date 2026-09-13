@@ -137,6 +137,13 @@ def build_assessment_report_view_model(payload: dict[str, Any]) -> dict[str, Any
     ]
     planning = _as_dict(payload.get("investigation_plan"))
     stage_intelligence = _as_dict(payload.get("stage_intelligence"))
+    stage_view = _as_dict(payload.get("stage_assessment_view"))
+    if stage_view:
+        # The executive report and Streamlit customer view consume the same
+        # bounded projection.  Raw result fields remain available below for
+        # the audit appendix.
+        findings = [_as_dict(item) for item in _as_list(stage_view.get("relevant_findings"))]
+        actions = [_as_dict(item) for item in _as_list(stage_view.get("next_actions"))]
     return {
         "report_version": REPORT_VERSION,
         "project": {
@@ -167,14 +174,14 @@ def build_assessment_report_view_model(payload: dict[str, Any]) -> dict[str, Any
         ),
         "known_facts": [_text(item) for item in _as_list(explanation.get("known_facts"))],
         "why_it_matters": [_text(item) for item in _as_list(explanation.get("why_it_matters"))],
-        "domains": assessment_domain_state_summary(payload),
+        "domains": [_as_dict(item) for item in _as_list(stage_view.get("domain_states"))] if stage_view else assessment_domain_state_summary(payload),
         "findings": findings,
         "key_findings": [_text(item) for item in _as_list(explanation.get("key_findings"))],
         "unknowns": unknowns,
         "dependencies": dependency_items,
         "contradictions": [_text(item) for item in _as_list(explanation.get("contradictions"))],
         "reviews": reviews,
-        "actions": action_items,
+        "actions": actions if stage_view else action_items,
         "citations": citation_items,
         "source_records": records,
         "constraints": [_text(item) for item in _as_list(assessment.get("constraints")) or _as_list(explanation.get("constraints"))],
@@ -200,10 +207,13 @@ def build_assessment_report_view_model(payload: dict[str, Any]) -> dict[str, Any
         },
         "summary": summary,
         "stage_intelligence": stage_intelligence,
+        "stage_assessment_view": stage_view,
         "required_to_progress": [
+            *([_as_dict(item) for item in _as_list(stage_view.get("information_required"))] if stage_view else [
             _as_dict(item)
             for item in _as_list(stage_intelligence.get("required_to_progress"))
             if _as_dict(item).get("status") == "REQUIRED_TO_PROGRESS"
+            ])
         ],
         "provenance": {
             "schema_version": _text(payload.get("schema_version"), "Not provided"),
@@ -737,7 +747,7 @@ def _draw_report_sections(writer: _PdfWriter, model: dict[str, Any]) -> None:
         writer.paragraph(f"Customer question: {stage['customer_question']}", color=TEAL, size=9.5)
     writer.paragraph(
         f"Recorded scope: {summary.get('finding_count', 0)} findings, "
-        f"{summary.get('unknown_theme_count', 0)} information-required themes, "
+        f"{_as_dict(model.get('stage_assessment_view')).get('counts', {}).get('information_required_count', summary.get('unknown_theme_count', 0))} information-required items, "
         f"{summary.get('human_review_count', 0)} professional review requests.",
         color=MUTED,
         size=8.7,
@@ -759,7 +769,11 @@ def _draw_report_sections(writer: _PdfWriter, model: dict[str, Any]) -> None:
     writer.heading("04", "Key findings")
     for finding in model["findings"][:5]:
         body = f"Status: {finding['status']}"
-        if finding.get("narrative"):
+        if finding.get("headline"):
+            body += f"\n{_truncate(finding['headline'], 420)}"
+            if finding.get("why_it_matters"):
+                body += f"\nWhy it matters: {_truncate(finding['why_it_matters'], 320)}"
+        elif finding.get("narrative"):
             body += f"\n{_truncate(finding['narrative'], 420)}"
         elif finding.get("decision_impact"):
             body += f"\n{_truncate(finding['decision_impact'], 420)}"
@@ -770,7 +784,8 @@ def _draw_report_sections(writer: _PdfWriter, model: dict[str, Any]) -> None:
         writer.paragraph(f"Showing 5 of {len(model['findings'])} findings in the executive pack. Full findings are in the technical appendix.", color=MUTED, size=8.2)
 
     writer.new_body_page()
-    writer.heading("05", "Required to progress")
+    requirement_heading = _as_dict(model.get("stage_assessment_view")).get("requirement_heading") or "Required to progress"
+    writer.heading("05", _text(requirement_heading, "Required to progress"))
     requirements = model["required_to_progress"]
     if not requirements:
         writer.paragraph("No additional stage-specific information is recorded as required.", color=MUTED)
@@ -785,6 +800,10 @@ def _draw_report_sections(writer: _PdfWriter, model: dict[str, Any]) -> None:
     writer.heading("06", "Next actions and professional review")
     for action in model["actions"][:5]:
         body = _text(action.get("rationale"), "Resolve the related evidence gap before relying on this point.")
+        if action.get("reason"):
+            body = _text(action.get("reason"))
+        if action.get("why_this_action"):
+            body += "\nWhy this action: " + _text(action.get("why_this_action"))
         roles = [_text(role) for role in _as_list(action.get("specialist_roles"))]
         if roles:
             body += "\nOwner: " + ", ".join(roles)

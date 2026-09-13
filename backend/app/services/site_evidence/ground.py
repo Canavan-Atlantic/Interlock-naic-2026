@@ -17,6 +17,7 @@ from .base import (
     nearest_row,
     query_references,
     records_from_rows,
+    map_features_from_rows,
     source_provenance,
     source_reference_label,
 )
@@ -107,6 +108,13 @@ def _groundwater(context: SiteEvidenceContext) -> tuple[dict[str, Any], Any]:
         "evidence_state": "FACT",
         "intersects": bool(intersections),
         "intersections": intersections,
+        "map_features": [
+            feature for reference in references
+            for feature in map_features_from_rows(
+                intersecting_rows(query_references([reference], context.point_itm, 1.0), context.point_itm),
+                reference, context.point_itm, layer="groundwater", fields=GROUNDWATER_FIELDS, limit=10,
+            )
+        ],
         "multiple_intersections": len(intersections) > 1,
         "source": source_provenance(references[0]),
         "limitations": limitations,
@@ -162,6 +170,10 @@ def _karst_landforms(
         "evidence_state": "FACT",
         "counts_within_radii": counts,
         "nearest_landform": nearest_landform,
+        "map_features": map_features_from_rows(
+            nearest.to_frame().T if nearest is not None else local,
+            references[0], context.point_itm, layer="karst-landform", fields=KARST_LANDFORM_FIELDS, limit=10,
+        ),
         "source": source_provenance(references[0]),
         "limitations": limitations,
         "checked_at": context.checked_at.isoformat().replace("+00:00", "Z"),
@@ -215,6 +227,13 @@ def _karst_connections(context: SiteEvidenceContext) -> tuple[dict[str, Any], An
         "intersects": bool(intersections),
         "intersecting_connections": intersections,
         "nearest_connection": nearest_connection,
+        "map_features": [
+            feature for reference in references
+            for feature in map_features_from_rows(
+                query_references([reference], context.point_itm, 1.0),
+                reference, context.point_itm, layer="karst-connection", fields=KARST_CONNECTION_FIELDS, limit=10,
+            )
+        ],
         "source": source_provenance(references[0]),
         "limitations": limitations,
         "checked_at": context.checked_at.isoformat().replace("+00:00", "Z"),

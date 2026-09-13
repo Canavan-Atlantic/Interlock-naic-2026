@@ -162,6 +162,10 @@ def request_navigation(page: str) -> None:
     st.rerun()
 
 
+def debug_ui_enabled() -> bool:
+    return os.getenv("INTERLOCK_DEBUG_UI", "").strip().casefold() in {"1", "true", "yes", "on"}
+
+
 def run_interlock(
     project_payload: dict[str, object],
     project_evidence_mode: str,
@@ -192,9 +196,8 @@ def run_interlock(
         preset_metadata=preset_metadata,
     )
     with st.status("Running INTERLOCK", expanded=True) as progress:
-        st.write("Gathering project evidence")
-        st.write("Checking authoritative sources and dependencies")
-        st.write("Preparing a traceable explanation")
+        st.write("Validating project")
+        st.write("Planning investigation")
         try:
             run_params = {
                 "include_project_documents": "true",
@@ -212,6 +215,10 @@ def run_interlock(
             )
             response.raise_for_status()
             payload = response.json()
+            st.write("Checking spatial and policy evidence")
+            st.write("Checking project documents where relevant")
+            st.write("Assessing findings")
+            st.write("Preparing Decision Pack")
             workflow_status = str(payload.get("workflow_status") or "UNKNOWN")
             st.session_state["submitted_project_payload"] = project_payload
             st.session_state["interlock_payload"] = payload
@@ -1114,7 +1121,8 @@ elif active_page == "Decision Pack":
             st.session_state["project_portfolio_view"] = True
             request_navigation("Projects")
         render_decision_pack(payload)
-        render_demo_run_summary(st.session_state.get("demo_run_summary"))
+        if debug_ui_enabled() or not as_dict(payload).get("stage_assessment_view"):
+            render_demo_run_summary(st.session_state.get("demo_run_summary"))
     else:
         st.markdown('<p class="interlock-section-kicker">Project / assessment result</p>', unsafe_allow_html=True)
         st.markdown('<h1 class="interlock-section-title">Your decision pack will appear here.</h1>', unsafe_allow_html=True)

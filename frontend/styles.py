@@ -148,6 +148,20 @@ div[data-testid="stButton"] button[kind="primary"]:hover, div[data-testid="stFor
 .interlock-domain-node.status-constrained .interlock-domain-ring { border-color: var(--interlock-red); }
 .interlock-domain-node.status-unknown .interlock-domain-ring { border-color: #4b7890; }
 .interlock-domain-empty { color: var(--interlock-muted); font-size: 0.82rem; margin: 0; }
+.interlock-domain-radial { align-items: center; background: var(--interlock-pale); border: 1px solid var(--interlock-line); display: flex; gap: 2.2rem; margin: 0.6rem 0 0.4rem; min-height: 15rem; padding: 1.2rem 1.6rem; }
+.interlock-radial-wrap { flex: 0 0 14rem; position: relative; }
+.interlock-radial-wrap svg { display: block; height: 14rem; transform: rotate(-90deg); width: 14rem; }
+.interlock-radial-segment { fill: none; stroke-linecap: butt; stroke-width: 16; }
+.interlock-radial-centre { align-items: center; display: flex; flex-direction: column; inset: 0; justify-content: center; position: absolute; text-align: center; }
+.interlock-radial-centre span { color: var(--interlock-muted); font-size: 0.62rem; font-weight: 800; letter-spacing: 0.14em; }
+.interlock-radial-centre strong { color: var(--interlock-navy); font-size: 0.82rem; line-height: 1.25; margin: 0.45rem 0; max-width: 7rem; }
+.interlock-radial-centre small { color: var(--interlock-muted); font-size: 0.62rem; max-width: 8rem; }
+.interlock-radial-legend { display: grid; gap: 0.75rem; list-style: none; margin: 0; padding: 0; }
+.interlock-radial-legend li { align-items: center; display: flex; gap: 0.65rem; }
+.interlock-radial-legend li span:last-child { display: flex; flex-direction: column; gap: 0.12rem; }
+.interlock-radial-legend strong { color: var(--interlock-navy); font-size: 0.76rem; }
+.interlock-radial-legend small { color: var(--interlock-muted); font-size: 0.67rem; }
+.interlock-legend-dot { border-radius: 50%; display: block; height: 0.7rem; width: 0.7rem; }
 .interlock-evidence-count { background: var(--interlock-pale); border-top: 2px solid var(--interlock-teal); min-height: 5.6rem; padding: 0.7rem 0.8rem; }
 .interlock-evidence-count strong { color: var(--interlock-navy); display: block; font-size: 1.7rem; }
 .interlock-evidence-count span { color: var(--interlock-muted); display: block; font-size: 0.7rem; line-height: 1.25; }
@@ -168,6 +182,8 @@ div[data-testid="stButton"] button[kind="primary"]:hover, div[data-testid="stFor
   .st-key-capability_strip [data-testid="column"]:nth-child(even) .interlock-capability, .st-key-truth_band [data-testid="column"]:nth-child(even) .interlock-truth-item { border-left: 1px solid var(--interlock-line); padding-left: 1.4rem; }
   .interlock-domain-visual { grid-template-columns: 1fr; }
   .interlock-domain-centre { min-height: 7rem; }
+  .interlock-domain-radial { align-items: flex-start; flex-direction: column; gap: 1rem; }
+  .interlock-radial-wrap { align-self: center; }
 }
 @media (max-width: 640px) {
   .interlock-site-header { min-height: 66px; }

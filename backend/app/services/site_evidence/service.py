@@ -41,6 +41,7 @@ class SiteEvidenceOptions:
     grid_min_primary_kv: float | None = None
     planning_nearby_limit: int = 10
     grid_nearby_limit: int = 30
+    domains: tuple[object, ...] | None = None
 
 
 def _location_payload(context: SiteEvidenceContext) -> dict[str, Any]:
@@ -164,7 +165,7 @@ def evaluate_site(
     timings: dict[str, float] = {}
     records = [_location_record(context)]
 
-    domain_calls: tuple[tuple[str, Callable[[], DomainResult]], ...] = (
+    all_domain_calls: tuple[tuple[str, Callable[[], DomainResult]], ...] = (
         ("biodiversity", lambda: evaluate_biodiversity(context)),
         ("flood", lambda: evaluate_flood(context)),
         (
@@ -190,16 +191,37 @@ def evaluate_site(
         ("zoning", lambda: evaluate_zoning(context)),
         ("water", lambda: evaluate_water(context)),
     )
+    requested = {
+        str(getattr(value, "value", value)).casefold()
+        for value in selected.domains
+    } if selected.domains is not None else None
+    domain_calls = tuple(
+        (domain, evaluator)
+        for domain, evaluator in all_domain_calls
+        if requested is None or domain in requested
+    )
     # These evaluators read independent, cached processed layers.  Execute
     # them concurrently while collecting futures in the declared order so
     # the evidence ledger remains byte-for-byte deterministic for a run.
-    with ThreadPoolExecutor(max_workers=len(domain_calls), thread_name_prefix="interlock-gis") as executor:
-        futures = [executor.submit(_run_domain, context, domain, evaluator) for domain, evaluator in domain_calls]
-        for (domain, _), future in zip(domain_calls, futures):
-            result, elapsed = future.result()
-            evaluations[domain] = result
-            timings[domain] = elapsed
-            records.extend(result.records)
+    if domain_calls:
+        with ThreadPoolExecutor(max_workers=len(domain_calls), thread_name_prefix="interlock-gis") as executor:
+            futures = [executor.submit(_run_domain, context, domain, evaluator) for domain, evaluator in domain_calls]
+            for (domain, _), future in zip(domain_calls, futures):
+                result, elapsed = future.result()
+                evaluations[domain] = result
+                timings[domain] = elapsed
+                records.extend(result.records)
+    for domain, _ in all_domain_calls:
+        if domain not in evaluations:
+            evaluations[domain] = DomainResult(
+                {
+                    "status": "NOT_RUN",
+                    "evidence_state": "NOT_PROVIDED",
+                    "reason": "Not run for this assessment stage scope.",
+                    "limitations": ["This domain was outside the bounded evidence scope for this stage."],
+                    "checked_at": context.checked_at.isoformat().replace("+00:00", "Z"),
+                }
+            )
 
     timings["total"] = round((perf_counter() - overall_started) * 1000, 3)
     limitations = [
@@ -224,4 +246,10 @@ def evaluate_site(
         evidence_ledger=ledger,
         limitations=dedupe_strings(limitations),
         timings_ms=timings,
+        map_features=[
+            feature
+            for result in evaluations.values()
+            for feature in result.payload.get("map_features", [])
+            if isinstance(feature, dict)
+        ],
     )

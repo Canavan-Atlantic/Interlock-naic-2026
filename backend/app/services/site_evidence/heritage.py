@@ -18,6 +18,7 @@ from .base import (
     records_from_rows,
     source_provenance,
     source_reference_label,
+    map_features_from_rows,
 )
 
 
@@ -96,6 +97,18 @@ def evaluate_heritage(context: SiteEvidenceContext) -> DomainResult:
         "intersecting_zone_ids": [item.get("ZONE_ID") for item in intersections],
         "intersecting_zones": intersections,
         "nearest_zone": nearest_zone,
+        "map_features": [
+            feature
+            for reference in references
+            for feature in map_features_from_rows(
+                query_references([reference], context.point_itm, 1.0),
+                reference,
+                context.point_itm,
+                layer="heritage",
+                fields=HERITAGE_FIELDS,
+                limit=10,
+            )
+        ],
         "source": source_provenance(references[0]),
         "limitations": limitations,
         "checked_at": context.checked_at.isoformat().replace("+00:00", "Z"),

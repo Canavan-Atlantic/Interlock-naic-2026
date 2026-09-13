@@ -14,6 +14,7 @@ from .base import (
     evidence_record,
     query_references,
     records_from_rows,
+    map_features_from_rows,
     source_provenance,
     source_reference_label,
 )
@@ -89,6 +90,7 @@ def evaluate_planning(
     if frame.empty:
         counts = {f"{int(radius / 1000)}_km": 0 for radius in radii_m}
         nearby_records: list[dict[str, Any]] = []
+        nearby = frame
     else:
         distances = frame.geometry.distance(context.point_itm)
         frame = frame.copy()
@@ -130,6 +132,7 @@ def evaluate_planning(
         "radii_m": [float(radius) for radius in radii_m],
         "counts_within_radii": counts,
         "nearby_records": nearby_records,
+        "map_features": map_features_from_rows(nearby if not frame.empty else frame, references[0], context.point_itm, layer="planning", fields=("ApplicationNumber", "PlanningAuthority", "ApplicationStatus", "Decision"), limit=nearby_limit),
         "source": source_provenance(references[0]),
         "limitations": dedupe_strings(limitations),
         "checked_at": context.checked_at.isoformat().replace("+00:00", "Z"),
